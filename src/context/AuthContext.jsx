@@ -1,0 +1,84 @@
+import { createContext, useContext, useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
+
+const AuthContext = createContext({})
+
+const IS_MOCK = !import.meta.env.VITE_SUPABASE_URL ||
+  import.meta.env.VITE_SUPABASE_URL.includes('placeholder')
+
+const MOCK_USER = { id: 'mock-user-id', email: 'demo@leadunlock.com' }
+const MOCK_PROFILE = {
+  id: 'mock-user-id',
+  email: 'demo@leadunlock.com',
+  full_name: 'Usuario Demo',
+  role: 'admin',
+  clients: [{ id: 'mock-client-id', company_name: 'Mi Empresa Demo', lead_price: 20, balance: 0 }],
+}
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(IS_MOCK ? MOCK_USER : null)
+  const [profile, setProfile] = useState(IS_MOCK ? MOCK_PROFILE : null)
+  const [loading, setLoading] = useState(!IS_MOCK)
+
+  useEffect(() => {
+    if (IS_MOCK) return
+
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) { setLoading(false); return }
+      setUser(session?.user ?? null)
+      if (session?.user) fetchProfile(session.user.id)
+      else setLoading(false)
+    }).catch(() => setLoading(false))
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      if (session?.user) fetchProfile(session.user.id)
+      else { setProfile(null); setLoading(false) }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  async function fetchProfile(userId) {
+    const { data } = await supabase
+      .from('users')
+      .select('*, clients(*)')
+      .eq('id', userId)
+      .single()
+    setProfile(data)
+    setLoading(false)
+  }
+
+  const signIn = IS_MOCK
+    ? async () => ({ error: null })
+    : (email, password) => supabase.auth.signInWithPassword({ email, password })
+
+  const signUp = IS_MOCK
+    ? async () => ({ error: null })
+    : (email, password, metadata) => supabase.auth.signUp({ email, password, options: { data: metadata } })
+
+  const signOut = IS_MOCK
+    ? async () => {}
+    : () => supabase.auth.signOut()
+
+  const resetPassword = IS_MOCK
+    ? async () => {}
+    : (email) => supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+
+  const isAdmin = profile?.role === 'admin'
+  const clientId = profile?.clients?.[0]?.id
+  const clientData = profile?.clients?.[0]
+
+  return (
+    <AuthContext.Provider value={{
+      user, profile, isAdmin, clientId, clientData, loading,
+      signIn, signUp, signOut, resetPassword, isMock: IS_MOCK,
+    }}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
+
+export const useAuth = () => useContext(AuthContext)
