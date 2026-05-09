@@ -5,32 +5,44 @@ import { Badge } from '../../components/ui/Badge'
 import clsx from 'clsx'
 
 // Mock financiero — reemplazar con datos reales de Supabase
+// Precio mínimo garantizado y multiplicador de ganancia
+const MIN_LEAD_PRICE = 12
+const PROFIT_MULTIPLIER = 3
+
+function calcLeadPrice(metaCostTotal, leadsTotal) {
+  if (!leadsTotal) return MIN_LEAD_PRICE
+  const costPerLead = metaCostTotal / leadsTotal
+  return Math.max(MIN_LEAD_PRICE, Math.ceil(costPerLead * PROFIT_MULTIPLIER))
+}
+
 const MOCK_CLIENTS = [
   {
     id: 'c1',
-    company: 'Hipoteca Fácil MX',
-    industry: 'Bienes raíces',
-    city: 'CDMX',
+    company: 'García Insurance',
+    industry: 'Productos financieros',
+    city: 'Miami',
     status: 'active',
     activated_at: '2024-01-15',
     activation_paid: true,
     leads_total: 24,
     leads_unlocked: 8,
-    revenue_leads: 160,      // leads_unlocked * $20
+    lead_price: 20,
+    revenue_leads: 160,
     revenue_activation: 100,
-    meta_cost: 42,            // lo que costó en Meta Ads
+    meta_cost: 42,
     credit_returned: false,
   },
   {
     id: 'c2',
-    company: 'Seguros García',
-    industry: 'Seguros',
-    city: 'Guadalajara',
+    company: 'López Benefits',
+    industry: 'Gastos finales',
+    city: 'Orlando',
     status: 'active',
     activated_at: '2024-02-01',
     activation_paid: true,
     leads_total: 15,
     leads_unlocked: 5,
+    lead_price: 20,
     revenue_leads: 100,
     revenue_activation: 100,
     meta_cost: 27,
@@ -38,29 +50,31 @@ const MOCK_CLIENTS = [
   },
   {
     id: 'c3',
-    company: 'PyME Capital',
-    industry: 'Servicios financieros',
-    city: 'CDMX',
+    company: 'Miami Financial',
+    industry: 'Productos financieros',
+    city: 'Miami',
     status: 'active',
     activated_at: '2024-02-20',
     activation_paid: true,
     leads_total: 62,
     leads_unlocked: 51,
+    lead_price: 20,
     revenue_leads: 1020,
     revenue_activation: 100,
     meta_cost: 289,
-    credit_returned: true,   // ya pasó los $1,000 → crédito devuelto
+    credit_returned: true,
   },
   {
     id: 'c4',
-    company: 'Dental Estética Plus',
-    industry: 'Salud / Medicina estética',
-    city: 'Monterrey',
+    company: 'Tampa Insurance Group',
+    industry: 'Gastos finales',
+    city: 'Tampa',
     status: 'paused',
     activated_at: '2024-03-05',
     activation_paid: true,
     leads_total: 8,
     leads_unlocked: 2,
+    lead_price: 20,
     revenue_leads: 40,
     revenue_activation: 100,
     meta_cost: 18,
@@ -68,14 +82,15 @@ const MOCK_CLIENTS = [
   },
   {
     id: 'c5',
-    company: 'EduPro Cursos',
-    industry: 'Educación',
-    city: 'Puebla',
+    company: 'Sunshine Benefits',
+    industry: 'Productos financieros',
+    city: 'Hialeah',
     status: 'pending',
     activated_at: '2024-04-10',
     activation_paid: false,
     leads_total: 0,
     leads_unlocked: 0,
+    lead_price: 20,
     revenue_leads: 0,
     revenue_activation: 0,
     meta_cost: 0,
@@ -316,11 +331,49 @@ export default function AdminFinanzas() {
                           ))}
                         </div>
 
-                        {/* Costo Meta (editable) */}
+                        {/* Precio + Rentabilidad */}
                         <div className="space-y-3">
-                          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Rentabilidad</h4>
+                          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Precio y rentabilidad</h4>
+
+                          {/* Calculadora de precio */}
+                          {(() => {
+                            const costPerLead = client.leads_total > 0 ? (client.meta_cost / client.leads_total) : 0
+                            const suggested = calcLeadPrice(client.meta_cost, client.leads_total)
+                            const isUnderpriced = client.lead_price < suggested
+                            return (
+                              <div className={clsx(
+                                'rounded-xl p-3 border text-sm space-y-2',
+                                isUnderpriced ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
+                              )}>
+                                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Fórmula de precio</p>
+                                <div className="space-y-1 text-xs text-slate-600">
+                                  <div className="flex justify-between">
+                                    <span>Costo Meta por lead</span>
+                                    <span className="font-medium">${costPerLead > 0 ? costPerLead.toFixed(2) : '—'}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>× {PROFIT_MULTIPLIER} (ganancia 3×)</span>
+                                    <span className="font-medium">${costPerLead > 0 ? (costPerLead * 3).toFixed(2) : '—'}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Mínimo garantizado</span>
+                                    <span className="font-medium">${MIN_LEAD_PRICE}</span>
+                                  </div>
+                                  <div className={clsx('flex justify-between font-bold border-t pt-1', isUnderpriced ? 'text-red-600' : 'text-green-700')}>
+                                    <span>Precio recomendado</span>
+                                    <span>${suggested}</span>
+                                  </div>
+                                </div>
+                                <div className={clsx('flex justify-between text-xs font-semibold pt-1 border-t', isUnderpriced ? 'border-red-200 text-red-500' : 'border-green-200 text-green-600')}>
+                                  <span>Precio actual cobrado</span>
+                                  <span>${client.lead_price} {isUnderpriced ? '⚠️ bajo' : '✓ ok'}</span>
+                                </div>
+                              </div>
+                            )
+                          })()}
+
                           <div>
-                            <label className="text-xs text-slate-500 mb-1 block">Costo Meta Ads (editable)</label>
+                            <label className="text-xs text-slate-500 mb-1 block">Costo Meta Ads total (editable)</label>
                             <div className="flex items-center gap-2">
                               <span className="text-slate-400 text-sm">$</span>
                               <input
