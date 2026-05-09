@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Zap, Mail, Lock, AlertCircle } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
+import { supabase } from '../../lib/supabase'
 import Button from '../../components/ui/Button'
 
 export default function Login() {
@@ -16,11 +17,24 @@ export default function Login() {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    const { error: err } = await signIn(email, password)
+    const { data, error: err } = await signIn(email, password)
     if (err) {
       setError('Correo o contraseña incorrectos.')
       setLoading(false)
     } else {
+      // Si el cliente no completó el onboarding, mandarlo ahí
+      const userId = data?.user?.id
+      if (userId) {
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('status')
+          .eq('user_id', userId)
+          .single()
+        if (clientData?.status === 'pending') {
+          navigate('/onboarding')
+          return
+        }
+      }
       navigate('/dashboard')
     }
   }
