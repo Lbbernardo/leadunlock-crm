@@ -22,17 +22,24 @@ export default function Login() {
       setError('Correo o contraseña incorrectos.')
       setLoading(false)
     } else {
-      // Si el cliente no completó el onboarding, mandarlo ahí
       const userId = data?.user?.id
       if (userId) {
-        const { data: clientData } = await supabase
-          .from('clients')
-          .select('status')
-          .eq('user_id', userId)
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', userId)
           .single()
-        if (clientData?.status === 'pending') {
-          navigate('/onboarding')
-          return
+
+        if (userData?.role !== 'admin') {
+          const { data: clientData } = await supabase
+            .from('clients')
+            .select('status')
+            .eq('user_id', userId)
+            .single()
+          if (clientData?.status === 'pending') {
+            navigate('/onboarding')
+            return
+          }
         }
       }
       navigate('/dashboard')
