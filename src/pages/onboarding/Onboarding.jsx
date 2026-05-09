@@ -16,7 +16,7 @@ const DISCOUNT_CODES = {
 
 const LEAD_CATEGORIES = [
   { id: 'final-expense',      label: 'Gastos finales',        icon: '🕊️', description: 'Seguros de gastos funerarios' },
-  { id: 'financial-products', label: 'Productos financieros', icon: '💰', description: 'Créditos y préstamos personales' },
+  { id: 'financial-products', label: 'Productos financieros', icon: '💰', description: 'UIL · Anualidades · Whole Life · Seguro de vida' },
   { id: 'life-insurance',     label: 'Seguros de vida',       icon: '🛡️', description: 'Pólizas de seguro de vida',    locked: true },
   { id: 'medicare',           label: 'Medicare / Medicaid',   icon: '🏥', description: 'Planes Medicare y Medicaid',  locked: true },
   { id: 'auto-insurance',     label: 'Seguros de auto',       icon: '🚗', description: 'Seguros vehiculares',         locked: true },
@@ -188,6 +188,7 @@ function Step1({ data, onChange, onNext }) {
 
 function Step2({ data, onChange, onNext, onBack }) {
   const valid = data.targetAudience && data.budget && data.goal
+  const hasFinancial = data.categories.includes('financial-products')
 
   return (
     <div className="space-y-5">
@@ -195,6 +196,16 @@ function Step2({ data, onChange, onNext, onBack }) {
         <h2 className="text-2xl font-bold text-white mb-1">Diseña tu campaña</h2>
         <p className="text-slate-400 text-sm">Nosotros creamos y manejamos tus campañas en Meta Ads.</p>
       </div>
+
+      {hasFinancial && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 text-sm text-amber-300">
+          <p className="font-semibold mb-1">⚠️ Nota sobre productos financieros en Meta Ads</p>
+          <p className="text-amber-400/80 text-xs leading-relaxed">
+            Meta no permite segmentar por edad para productos financieros (UIL, Anualidades, Whole Life).
+            Nuestras campañas se enfocan en intereses, comportamientos y audiencias similares — sin restricciones de edad.
+          </p>
+        </div>
+      )}
 
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -204,7 +215,11 @@ function Step2({ data, onChange, onNext, onBack }) {
         <textarea
           value={data.targetAudience}
           onChange={e => onChange({ ...data, targetAudience: e.target.value })}
-          placeholder="Ej: Adultos de 50-85 años, que buscan proteger a su familia de gastos funerarios..."
+          placeholder={
+            hasFinancial
+              ? 'Ej: Personas interesadas en proteger su patrimonio, que buscan opciones de ahorro e inversión con beneficios de seguro de vida...'
+              : 'Ej: Adultos de 50-85 años, que buscan proteger a su familia de gastos funerarios...'
+          }
           rows={3}
           className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 resize-none"
         />

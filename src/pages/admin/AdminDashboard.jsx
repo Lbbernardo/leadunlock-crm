@@ -21,7 +21,7 @@ const MOCK_LEADS = [
 
 const INITIAL_CATEGORIES = [
   { id: 'final-expense',      name: 'Gastos finales',        icon: '🕊️', description: 'Seguros de gastos funerarios y vida',   is_active: true,  clients: 2 },
-  { id: 'financial-products', name: 'Productos financieros', icon: '💰', description: 'Créditos, préstamos personales y PyME', is_active: true,  clients: 2 },
+  { id: 'financial-products', name: 'Productos financieros', icon: '💰', description: 'UIL · Anualidades · Whole Life · Seguro de vida', is_active: true,  clients: 2 },
   { id: 'life-insurance',     name: 'Seguros de vida',       icon: '🛡️', description: 'Pólizas de seguro de vida',             is_active: false, clients: 0 },
   { id: 'medicare',           name: 'Medicare / Medicaid',   icon: '🏥', description: 'Planes Medicare y Medicaid',            is_active: false, clients: 0 },
   { id: 'auto-insurance',     name: 'Seguros de auto',       icon: '🚗', description: 'Seguros vehiculares',                  is_active: false, clients: 0 },
