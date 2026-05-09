@@ -8,18 +8,13 @@ import { useAuth } from '../../context/AuthContext'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder')
 
-const INDUSTRIES = [
-  'Bienes raíces / Inmobiliaria',
-  'Seguros',
-  'Servicios financieros / Créditos',
-  'Educación / Cursos',
-  'Salud / Medicina estética',
-  'Automotriz',
-  'Restaurantes / Alimentos',
-  'Construcción / Remodelación',
-  'E-commerce',
-  'Consultoría / Servicios profesionales',
-  'Otro',
+const LEAD_CATEGORIES = [
+  { id: 'final-expense',      label: 'Gastos finales',        icon: '🕊️', description: 'Seguros de gastos funerarios' },
+  { id: 'financial-products', label: 'Productos financieros', icon: '💰', description: 'Créditos y préstamos personales' },
+  { id: 'life-insurance',     label: 'Seguros de vida',       icon: '🛡️', description: 'Pólizas de seguro de vida',    locked: true },
+  { id: 'medicare',           label: 'Medicare / Medicaid',   icon: '🏥', description: 'Planes Medicare y Medicaid',  locked: true },
+  { id: 'auto-insurance',     label: 'Seguros de auto',       icon: '🚗', description: 'Seguros vehiculares',         locked: true },
+  { id: 'real-estate',        label: 'Bienes raíces',         icon: '🏠', description: 'Compra, venta y renta',      locked: true },
 ]
 
 const BUDGETS = [
@@ -63,7 +58,14 @@ function StepIndicator({ current }) {
 }
 
 function Step1({ data, onChange, onNext }) {
-  const valid = data.companyName && data.industry && data.city
+  const valid = data.companyName && data.city && data.categories.length > 0
+
+  function toggleCategory(id) {
+    const selected = data.categories.includes(id)
+      ? data.categories.filter(c => c !== id)
+      : [...data.categories, id]
+    onChange({ ...data, categories: selected })
+  }
 
   return (
     <div className="space-y-5">
@@ -80,25 +82,58 @@ function Step1({ data, onChange, onNext }) {
             type="text"
             value={data.companyName}
             onChange={e => onChange({ ...data, companyName: e.target.value })}
-            placeholder="Inmobiliaria García & Asociados"
+            placeholder="Ej: García Insurance Agency"
             className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">Industria</label>
-        <div className="relative">
-          <Briefcase size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-          <select
-            value={data.industry}
-            onChange={e => onChange({ ...data, industry: e.target.value })}
-            className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 appearance-none"
-          >
-            <option value="">Selecciona tu industria</option>
-            {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
-          </select>
+        <label className="block text-sm font-medium text-slate-300 mb-1.5">
+          ¿Qué tipo de leads quieres recibir?
+        </label>
+        <p className="text-xs text-slate-500 mb-3">Selecciona uno o más. Solo disponibles los nichos activos.</p>
+        <div className="grid grid-cols-2 gap-2">
+          {LEAD_CATEGORIES.map(cat => {
+            const isSelected = data.categories.includes(cat.id)
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                disabled={cat.locked}
+                onClick={() => !cat.locked && toggleCategory(cat.id)}
+                className={`relative flex items-start gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
+                  cat.locked
+                    ? 'border-slate-800 bg-slate-900/30 opacity-40 cursor-not-allowed'
+                    : isSelected
+                    ? 'border-green-500 bg-green-500/10'
+                    : 'border-slate-700 bg-slate-800 hover:border-slate-600'
+                }`}
+              >
+                <span className="text-xl mt-0.5">{cat.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-semibold leading-tight ${isSelected ? 'text-green-400' : 'text-white'}`}>
+                    {cat.label}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-0.5">{cat.description}</p>
+                </div>
+                {isSelected && (
+                  <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check size={10} className="text-white" />
+                  </div>
+                )}
+                {cat.locked && (
+                  <span className="absolute top-2 right-2 text-xs bg-slate-700 text-slate-500 px-1.5 py-0.5 rounded-full">
+                    Próximo
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
+        {data.categories.length === 0 && (
+          <p className="text-xs text-amber-500 mt-2">Selecciona al menos una categoría para continuar.</p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -110,7 +145,7 @@ function Step1({ data, onChange, onNext }) {
               type="text"
               value={data.city}
               onChange={e => onChange({ ...data, city: e.target.value })}
-              placeholder="CDMX"
+              placeholder="Miami, FL"
               className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
             />
           </div>
@@ -121,19 +156,19 @@ function Step1({ data, onChange, onNext }) {
             type="tel"
             value={data.phone}
             onChange={e => onChange({ ...data, phone: e.target.value })}
-            placeholder="+52 55 0000 0000"
+            placeholder="+1 305 000 0000"
             className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">¿Qué producto o servicio vendes?</label>
+        <label className="block text-sm font-medium text-slate-300 mb-2">¿Qué producto o servicio vendes? (opcional)</label>
         <textarea
           value={data.productDescription}
           onChange={e => onChange({ ...data, productDescription: e.target.value })}
-          placeholder="Ej: Vendemos créditos hipotecarios para personas que quieren comprar su primera casa en CDMX con ingresos comprobables de $15,000/mes..."
-          rows={3}
+          placeholder="Ej: Vendemos pólizas de gastos finales para adultos mayores de 50-85 años..."
+          rows={2}
           className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 resize-none"
         />
       </div>
@@ -163,7 +198,7 @@ function Step2({ data, onChange, onNext, onBack }) {
         <textarea
           value={data.targetAudience}
           onChange={e => onChange({ ...data, targetAudience: e.target.value })}
-          placeholder="Ej: Hombres y mujeres de 28-45 años, profesionistas, que rentan y quieren comprar casa propia, con ingresos de $20k-50k/mes..."
+          placeholder="Ej: Adultos de 50-85 años, que buscan proteger a su familia de gastos funerarios..."
           rows={3}
           className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 resize-none"
         />
@@ -181,7 +216,7 @@ function Step2({ data, onChange, onNext, onBack }) {
         />
         {data.leadsPerMonth && (
           <p className="text-xs text-slate-500 mt-1.5">
-            Estimado: ${(data.leadsPerMonth * 20).toLocaleString()} MXN/mes en desbloqueos
+            Estimado: ${(data.leadsPerMonth * 20).toLocaleString()} / mes en desbloqueos
           </p>
         )}
       </div>
@@ -289,6 +324,11 @@ function PaymentForm({ data, onSuccess, onBack }) {
     }
   }
 
+  const categoryLabels = data.categories.map(id => {
+    const cat = LEAD_CATEGORIES.find(c => c.id === id)
+    return cat ? cat.label : id
+  })
+
   return (
     <form onSubmit={handlePay} className="space-y-5">
       <div>
@@ -296,7 +336,6 @@ function PaymentForm({ data, onSuccess, onBack }) {
         <p className="text-slate-400 text-sm">Pago único de activación para empezar a recibir leads.</p>
       </div>
 
-      {/* Resumen */}
       <div className="bg-slate-800 rounded-2xl p-5 space-y-3">
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Resumen de tu cuenta</h3>
         <div className="space-y-2 text-sm">
@@ -304,9 +343,9 @@ function PaymentForm({ data, onSuccess, onBack }) {
             <span className="text-slate-400">Empresa</span>
             <span className="text-white font-medium">{data.companyName}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-slate-400">Industria</span>
-            <span className="text-white">{data.industry}</span>
+          <div className="flex justify-between items-start gap-4">
+            <span className="text-slate-400 flex-shrink-0">Categorías</span>
+            <span className="text-white text-right">{categoryLabels.join(', ')}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-400">Leads estimados/mes</span>
@@ -320,7 +359,6 @@ function PaymentForm({ data, onSuccess, onBack }) {
         </div>
       </div>
 
-      {/* Precio */}
       <div className="flex items-center justify-between bg-slate-900 border border-slate-700 rounded-2xl px-5 py-4">
         <div>
           <p className="text-white font-semibold">Activación de cuenta</p>
@@ -329,7 +367,6 @@ function PaymentForm({ data, onSuccess, onBack }) {
         <span className="text-3xl font-extrabold text-white">$100</span>
       </div>
 
-      {/* Card */}
       {!isMock && (
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-2">Datos de tarjeta</label>
@@ -366,6 +403,11 @@ function PaymentForm({ data, onSuccess, onBack }) {
 
 function Step4({ data }) {
   const navigate = useNavigate()
+  const categoryLabels = data.categories.map(id => {
+    const cat = LEAD_CATEGORIES.find(c => c.id === id)
+    return cat ? `${cat.icon} ${cat.label}` : id
+  })
+
   return (
     <div className="text-center space-y-6">
       <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto">
@@ -381,6 +423,16 @@ function Step4({ data }) {
           Nuestro equipo creará tus campañas en las próximas <strong className="text-green-400">24-48 horas</strong>.
         </p>
       </div>
+
+      {categoryLabels.length > 0 && (
+        <div className="flex flex-wrap gap-2 justify-center">
+          {categoryLabels.map(label => (
+            <span key={label} className="bg-green-500/10 text-green-400 text-xs font-medium px-3 py-1.5 rounded-full border border-green-500/20">
+              {label}
+            </span>
+          ))}
+        </div>
+      )}
 
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 text-left space-y-3">
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide">¿Qué sigue?</h3>
@@ -414,7 +466,7 @@ function Step4({ data }) {
 }
 
 const EMPTY = {
-  companyName: '', industry: '', city: '', phone: '',
+  companyName: '', categories: [], city: '', phone: '',
   productDescription: '', targetAudience: '', leadsPerMonth: '',
   budget: '', goal: '',
 }

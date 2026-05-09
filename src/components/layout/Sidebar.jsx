@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, CreditCard, LogOut, Zap, Shield, Webhook, Map, DollarSign } from 'lucide-react'
+import { LayoutDashboard, CreditCard, LogOut, Zap, Shield, Webhook, Map, DollarSign, BookMarked } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import clsx from 'clsx'
 
@@ -8,6 +8,7 @@ const navItems = [
   { label: 'Facturación', icon: CreditCard, href: '/dashboard/billing' },
   { label: 'Integraciones', icon: Webhook, href: '/dashboard/integraciones' },
   { label: 'Roadmap', icon: Map, href: '/dashboard/roadmap' },
+  { label: '¿Dónde me quedé?', icon: BookMarked, href: '/dashboard/estado' },
 ]
 
 export default function Sidebar() {
