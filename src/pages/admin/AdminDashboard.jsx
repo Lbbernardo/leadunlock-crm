@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Users, TrendingUp, DollarSign, Plus, Eye, Edit2, Zap, Tag, ToggleLeft, ToggleRight } from 'lucide-react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import Button from '../../components/ui/Button'
 import Modal from '../../components/ui/Modal'
 import { Badge, StatusBadge } from '../../components/ui/Badge'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext'
 
 const MOCK_CLIENTS = [
   { id: 'c1', company_name: 'García Insurance', email: 'garcia@insurance.com', leads_total: 24, leads_unlocked: 8, revenue: 160, created_at: '2024-01-15', categories: ['Gastos finales', 'Productos financieros'] },
@@ -48,12 +50,62 @@ function StatCard({ icon: Icon, label, value, color }) {
 }
 
 export default function AdminDashboard() {
+  const { isMock } = useAuth()
   const [activeTab, setActiveTab] = useState('clients')
-  const [clients] = useState(MOCK_CLIENTS)
+  const [clients, setClients] = useState(MOCK_CLIENTS)
   const [leads, setLeads] = useState(MOCK_LEADS)
   const [categories, setCategories] = useState(INITIAL_CATEGORIES)
   const [leadForm, setLeadForm] = useState(EMPTY_LEAD_FORM)
   const [leadModalOpen, setLeadModalOpen] = useState(false)
+  const [loadingData, setLoadingData] = useState(!isMock)
+
+  useEffect(() => {
+    if (isMock) return
+    fetchData()
+  }, [isMock])
+
+  async function fetchData() {
+    setLoadingData(true)
+    const [{ data: clientsData }, { data: leadsData }] = await Promise.all([
+      supabase
+        .from('clients')
+        .select('id, company_name, lead_price, balance, created_at, users(email, full_name)')
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('leads')
+        .select('id, full_name, email, city, product_interest, is_locked, status, created_at, client_id, clients(company_name)')
+        .order('created_at', { ascending: false })
+        .limit(100),
+    ])
+
+    if (clientsData) {
+      const mapped = clientsData.map(c => {
+        const clientLeads = leadsData?.filter(l => l.client_id === c.id) || []
+        const unlocked = clientLeads.filter(l => !l.is_locked).length
+        return {
+          id: c.id,
+          company_name: c.company_name || '(sin nombre)',
+          email: c.users?.email || '',
+          leads_total: clientLeads.length,
+          leads_unlocked: unlocked,
+          revenue: unlocked * (c.lead_price || 20),
+          created_at: c.created_at,
+          categories: [],
+        }
+      })
+      setClients(mapped)
+    }
+
+    if (leadsData) {
+      setLeads(leadsData.map(l => ({
+        ...l,
+        client_name: l.clients?.company_name || '—',
+        category: l.product_interest || '—',
+      })))
+    }
+
+    setLoadingData(false)
+  }
 
   const totalRevenue = clients.reduce((sum, c) => sum + c.revenue, 0)
   const totalLeads = leads.length
@@ -97,6 +149,16 @@ export default function AdminDashboard() {
     { id: 'leads', label: 'Leads' },
     { id: 'categories', label: 'Categorías' },
   ]
+
+  if (loadingData) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500" />
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout>
