@@ -66,44 +66,44 @@ export default function AdminDashboard() {
 
   async function fetchData() {
     setLoadingData(true)
-    const [{ data: clientsData }, { data: leadsData }] = await Promise.all([
-      supabase
-        .from('clients')
-        .select('id, company_name, lead_price, balance, created_at, users(email, full_name)')
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('leads')
-        .select('id, full_name, email, city, product_interest, is_locked, status, created_at, client_id, clients(company_name)')
-        .order('created_at', { ascending: false })
-        .limit(100),
-    ])
+    try {
+      const [{ data: clientsData }, { data: usersData }, { data: leadsData }] = await Promise.all([
+        supabase.from('clients').select('id, company_name, lead_price, balance, created_at, user_id').order('created_at', { ascending: false }),
+        supabase.from('users').select('id, email, full_name'),
+        supabase.from('leads').select('id, full_name, email, city, product_interest, is_locked, status, created_at, client_id').order('created_at', { ascending: false }).limit(100),
+      ])
 
-    if (clientsData) {
-      const mapped = clientsData.map(c => {
-        const clientLeads = leadsData?.filter(l => l.client_id === c.id) || []
-        const unlocked = clientLeads.filter(l => !l.is_locked).length
-        return {
-          id: c.id,
-          company_name: c.company_name || '(sin nombre)',
-          email: c.users?.email || '',
-          leads_total: clientLeads.length,
-          leads_unlocked: unlocked,
-          revenue: unlocked * (c.lead_price || 20),
-          created_at: c.created_at,
-          categories: [],
-        }
-      })
-      setClients(mapped)
+      if (clientsData) {
+        const mapped = clientsData.map(c => {
+          const user = usersData?.find(u => u.id === c.user_id)
+          const clientLeads = leadsData?.filter(l => l.client_id === c.id) || []
+          const unlocked = clientLeads.filter(l => !l.is_locked).length
+          return {
+            id: c.id,
+            company_name: c.company_name || '(sin nombre)',
+            email: user?.email || '',
+            leads_total: clientLeads.length,
+            leads_unlocked: unlocked,
+            revenue: unlocked * (c.lead_price || 20),
+            created_at: c.created_at,
+            categories: [],
+          }
+        })
+        setClients(mapped)
+      }
+
+      if (leadsData) {
+        const clientsMap = {}
+        clientsData?.forEach(c => { clientsMap[c.id] = c.company_name })
+        setLeads(leadsData.map(l => ({
+          ...l,
+          client_name: clientsMap[l.client_id] || '—',
+          category: l.product_interest || '—',
+        })))
+      }
+    } catch (e) {
+      console.error('Error cargando datos admin:', e)
     }
-
-    if (leadsData) {
-      setLeads(leadsData.map(l => ({
-        ...l,
-        client_name: l.clients?.company_name || '—',
-        category: l.product_interest || '—',
-      })))
-    }
-
     setLoadingData(false)
   }
 
