@@ -5,6 +5,7 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 import { Zap, Building2, MapPin, Tag, Users, ChevronRight, Check, CreditCard, AlertCircle, Briefcase } from 'lucide-react'
 import Button from '../../components/ui/Button'
 import { useAuth } from '../../context/AuthContext'
+import { supabase } from '../../lib/supabase'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder')
 
@@ -548,6 +549,32 @@ const EMPTY = {
 function OnboardingContent() {
   const [step, setStep] = useState(1)
   const [data, setData] = useState(EMPTY)
+  const { user, isMock } = useAuth()
+
+  async function handlePaymentSuccess() {
+    if (!isMock && user) {
+      const categoryLabels = data.categories.map(id => {
+        const cat = LEAD_CATEGORIES.find(c => c.id === id)
+        return cat ? cat.label : id
+      })
+      await supabase
+        .from('clients')
+        .update({
+          company_name: data.companyName,
+          phone: data.phone,
+          city: data.city,
+          product_description: data.productDescription,
+          target_audience: data.targetAudience,
+          leads_per_month: data.leadsPerMonth ? parseInt(data.leadsPerMonth) : null,
+          budget: data.budget,
+          goal: data.goal,
+          categories: categoryLabels,
+          status: 'active',
+        })
+        .eq('user_id', user.id)
+    }
+    setStep(4)
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-12">
@@ -566,7 +593,7 @@ function OnboardingContent() {
           {step === 2 && <Step2 data={data} onChange={setData} onNext={() => setStep(3)} onBack={() => setStep(1)} />}
           {step === 3 && (
             <Elements stripe={stripePromise}>
-              <PaymentForm data={data} onSuccess={() => setStep(4)} onBack={() => setStep(2)} />
+              <PaymentForm data={data} onSuccess={handlePaymentSuccess} onBack={() => setStep(2)} />
             </Elements>
           )}
           {step === 4 && <Step4 data={data} />}

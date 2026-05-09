@@ -35,6 +35,94 @@ const EMPTY_LEAD_FORM = {
   product_interest: '', source: '', campaign_name: '', client_id: '',
 }
 
+function ClientRow({ client }) {
+  const [expanded, setExpanded] = useState(false)
+  const statusColor = { active: 'green', pending: 'yellow', paused: 'slate' }[client.status] || 'slate'
+  const statusLabel = { active: 'Activo', pending: 'Pendiente', paused: 'Pausado' }[client.status] || client.status
+
+  return (
+    <div>
+      <div
+        className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 cursor-pointer transition-colors"
+        onClick={() => setExpanded(e => !e)}
+      >
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-slate-900 text-sm">{client.company_name}</p>
+          <p className="text-xs text-slate-500">{client.email} {client.city ? `· ${client.city}` : ''}</p>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {client.categories.map(cat => (
+            <span key={cat} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">{cat}</span>
+          ))}
+          {client.categories.length === 0 && <span className="text-xs text-slate-400">Sin categoría</span>}
+        </div>
+        <div className="text-center hidden md:block">
+          <p className="text-xs text-slate-400">Leads</p>
+          <p className="font-semibold text-slate-900 text-sm">{client.leads_total}</p>
+        </div>
+        <div className="text-center hidden md:block">
+          <p className="text-xs text-slate-400">Desbloqueados</p>
+          <Badge color="green">{client.leads_unlocked}</Badge>
+        </div>
+        <div className="text-center hidden md:block">
+          <p className="text-xs text-slate-400">Ingresos</p>
+          <p className="font-semibold text-slate-900 text-sm">${client.revenue}</p>
+        </div>
+        <Badge color={statusColor}>{statusLabel}</Badge>
+        <Edit2 size={14} className={`text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+      </div>
+
+      {expanded && (
+        <div className="bg-slate-50 border-t border-slate-100 px-6 py-5 grid md:grid-cols-3 gap-6">
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Información de contacto</p>
+            {[
+              ['Email', client.email],
+              ['Teléfono', client.phone || '—'],
+              ['Ciudad', client.city || '—'],
+              ['Leads/mes solicitados', client.leads_per_month || '—'],
+              ['Presupuesto campaña', client.budget || '—'],
+            ].map(([label, val]) => (
+              <div key={label} className="flex justify-between text-sm">
+                <span className="text-slate-500">{label}</span>
+                <span className="font-medium text-slate-900 text-right ml-4">{val}</span>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Campaña</p>
+            <div>
+              <p className="text-xs text-slate-500 mb-1">Objetivo</p>
+              <p className="text-sm text-slate-900">{client.goal || '—'}</p>
+            </div>
+            <div className="mt-3">
+              <p className="text-xs text-slate-500 mb-1">Audiencia objetivo</p>
+              <p className="text-sm text-slate-900 leading-relaxed">{client.target_audience || '—'}</p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Categorías seleccionadas</p>
+            <div className="flex flex-wrap gap-2">
+              {client.categories.length > 0
+                ? client.categories.map(cat => (
+                    <span key={cat} className="bg-blue-100 text-blue-700 text-sm font-medium px-3 py-1 rounded-full">{cat}</span>
+                  ))
+                : <span className="text-slate-400 text-sm">Sin categorías asignadas</span>
+              }
+            </div>
+            <div className="mt-4 pt-4 border-t border-slate-200">
+              <p className="text-xs text-slate-400">Miembro desde</p>
+              <p className="text-sm font-medium text-slate-900 mt-0.5">
+                {new Date(client.created_at).toLocaleDateString('es-MX', { dateStyle: 'medium' })}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function StatCard({ icon: Icon, label, value, color }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-6">
@@ -82,11 +170,18 @@ export default function AdminDashboard() {
             id: c.id,
             company_name: c.company_name || '(sin nombre)',
             email: user?.email || '',
+            phone: c.phone || '',
+            city: c.city || '',
+            categories: c.categories || [],
+            budget: c.budget || '',
+            leads_per_month: c.leads_per_month || 0,
+            target_audience: c.target_audience || '',
+            goal: c.goal || '',
+            status: c.status || 'pending',
             leads_total: clientLeads.length,
             leads_unlocked: unlocked,
             revenue: unlocked * (c.lead_price || 20),
             created_at: c.created_at,
-            categories: [],
           }
         })
         setClients(mapped)
@@ -207,45 +302,13 @@ export default function AdminDashboard() {
           </div>
 
           {activeTab === 'clients' && (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50">
-                    {['Empresa', 'Email', 'Categorías', 'Leads', 'Desbloqueados', 'Ingresos', ''].map((h) => (
-                      <th key={h} className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide px-6 py-3">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {clients.map((client) => (
-                    <tr key={client.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 font-medium text-slate-900 text-sm">{client.company_name}</td>
-                      <td className="px-6 py-4 text-slate-500 text-sm">{client.email}</td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-1">
-                          {client.categories.map(cat => (
-                            <span key={cat} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">
-                              {cat}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-slate-700 text-sm">{client.leads_total}</td>
-                      <td className="px-6 py-4">
-                        <Badge color="green">{client.leads_unlocked}</Badge>
-                      </td>
-                      <td className="px-6 py-4 font-semibold text-slate-900 text-sm">${client.revenue}</td>
-                      <td className="px-6 py-4">
-                        <button className="text-slate-400 hover:text-blue-500 transition-colors p-1">
-                          <Eye size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="divide-y divide-slate-100">
+              {clients.length === 0 && (
+                <p className="text-center text-slate-400 text-sm py-12">No hay clientes registrados aún.</p>
+              )}
+              {clients.map((client) => (
+                <ClientRow key={client.id} client={client} />
+              ))}
             </div>
           )}
 
