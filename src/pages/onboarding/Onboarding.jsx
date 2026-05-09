@@ -8,6 +8,12 @@ import { useAuth } from '../../context/AuthContext'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder')
 
+const DISCOUNT_CODES = {
+  'PRUEBA100': { pct: 100, label: '100% de descuento (modo prueba)' },
+  'WELCOME50': { pct: 50,  label: '50% de descuento — Bienvenida' },
+  'PARTNER25': { pct: 25,  label: '25% de descuento — Partner' },
+}
+
 const LEAD_CATEGORIES = [
   { id: 'final-expense',      label: 'Gastos finales',        icon: '🕊️', description: 'Seguros de gastos funerarios' },
   { id: 'financial-products', label: 'Productos financieros', icon: '💰', description: 'Créditos y préstamos personales' },
@@ -291,15 +297,33 @@ function PaymentForm({ data, onSuccess, onBack }) {
   const elements = useElements()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [couponInput, setCouponInput] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState(null)
+  const [couponError, setCouponError] = useState(null)
   const { isMock } = useAuth()
+
+  const discount = appliedCoupon ? DISCOUNT_CODES[appliedCoupon] : null
+  const finalAmount = discount ? Math.round(100 * (1 - discount.pct / 100)) : 100
+  const isFree = finalAmount === 0
+
+  function applyCoupon() {
+    const code = couponInput.trim().toUpperCase()
+    if (DISCOUNT_CODES[code]) {
+      setAppliedCoupon(code)
+      setCouponError(null)
+    } else {
+      setCouponError('Código inválido.')
+      setAppliedCoupon(null)
+    }
+  }
 
   async function handlePay(e) {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
-    if (isMock) {
-      await new Promise(r => setTimeout(r, 1200))
+    if (isMock || isFree) {
+      await new Promise(r => setTimeout(r, 900))
       onSuccess()
       return
     }
@@ -308,7 +332,7 @@ function PaymentForm({ data, onSuccess, onBack }) {
       const res = await fetch('/api/stripe/create-activation-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: 100, description: 'Activación cuenta LeadUnlock' }),
+        body: JSON.stringify({ amount: finalAmount, description: 'Activación cuenta LeadUnlock' }),
       })
       const { clientSecret, error: apiErr } = await res.json()
       if (apiErr) throw new Error(apiErr)
@@ -359,15 +383,49 @@ function PaymentForm({ data, onSuccess, onBack }) {
         </div>
       </div>
 
+      {/* Código de descuento */}
+      <div>
+        <label className="block text-sm font-medium text-slate-300 mb-2">Código de descuento (opcional)</label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={couponInput}
+            onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError(null) }}
+            placeholder="Ej: WELCOME50"
+            className="flex-1 px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 text-sm uppercase"
+          />
+          <button
+            type="button"
+            onClick={applyCoupon}
+            className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-xl transition-colors"
+          >
+            Aplicar
+          </button>
+        </div>
+        {couponError && <p className="text-xs text-red-400 mt-1.5">{couponError}</p>}
+        {discount && (
+          <div className="flex items-center gap-2 mt-2 bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2">
+            <Check size={14} className="text-green-400 flex-shrink-0" />
+            <p className="text-xs text-green-400 font-medium">{discount.label}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Precio */}
       <div className="flex items-center justify-between bg-slate-900 border border-slate-700 rounded-2xl px-5 py-4">
         <div>
           <p className="text-white font-semibold">Activación de cuenta</p>
           <p className="text-slate-500 text-xs">Pago único · No recurrente</p>
         </div>
-        <span className="text-3xl font-extrabold text-white">$100</span>
+        <div className="text-right">
+          {discount && <p className="text-slate-500 text-sm line-through">$100</p>}
+          <span className={`text-3xl font-extrabold ${isFree ? 'text-green-400' : 'text-white'}`}>
+            {isFree ? 'GRATIS' : `$${finalAmount}`}
+          </span>
+        </div>
       </div>
 
-      {!isMock && (
+      {!isMock && !isFree && (
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-2">Datos de tarjeta</label>
           <div className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3.5 focus-within:ring-2 focus-within:ring-green-500/20 focus-within:border-green-500 transition-all">
@@ -377,9 +435,9 @@ function PaymentForm({ data, onSuccess, onBack }) {
         </div>
       )}
 
-      {isMock && (
+      {(isMock || isFree) && (
         <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 text-xs text-blue-400">
-          Modo demo activo — el pago se simulará sin cargo real.
+          {isFree ? '✅ Código aplicado — no se requiere tarjeta.' : 'Modo demo activo — el pago se simulará sin cargo real.'}
         </div>
       )}
 
@@ -394,7 +452,8 @@ function PaymentForm({ data, onSuccess, onBack }) {
           Atrás
         </Button>
         <Button type="submit" loading={loading} className="flex-1 py-3 text-base">
-          <CreditCard size={18} /> Pagar $100 y activar cuenta
+          <CreditCard size={18} />
+          {isFree ? 'Activar cuenta gratis' : `Pagar $${finalAmount} y activar cuenta`}
         </Button>
       </div>
     </form>
