@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Users, TrendingUp, DollarSign, Plus, Eye, Edit2, Zap, Tag, ToggleLeft, ToggleRight, Copy, Check } from 'lucide-react'
+import { Users, TrendingUp, DollarSign, Plus, Edit2, Zap, ToggleLeft, ToggleRight, Copy, Check, Trash2, Link } from 'lucide-react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import Button from '../../components/ui/Button'
 import Modal from '../../components/ui/Modal'
@@ -164,12 +164,17 @@ function StatCard({ icon: Icon, label, value, color }) {
   )
 }
 
+const EMPTY_CAMPAIGN_FORM = { name: '', client_id: '', source: 'Meta Ads' }
+
 export default function AdminDashboard() {
   const { isMock } = useAuth()
   const [activeTab, setActiveTab] = useState('clients')
   const [clients, setClients] = useState(MOCK_CLIENTS)
   const [leads, setLeads] = useState(MOCK_LEADS)
   const [categories, setCategories] = useState(INITIAL_CATEGORIES)
+  const [campaigns, setCampaigns] = useState([])
+  const [campaignForm, setCampaignForm] = useState(EMPTY_CAMPAIGN_FORM)
+  const [campaignLoading, setCampaignLoading] = useState(false)
   const [leadForm, setLeadForm] = useState(EMPTY_LEAD_FORM)
   const [leadModalOpen, setLeadModalOpen] = useState(false)
   const [loadingData, setLoadingData] = useState(!isMock)
@@ -177,7 +182,16 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (isMock) return
     fetchData()
+    fetchCampaigns()
   }, [isMock])
+
+  async function fetchCampaigns() {
+    const { data } = await supabase
+      .from('campaigns')
+      .select('id, name, source, is_active, created_at, client_id, clients(company_name)')
+      .order('created_at', { ascending: false })
+    if (data) setCampaigns(data)
+  }
 
   async function fetchData() {
     setLoadingData(true)
@@ -266,9 +280,35 @@ export default function AdminDashboard() {
     )
   }
 
+  async function handleAddCampaign(e) {
+    e.preventDefault()
+    setCampaignLoading(true)
+    const { error } = await supabase.from('campaigns').insert({
+      name: campaignForm.name.trim(),
+      client_id: campaignForm.client_id,
+      source: campaignForm.source,
+    })
+    if (!error) {
+      setCampaignForm(EMPTY_CAMPAIGN_FORM)
+      await fetchCampaigns()
+    }
+    setCampaignLoading(false)
+  }
+
+  async function handleDeleteCampaign(id) {
+    await supabase.from('campaigns').delete().eq('id', id)
+    await fetchCampaigns()
+  }
+
+  async function handleToggleCampaign(id, current) {
+    await supabase.from('campaigns').update({ is_active: !current }).eq('id', id)
+    await fetchCampaigns()
+  }
+
   const tabs = [
     { id: 'clients', label: 'Clientes' },
     { id: 'leads', label: 'Leads' },
+    { id: 'campaigns', label: 'Campañas' },
     { id: 'categories', label: 'Categorías' },
   ]
 
@@ -381,6 +421,113 @@ export default function AdminDashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {activeTab === 'campaigns' && (
+            <div className="p-6">
+              <div className="mb-6">
+                <h3 className="font-semibold text-slate-900">Campañas registradas</h3>
+                <p className="text-sm text-slate-500 mt-1">
+                  Registra el nombre exacto de cada campaña de Meta Ads y asígnala a un cliente.
+                  Los leads llegan automáticamente al cliente correcto sin tocar n8n.
+                </p>
+              </div>
+
+              {/* Formulario agregar campaña */}
+              {!isMock && (
+                <form onSubmit={handleAddCampaign} className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6">
+                  <p className="text-sm font-semibold text-slate-700 mb-4">Registrar nueva campaña</p>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Nombre de campaña (exacto)</label>
+                      <input
+                        required
+                        value={campaignForm.name}
+                        onChange={e => setCampaignForm(p => ({ ...p, name: e.target.value }))}
+                        placeholder="Camp_GastosFinal_Q1"
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Cliente</label>
+                      <select
+                        required
+                        value={campaignForm.client_id}
+                        onChange={e => setCampaignForm(p => ({ ...p, client_id: e.target.value }))}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400"
+                      >
+                        <option value="">Seleccionar cliente</option>
+                        {clients.map(c => (
+                          <option key={c.id} value={c.id}>{c.company_name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Fuente</label>
+                      <select
+                        value={campaignForm.source}
+                        onChange={e => setCampaignForm(p => ({ ...p, source: e.target.value }))}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400"
+                      >
+                        {['Meta Ads', 'Zapier', 'n8n', 'Make', 'GoHighLevel', 'Manual'].map(s => (
+                          <option key={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={campaignLoading}
+                    className="mt-3 px-5 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50"
+                  >
+                    {campaignLoading ? 'Guardando...' : '+ Registrar campaña'}
+                  </button>
+                </form>
+              )}
+
+              {/* Lista de campañas */}
+              {campaigns.length === 0 ? (
+                <div className="text-center py-12 text-slate-400">
+                  <Link size={28} className="mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No hay campañas registradas aún.</p>
+                  <p className="text-xs mt-1">Agrega el nombre de una campaña de Meta Ads para que los leads se enruten automáticamente.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {campaigns.map(camp => (
+                    <div key={camp.id} className={`flex items-center gap-4 p-4 rounded-xl border ${camp.is_active ? 'border-green-200 bg-green-50' : 'border-slate-200 bg-slate-50'}`}>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-slate-900 text-sm">{camp.name}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {camp.clients?.company_name || '—'} · {camp.source}
+                        </p>
+                      </div>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${camp.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-500'}`}>
+                        {camp.is_active ? 'Activa' : 'Inactiva'}
+                      </span>
+                      <button
+                        onClick={() => handleToggleCampaign(camp.id, camp.is_active)}
+                        className="text-slate-400 hover:text-blue-500 transition-colors p-1"
+                        title={camp.is_active ? 'Desactivar' : 'Activar'}
+                      >
+                        {camp.is_active ? <ToggleRight size={18} className="text-green-500" /> : <ToggleLeft size={18} />}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCampaign(camp.id)}
+                        className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700">
+                <strong>Cómo funciona:</strong> Cuando llega un lead por webhook, el sistema busca el nombre de campaña en esta tabla y lo asigna al cliente correcto automáticamente. Sin tocar n8n.
+              </div>
             </div>
           )}
 

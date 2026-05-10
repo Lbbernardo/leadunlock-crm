@@ -4,9 +4,10 @@
 // Required headers:
 //   x-webhook-token: <WEBHOOK_SECRET from .env>
 //
-// client_id can be passed two ways:
-//   1. URL param:  /api/webhook?client=CLIENT_ID   ← recommended for multi-client
-//   2. Body field: { client_id: "CLIENT_ID", ... }
+// client_id resolution (in order of priority):
+//   1. URL param:      /api/webhook?client=CLIENT_ID
+//   2. Body field:     { client_id: "CLIENT_ID", ... }
+//   3. Campaign name:  looks up campaigns table by campaign_name → client_id
 //
 // Body (JSON):
 //   full_name, phone, email, city, state,
@@ -41,10 +42,26 @@ export default async function handler(req, res) {
     client_id: bodyClientId,
   } = req.body
 
-  const client_id = req.query.client || bodyClientId
+  if (!full_name) {
+    return res.status(400).json({ error: 'full_name is required' })
+  }
 
-  if (!full_name || !client_id) {
-    return res.status(400).json({ error: 'full_name and client_id are required' })
+  // Resolve client_id: URL param → body → campaign name lookup
+  let client_id = req.query.client || bodyClientId
+
+  if (!client_id && campaign_name) {
+    const { data: campaign } = await supabase
+      .from('campaigns')
+      .select('client_id')
+      .eq('name', campaign_name)
+      .eq('is_active', true)
+      .single()
+
+    if (campaign) client_id = campaign.client_id
+  }
+
+  if (!client_id) {
+    return res.status(400).json({ error: 'Could not resolve client. Provide ?client=ID, client_id in body, or register the campaign name in the admin panel.' })
   }
 
   // Verify client exists
