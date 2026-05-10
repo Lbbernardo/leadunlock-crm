@@ -639,7 +639,9 @@ export default function AdminDashboard() {
             >
               <option value="">Seleccionar cliente</option>
               {clients.map((c) => (
-                <option key={c.id} value={c.id}>{c.company_name}</option>
+                <option key={c.id} value={c.id}>
+                  {c.company_name && c.company_name !== '(sin nombre)' ? `${c.company_name} — ${c.email}` : c.email || c.id}
+                </option>
               ))}
             </select>
           </div>
