@@ -251,26 +251,38 @@ export default function AdminDashboard() {
     setLeadForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  function handleCreateLead(e) {
+  async function handleCreateLead(e) {
     e.preventDefault()
     const client = clients.find((c) => c.id === leadForm.client_id)
-    const newLead = {
-      ...leadForm,
-      id: Date.now().toString(),
+    const { data, error } = await supabase.from('leads').insert({
+      full_name: leadForm.full_name,
+      phone: leadForm.phone,
+      email: leadForm.email,
+      city: leadForm.city,
+      state: leadForm.state,
+      product_interest: leadForm.product_interest,
+      source: leadForm.source,
+      campaign_name: leadForm.campaign_name,
+      client_id: leadForm.client_id || null,
       is_locked: true,
       status: 'new',
-      created_at: new Date().toISOString(),
+    }).select().single()
+    if (error) { alert('Error al crear lead: ' + error.message); return }
+    setLeads((prev) => [{
+      ...data,
       client_name: client?.company_name || '—',
       category: '—',
-    }
-    setLeads((prev) => [newLead, ...prev])
+    }, ...prev])
     setLeadForm(EMPTY_LEAD_FORM)
     setLeadModalOpen(false)
   }
 
-  function toggleLock(leadId) {
+  async function toggleLock(leadId) {
+    const lead = leads.find((l) => l.id === leadId)
+    const newLocked = !lead.is_locked
+    await supabase.from('leads').update({ is_locked: newLocked }).eq('id', leadId)
     setLeads((prev) =>
-      prev.map((l) => l.id === leadId ? { ...l, is_locked: !l.is_locked } : l),
+      prev.map((l) => l.id === leadId ? { ...l, is_locked: newLocked } : l),
     )
   }
 
