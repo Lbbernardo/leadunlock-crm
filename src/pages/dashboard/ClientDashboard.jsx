@@ -34,20 +34,19 @@ function StatCard({ icon: Icon, label, value, color }) {
 }
 
 export default function ClientDashboard() {
-  const { clientId } = useAuth()
-  const [leads, setLeads] = useState(MOCK_LEADS)
+  const { clientId, isMock, clientData } = useAuth()
+  const [leads, setLeads] = useState(isMock ? MOCK_LEADS : [])
   const [filters, setFilters] = useState({ search: '', status: '', locked: '' })
   const [selectedLead, setSelectedLead] = useState(null)
   const [payModalOpen, setPayModalOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(!isMock)
 
-  // Uncomment to fetch real data from Supabase:
-  // useEffect(() => {
-  //   if (!clientId) return
-  //   setLoading(true)
-  //   supabase.rpc('get_client_leads', { p_client_id: clientId })
-  //     .then(({ data }) => { setLeads(data || []); setLoading(false) })
-  // }, [clientId])
+  useEffect(() => {
+    if (isMock || !clientId) return
+    setLoading(true)
+    supabase.rpc('get_client_leads', { p_client_id: clientId })
+      .then(({ data }) => { setLeads(data || []); setLoading(false) })
+  }, [clientId, isMock])
 
   const filtered = leads.filter((lead) => {
     if (filters.search) {
@@ -67,7 +66,8 @@ export default function ClientDashboard() {
   const totalLeads = leads.length
   const unlockedLeads = leads.filter((l) => l.is_unlocked).length
   const lockedLeads = leads.filter((l) => !l.is_unlocked).length
-  const totalSpent = unlockedLeads * 20
+  const leadPrice = clientData?.lead_price || 20
+  const totalSpent = unlockedLeads * leadPrice
 
   function handleUnlock(lead) {
     setSelectedLead(lead)

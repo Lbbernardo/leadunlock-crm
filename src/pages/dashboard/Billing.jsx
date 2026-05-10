@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { CreditCard, Unlock, DollarSign, Clock, CheckCircle, AlertCircle } from 'lucide-react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import Button from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext'
 
 const MOCK_UNLOCKED_LEADS = [
   { id: '1', full_name: 'Carlos Mendoza', amount: 20, unlocked_at: new Date(Date.now() - 1 * 86400000).toISOString(), campaign: 'Camp_Hipoteca_Q1' },
@@ -20,8 +22,51 @@ function formatDate(dateStr) {
 }
 
 export default function Billing() {
-  const totalSpent = MOCK_UNLOCKED_LEADS.reduce((sum, l) => sum + l.amount, 0)
-  const pendingBalance = 0
+  const { clientId, isMock } = useAuth()
+  const [unlockedLeads, setUnlockedLeads] = useState(isMock ? MOCK_UNLOCKED_LEADS : [])
+  const [payments, setPayments] = useState(isMock ? MOCK_PAYMENTS : [])
+  const [loading, setLoading] = useState(!isMock)
+
+  useEffect(() => {
+    if (isMock || !clientId) return
+    setLoading(true)
+    Promise.all([
+      supabase
+        .from('lead_unlocks')
+        .select('id, amount_paid, created_at, leads(full_name, campaign_name)')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('payments')
+        .select('id, amount, status, description, created_at')
+        .eq('client_id', clientId)
+        .order('created_at', { ascending: false }),
+    ]).then(([{ data: unlocks }, { data: pays }]) => {
+      if (unlocks) {
+        setUnlockedLeads(unlocks.map(u => ({
+          id: u.id,
+          full_name: u.leads?.full_name || '—',
+          amount: u.amount_paid,
+          unlocked_at: u.created_at,
+          campaign: u.leads?.campaign_name || '—',
+        })))
+      }
+      if (pays) setPayments(pays)
+      setLoading(false)
+    })
+  }, [clientId, isMock])
+
+  const totalSpent = unlockedLeads.reduce((sum, l) => sum + Number(l.amount), 0)
+
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500" />
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   return (
     <DashboardLayout>
@@ -39,12 +84,7 @@ export default function Billing() {
                 <Clock size={18} className="text-orange-500" />
               </div>
             </div>
-            <p className="text-3xl font-bold text-slate-900">${pendingBalance}</p>
-            {pendingBalance > 0 && (
-              <Button size="sm" className="mt-3 w-full">
-                <CreditCard size={14} /> Pagar ahora
-              </Button>
-            )}
+            <p className="text-3xl font-bold text-slate-900">$0</p>
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200 p-6">
@@ -54,7 +94,7 @@ export default function Billing() {
                 <Unlock size={18} className="text-green-500" />
               </div>
             </div>
-            <p className="text-3xl font-bold text-slate-900">{MOCK_UNLOCKED_LEADS.length}</p>
+            <p className="text-3xl font-bold text-slate-900">{unlockedLeads.length}</p>
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200 p-6">
@@ -73,7 +113,9 @@ export default function Billing() {
             <h2 className="font-semibold text-slate-900">Leads desbloqueados</h2>
           </div>
           <div className="divide-y divide-slate-100">
-            {MOCK_UNLOCKED_LEADS.map((item) => (
+            {unlockedLeads.length === 0 ? (
+              <p className="text-center text-slate-400 text-sm py-10">Aún no has desbloqueado ningún lead.</p>
+            ) : unlockedLeads.map((item) => (
               <div key={item.id} className="flex items-center justify-between p-5">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 bg-green-50 rounded-xl flex items-center justify-center">
@@ -95,7 +137,9 @@ export default function Billing() {
             <h2 className="font-semibold text-slate-900">Historial de pagos</h2>
           </div>
           <div className="divide-y divide-slate-100">
-            {MOCK_PAYMENTS.map((payment) => (
+            {payments.length === 0 ? (
+              <p className="text-center text-slate-400 text-sm py-10">No hay pagos registrados aún.</p>
+            ) : payments.map((payment) => (
               <div key={payment.id} className="flex items-center justify-between p-5">
                 <div className="flex items-center gap-3">
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
