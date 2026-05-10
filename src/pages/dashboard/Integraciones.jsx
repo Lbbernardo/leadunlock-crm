@@ -4,25 +4,34 @@ import DashboardLayout from '../../components/layout/DashboardLayout'
 import Button from '../../components/ui/Button'
 import { useAuth } from '../../context/AuthContext'
 
-const WEBHOOK_SECRET = 'tu-webhook-secret-aqui'
-const BASE_URL = window.location.origin
+const PROD_BASE_URL = 'https://leadunlock-crm.vercel.app'
 
-function CopyBox({ label, value }) {
+function CopyBox({ label, value, dark }) {
   const [copied, setCopied] = useState(false)
   function copy() {
     navigator.clipboard.writeText(value)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
+  if (dark) {
+    return (
+      <div>
+        {label && <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1.5">{label}</p>}
+        <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3">
+          <code className="flex-1 text-sm text-green-400 break-all">{value}</code>
+          <button onClick={copy} className="flex-shrink-0 text-slate-500 hover:text-green-400 transition-colors p-1">
+            {copied ? <Check size={15} className="text-green-400" /> : <Copy size={15} />}
+          </button>
+        </div>
+      </div>
+    )
+  }
   return (
     <div>
       {label && <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{label}</p>}
       <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
         <code className="flex-1 text-sm text-slate-700 break-all">{value}</code>
-        <button
-          onClick={copy}
-          className="flex-shrink-0 text-slate-400 hover:text-green-500 transition-colors p-1"
-        >
+        <button onClick={copy} className="flex-shrink-0 text-slate-400 hover:text-green-500 transition-colors p-1">
           {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
         </button>
       </div>
@@ -99,13 +108,13 @@ function TestLeadButton({ clientId, onLeadReceived }) {
 }
 
 export default function Integraciones({ onTestLead }) {
-  const { clientId, clientData, isMock } = useAuth()
-  const resolvedClientId = clientId || 'mock-client-id'
-  const webhookUrl = `${BASE_URL}/api/webhook`
+  const { clientId, isMock } = useAuth()
+  const resolvedClientId = isMock ? 'TU-CLIENT-ID' : (clientId || 'TU-CLIENT-ID')
+  const webhookUrl = `${PROD_BASE_URL}/api/webhook?client=${resolvedClientId}`
 
-  const curlExample = `curl -X POST ${webhookUrl} \\
+  const curlExample = `curl -X POST "${webhookUrl}" \\
   -H "Content-Type: application/json" \\
-  -H "x-webhook-token: ${WEBHOOK_SECRET}" \\
+  -H "x-webhook-token: TU-WEBHOOK-TOKEN" \\
   -d '{
     "full_name": "Juan García",
     "phone": "+52 55 1234 5678",
@@ -113,9 +122,8 @@ export default function Integraciones({ onTestLead }) {
     "city": "CDMX",
     "state": "Ciudad de México",
     "campaign_name": "Mi Campaña",
-    "product_interest": "Crédito hipotecario",
-    "source": "Meta Ads",
-    "client_id": "${resolvedClientId}"
+    "product_interest": "Gastos finales",
+    "source": "Meta Ads"
   }'`
 
   return (
@@ -126,44 +134,18 @@ export default function Integraciones({ onTestLead }) {
           <p className="text-slate-500 mt-1">Conecta tus campañas para recibir leads automáticamente</p>
         </div>
 
-        {/* Datos de conexión */}
+        {/* URL única del cliente */}
         <div className="bg-slate-900 rounded-2xl p-6 mb-8">
-          <div className="flex items-center gap-2 mb-5">
+          <div className="flex items-center gap-2 mb-2">
             <Webhook size={18} className="text-green-400" />
-            <h2 className="font-semibold text-white">Tus datos de conexión</h2>
+            <h2 className="font-semibold text-white">Tu URL de webhook única</h2>
           </div>
-          <div className="space-y-4">
-            <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1.5">URL del webhook</p>
-              <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3">
-                <code className="flex-1 text-sm text-green-400 break-all">{webhookUrl}</code>
-                <button
-                  onClick={() => navigator.clipboard.writeText(webhookUrl)}
-                  className="flex-shrink-0 text-slate-500 hover:text-green-400 transition-colors p-1"
-                >
-                  <Copy size={15} />
-                </button>
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Tu Client ID</p>
-              <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3">
-                <code className="flex-1 text-sm text-green-400 break-all">{resolvedClientId}</code>
-                <button
-                  onClick={() => navigator.clipboard.writeText(resolvedClientId)}
-                  className="flex-shrink-0 text-slate-500 hover:text-green-400 transition-colors p-1"
-                >
-                  <Copy size={15} />
-                </button>
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Token de autenticación</p>
-              <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3">
-                <code className="flex-1 text-sm text-slate-500 break-all">••••••••••••••••••••••••••••••••</code>
-                <span className="text-xs text-slate-500">Visible en tu panel admin</span>
-              </div>
-            </div>
+          <p className="text-slate-400 text-sm mb-5">
+            Pega esta URL en Meta Ads, Zapier, n8n o cualquier plataforma. Los leads llegarán directamente a tu cuenta.
+          </p>
+          <CopyBox dark label="URL única — ya incluye tu ID de cliente" value={webhookUrl} />
+          <div className="mt-4 bg-green-900/30 border border-green-800 rounded-xl px-4 py-3">
+            <p className="text-green-400 text-xs font-medium">No necesitas configurar nada más — esta URL enruta los leads automáticamente a tu cuenta.</p>
           </div>
         </div>
 
@@ -189,19 +171,15 @@ export default function Integraciones({ onTestLead }) {
                 </li>
                 <li className="flex gap-3">
                   <span className="font-bold text-slate-400 flex-shrink-0">2.</span>
-                  Agrega un nuevo webhook con la URL y selecciona el evento <code className="bg-slate-100 px-1 rounded">leadgen</code>
+                  Agrega un nuevo webhook con tu URL única de arriba y selecciona el evento <code className="bg-slate-100 px-1 rounded">leadgen</code>
                 </li>
                 <li className="flex gap-3">
                   <span className="font-bold text-slate-400 flex-shrink-0">3.</span>
-                  Meta enviará los campos del formulario. Mapea: <code className="bg-slate-100 px-1 rounded">full_name</code>, <code className="bg-slate-100 px-1 rounded">phone</code>, <code className="bg-slate-100 px-1 rounded">email</code>
-                </li>
-                <li className="flex gap-3">
-                  <span className="font-bold text-slate-400 flex-shrink-0">4.</span>
-                  Incluye siempre <code className="bg-slate-100 px-1 rounded">client_id</code> como campo fijo con tu ID
+                  Meta enviará los campos del formulario automáticamente — no necesitas configurar nada más
                 </li>
               </ol>
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
-                Meta Ads requiere verificación del webhook. LeadUnlock responderá automáticamente al challenge de verificación.
+                Meta Ads requiere verificar el webhook antes de activarlo. LeadUnlock responde al challenge automáticamente.
               </div>
             </div>
           </StepAccordion>
@@ -219,26 +197,10 @@ export default function Integraciones({ onTestLead }) {
                 </li>
                 <li className="flex gap-3">
                   <span className="font-bold text-slate-400 flex-shrink-0">3.</span>
-                  Configura la acción así:
+                  URL: tu URL única de arriba. Body: mapea <code className="bg-slate-100 px-1 rounded">full_name</code>, <code className="bg-slate-100 px-1 rounded">phone</code>, <code className="bg-slate-100 px-1 rounded">email</code>, <code className="bg-slate-100 px-1 rounded">city</code>
                 </li>
               </ol>
-              <div className="space-y-2">
-                <CopyBox label="URL" value={webhookUrl} />
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                    <p className="font-semibold text-slate-500 mb-2">Headers</p>
-                    <p className="text-slate-600"><code>Content-Type:</code> application/json</p>
-                    <p className="text-slate-600"><code>x-webhook-token:</code> [tu token]</p>
-                  </div>
-                  <div className="bg-slate-50 rounded-xl p-3 border border-slate-200">
-                    <p className="font-semibold text-slate-500 mb-2">Body (mapear)</p>
-                    <p className="text-slate-600">full_name → nombre</p>
-                    <p className="text-slate-600">phone → teléfono</p>
-                    <p className="text-slate-600">email → correo</p>
-                    <p className="text-slate-600">client_id → <strong>{resolvedClientId.slice(0,8)}...</strong></p>
-                  </div>
-                </div>
-              </div>
+              <CopyBox label="URL (pegar en Zapier)" value={webhookUrl} />
             </div>
           </StepAccordion>
 
@@ -247,17 +209,18 @@ export default function Integraciones({ onTestLead }) {
               <ol className="space-y-3 text-sm text-slate-600">
                 <li className="flex gap-3">
                   <span className="font-bold text-slate-400 flex-shrink-0">1.</span>
-                  Nodo trigger: <strong>Facebook Lead Ads</strong> o cualquier fuente
+                  Nodo trigger: <strong>Facebook Lead Ads</strong> o Webhook
                 </li>
                 <li className="flex gap-3">
                   <span className="font-bold text-slate-400 flex-shrink-0">2.</span>
-                  Nodo HTTP Request: <strong>POST</strong> a la URL del webhook
+                  Nodo HTTP Request: método <strong>POST</strong> a tu URL única
                 </li>
                 <li className="flex gap-3">
                   <span className="font-bold text-slate-400 flex-shrink-0">3.</span>
-                  En el nodo HTTP configura el body con los campos del lead + <code className="bg-slate-100 px-1 rounded">client_id</code>
+                  Body: mapea <code className="bg-slate-100 px-1 rounded">full_name</code>, <code className="bg-slate-100 px-1 rounded">phone</code>, <code className="bg-slate-100 px-1 rounded">email</code>, <code className="bg-slate-100 px-1 rounded">city</code> — el cliente ya va en la URL
                 </li>
               </ol>
+              <CopyBox label="URL (pegar en n8n)" value={webhookUrl} />
             </div>
           </StepAccordion>
 

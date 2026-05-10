@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Users, TrendingUp, DollarSign, Plus, Eye, Edit2, Zap, Tag, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Users, TrendingUp, DollarSign, Plus, Eye, Edit2, Zap, Tag, ToggleLeft, ToggleRight, Copy, Check } from 'lucide-react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import Button from '../../components/ui/Button'
 import Modal from '../../components/ui/Modal'
@@ -33,6 +33,30 @@ const INITIAL_CATEGORIES = [
 const EMPTY_LEAD_FORM = {
   full_name: '', phone: '', email: '', city: '', state: '',
   product_interest: '', source: '', campaign_name: '', client_id: '',
+}
+
+const PROD_BASE_URL = 'https://leadunlock-crm.vercel.app'
+
+function CopyWebhook({ clientId }) {
+  const [copied, setCopied] = useState(false)
+  const url = `${PROD_BASE_URL}/api/webhook?client=${clientId}`
+  function copy() {
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <div>
+      <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">URL del webhook</p>
+      <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2">
+        <code className="flex-1 text-xs text-green-400 break-all">{url}</code>
+        <button onClick={copy} className="flex-shrink-0 text-slate-500 hover:text-green-400 transition-colors p-1">
+          {copied ? <Check size={13} className="text-green-400" /> : <Copy size={13} />}
+        </button>
+      </div>
+      <p className="text-xs text-slate-400 mt-1.5">Pega esta URL en Meta Ads o n8n para este cliente.</p>
+    </div>
+  )
 }
 
 function ClientRow({ client }) {
@@ -100,7 +124,7 @@ function ClientRow({ client }) {
               <p className="text-sm text-slate-900 leading-relaxed">{client.target_audience || '—'}</p>
             </div>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Categorías seleccionadas</p>
             <div className="flex flex-wrap gap-2">
               {client.categories.length > 0
@@ -110,11 +134,14 @@ function ClientRow({ client }) {
                 : <span className="text-slate-400 text-sm">Sin categorías asignadas</span>
               }
             </div>
-            <div className="mt-4 pt-4 border-t border-slate-200">
+            <div className="mt-3 pt-3 border-t border-slate-200">
               <p className="text-xs text-slate-400">Miembro desde</p>
               <p className="text-sm font-medium text-slate-900 mt-0.5">
                 {new Date(client.created_at).toLocaleDateString('es-MX', { dateStyle: 'medium' })}
               </p>
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-200">
+              <CopyWebhook clientId={client.id} />
             </div>
           </div>
         </div>
