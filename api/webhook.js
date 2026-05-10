@@ -4,9 +4,13 @@
 // Required headers:
 //   x-webhook-token: <WEBHOOK_SECRET from .env>
 //
+// client_id can be passed two ways:
+//   1. URL param:  /api/webhook?client=CLIENT_ID   ← recommended for multi-client
+//   2. Body field: { client_id: "CLIENT_ID", ... }
+//
 // Body (JSON):
 //   full_name, phone, email, city, state,
-//   campaign_name, product_interest, source, client_id
+//   campaign_name, product_interest, source
 
 import { createClient } from '@supabase/supabase-js'
 
@@ -34,8 +38,10 @@ export default async function handler(req, res) {
     campaign_name,
     product_interest,
     source,
-    client_id,
+    client_id: bodyClientId,
   } = req.body
+
+  const client_id = req.query.client || bodyClientId
 
   if (!full_name || !client_id) {
     return res.status(400).json({ error: 'full_name and client_id are required' })
