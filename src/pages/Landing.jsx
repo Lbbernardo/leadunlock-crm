@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Zap, CheckCircle, ArrowRight, Lock, Unlock, BarChart3, Shield, Clock, DollarSign, TrendingUp } from 'lucide-react'
+import { Zap, CheckCircle, ArrowRight, Lock, Unlock, BarChart3, Shield, Clock, DollarSign, TrendingUp, Award, RotateCcw } from 'lucide-react'
 
 function Navbar() {
   return (
@@ -119,6 +119,69 @@ function HowItWorks() {
   )
 }
 
+function Activation() {
+  return (
+    <section className="py-24 bg-slate-900">
+      <div className="max-w-5xl mx-auto px-6">
+        <div className="text-center mb-14">
+          <div className="inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs font-medium px-4 py-2 rounded-full mb-6">
+            <Award size={13} />
+            Tu inversión inicial se devuelve
+          </div>
+          <h2 className="text-4xl font-bold text-white mb-4">
+            Empieza con $100 —<br />
+            <span className="text-green-400">y te los devolvemos</span>
+          </h2>
+          <p className="text-slate-400 text-xl max-w-2xl mx-auto leading-relaxed">
+            Para activar tu cuenta necesitas $100. Ese dinero arranca tus campañas.
+            Cuando alcances <strong className="text-white">$1,000 en leads desbloqueados</strong>, te regresamos los $100 completos.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-6 mb-12">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 text-center">
+            <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <DollarSign size={22} className="text-green-400" />
+            </div>
+            <p className="text-2xl font-extrabold text-white mb-1">$100</p>
+            <p className="text-slate-400 text-sm">Activación única para arrancar</p>
+          </div>
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 text-center">
+            <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <TrendingUp size={22} className="text-blue-400" />
+            </div>
+            <p className="text-2xl font-extrabold text-white mb-1">$1,000</p>
+            <p className="text-slate-400 text-sm">En leads desbloqueados para calificar</p>
+          </div>
+          <div className="bg-slate-800 border border-green-500/30 rounded-2xl p-6 text-center ring-1 ring-green-500/20">
+            <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+              <RotateCcw size={22} className="text-green-400" />
+            </div>
+            <p className="text-2xl font-extrabold text-green-400 mb-1">$100 de vuelta</p>
+            <p className="text-slate-400 text-sm">Te devolvemos tu inversión inicial</p>
+          </div>
+        </div>
+
+        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-6">
+          <div className="flex-1">
+            <p className="text-white font-semibold mb-1">¿Por qué los $100 de activación?</p>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              Garantizan que estás comprometido a trabajar tus leads. No es una tarifa — es el arranque de tu pipeline.
+              Y cuando demuestras que cierras negocios llegando a $1,000 en leads, te los regresamos como reconocimiento.
+            </p>
+          </div>
+          <Link
+            to="/register"
+            className="flex-shrink-0 flex items-center gap-2 bg-green-500 hover:bg-green-400 text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm whitespace-nowrap"
+          >
+            Activar mi cuenta <ArrowRight size={16} />
+          </Link>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function PriceExplainer() {
   return (
     <section className="py-20 bg-slate-950">
@@ -204,19 +267,20 @@ function Pricing() {
       highlighted: false,
     },
     {
-      name: 'Pay per Lead',
-      price: 'Desde $12',
-      period: 'por lead desbloqueado',
-      desc: 'Paga solo por los contactos que quieres cerrar',
+      name: 'Activa tu cuenta',
+      price: '$100',
+      period: 'pago único · reembolsable',
+      desc: 'Arranca tu pipeline y desbloquea leads desde $12 c/u',
       features: [
         'Todo lo del plan gratis',
-        'Teléfono y email completos',
+        'Teléfono y email completos por lead',
+        'Leads desde $12 según campaña',
         'Notas y seguimiento de status',
         'Historial de desbloqueos',
-        'Precio basado en costo real de campaña',
+        '$100 devueltos al llegar a $1,000 en leads',
         'Soporte por email',
       ],
-      cta: 'Crear cuenta',
+      cta: 'Activar mi cuenta — $100',
       href: '/register',
       highlighted: true,
     },
@@ -339,6 +403,7 @@ export default function Landing() {
       <Navbar />
       <Hero />
       <HowItWorks />
+      <Activation />
       <PriceExplainer />
       <Features />
       <Pricing />
