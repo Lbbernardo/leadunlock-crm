@@ -90,7 +90,7 @@ export default function LeadCard({ lead, onUnlock }) {
               className="bg-slate-900 hover:bg-slate-700 text-white text-xs px-3 py-1.5"
             >
               <Lock size={12} />
-              Desbloquear $20
+              Desbloquear ${lead.price ? Math.round(lead.price) : 12}
             </Button>
           )}
         </div>
