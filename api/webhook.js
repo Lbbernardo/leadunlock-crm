@@ -49,16 +49,20 @@ export default async function handler(req, res) {
 
   // Resolve client_id: URL param → body → campaign name lookup
   let client_id = req.query.client || bodyClientId
+  let campaign_id = null
 
   if (!client_id && campaign_name) {
     const { data: campaign } = await supabase
       .from('campaigns')
-      .select('client_id')
+      .select('id, client_id')
       .eq('name', campaign_name)
       .eq('is_active', true)
       .single()
 
-    if (campaign) client_id = campaign.client_id
+    if (campaign) {
+      client_id = campaign.client_id
+      campaign_id = campaign.id
+    }
   }
 
   if (!client_id) {
@@ -86,6 +90,7 @@ export default async function handler(req, res) {
       city: city || null,
       state: state || null,
       campaign_name: campaign_name || null,
+      campaign_id: campaign_id || null,
       product_interest: product_interest || null,
       source: source || 'webhook',
       is_locked: true,

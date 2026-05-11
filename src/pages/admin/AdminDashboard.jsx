@@ -21,7 +21,7 @@ const EMPTY_LEAD_FORM = {
   product_interest: '', source: '', campaign_name: '', client_id: '', acquisition_cost: '',
 }
 
-const PROD_BASE_URL = 'https://leadunlock-crm.vercel.app'
+const PROD_BASE_URL = 'https://unlocklead.click'
 
 function CopyWebhook({ clientId }) {
   const [copied, setCopied] = useState(false)
