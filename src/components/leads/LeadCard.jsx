@@ -12,8 +12,8 @@ function formatDate(dateStr) {
 
 function maskName(name) {
   if (!name) return '•••••• ••••••'
-  const parts = name.split(' ')
-  return parts.map((p, i) => i === 0 ? p : p[0] + '•'.repeat(p.length - 1)).join(' ')
+  const parts = name.split(' ').filter(p => p.length > 0)
+  return parts.map((p, i) => i === 0 ? p : p[0] + '•'.repeat(Math.max(0, p.length - 1))).join(' ')
 }
 
 export default function LeadCard({ lead, onUnlock }) {
