@@ -58,7 +58,7 @@ function Hero() {
         <div className="text-center max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-medium px-4 py-2 rounded-full mb-6 md:mb-8">
             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-            Conecta con Meta Ads en minutos
+            Tu campaña de Meta Ads personalizada, lista para generar leads
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-6xl font-extrabold text-white leading-tight mb-5 md:mb-6">
@@ -67,8 +67,8 @@ function Hero() {
           </h1>
 
           <p className="text-base sm:text-lg md:text-xl text-slate-400 mb-7 md:mb-8 leading-relaxed">
-            Empieza con <strong className="text-white">$100 reembolsables</strong> y recibe tus leads de Meta Ads directo en tu dashboard.
-            Solo pagas por los contactos que quieres abrir.{' '}
+            Nosotros creamos tu campaña de Meta Ads personalizada y los leads llegan directo a tu dashboard.
+            Empieza con <strong className="text-white">$100 reembolsables</strong> y solo pagas por los contactos que quieres abrir.{' '}
             <strong className="text-white">Sin mensualidades. Solo pagas lo que necesitas.</strong>
           </p>
 
@@ -101,22 +101,22 @@ function HowItWorks() {
     {
       icon: Zap,
       step: '01',
-      title: 'Conecta tu campaña de Meta',
-      desc: 'Vinculamos tu cuenta de Meta Ads con LeadUnlock. Cada nuevo lead llega directo a tu dashboard. Tarda menos de 5 minutos.',
+      title: 'Creamos tu campaña personalizada',
+      desc: 'Diseñamos y lanzamos una campaña de Meta Ads hecha a la medida de tu negocio. Tú no tienes que hacer nada técnico — nosotros nos encargamos.',
       color: 'text-green-400 bg-green-500/10',
     },
     {
       icon: Lock,
       step: '02',
-      title: 'Ve quién llegó',
-      desc: 'Verás el nombre, ciudad e interés de cada persona. Los datos de contacto están protegidos hasta que decidas abrirlos.',
+      title: 'Los leads llegan solos a tu dashboard',
+      desc: 'Cada persona que responde tu anuncio aparece automáticamente en tu plataforma. Verás su nombre, ciudad e interés antes de decidir abrirlo.',
       color: 'text-blue-400 bg-blue-500/10',
     },
     {
       icon: Unlock,
       step: '03',
-      title: 'Abre los que te interesan',
-      desc: 'Paga solo por los leads que quieres contactar. Ves el teléfono, el email y haces seguimiento desde la misma plataforma.',
+      title: 'Abre solo los que te interesan',
+      desc: 'Paga únicamente por los leads que quieres contactar. Ves el teléfono y el email completos, y puedes hacer seguimiento desde la misma plataforma.',
       color: 'text-purple-400 bg-purple-500/10',
     },
   ]
@@ -157,8 +157,9 @@ function ActivationModel() {
             <span className="text-green-400">y te los devolvemos</span>
           </h2>
           <p className="text-slate-400 text-base md:text-xl leading-relaxed max-w-2xl mx-auto">
-            Para activar LeadUnlock pagas $100 una sola vez. Eso es todo lo que necesitas para empezar a recibir y abrir leads.{' '}
-            <strong className="text-white">Cuando hayas comprado $1,000 en leads, te devolvemos los $100 completos.</strong>
+            Con $100 activamos tu cuenta y lanzamos tu campaña personalizada de Meta Ads.
+            Los leads empiezan a llegar solos. Solo pagas por los que quieres abrir.{' '}
+            <strong className="text-white">Cuando hayas gastado $1,000 en leads, te devolvemos los $100 completos.</strong>
           </p>
         </div>
 
@@ -199,10 +200,10 @@ function ActivationModel() {
 
 function Features() {
   const features = [
-    { icon: BarChart3, title: 'Todo en un dashboard', desc: 'Ve todos tus leads en un solo lugar. Filtra por campaña, estado o fecha.' },
-    { icon: Shield, title: 'Contactos protegidos', desc: 'El teléfono y email de cada lead solo se muestran cuando decides abrirlo.' },
-    { icon: Clock, title: 'Llegan solos', desc: 'Conectas una vez con Meta Ads y los leads llegan automáticamente. Sin trabajo manual.' },
-    { icon: Users, title: 'Seguimiento fácil', desc: 'Agrega notas, cambia el estado y lleva un historial de cada contacto.' },
+    { icon: Zap, title: 'Campaña hecha para ti', desc: 'Nosotros creamos y gestionamos tu campaña de Meta Ads según tu negocio, tu nicho y tu audiencia.' },
+    { icon: BarChart3, title: 'Todo en un dashboard', desc: 'Ve todos tus leads en un solo lugar. Filtra por estado, fecha o campaña.' },
+    { icon: Shield, title: 'Contactos protegidos', desc: 'El teléfono y email de cada lead solo se revelan cuando decides abrirlo.' },
+    { icon: Users, title: 'Seguimiento fácil', desc: 'Agrega notas, cambia el estado y lleva un historial completo de cada contacto.' },
   ]
 
   return (
@@ -250,12 +251,12 @@ function Pricing() {
 
           <ul className="space-y-2.5 md:space-y-3 mb-7 md:mb-8">
             {[
-              'Recibe leads ilimitados de Meta Ads',
-              'Ve nombre, ciudad e interés de cada lead',
-              'Abre solo los contactos que te interesan',
+              'Campaña de Meta Ads personalizada para tu negocio',
+              'Los leads llegan solos a tu dashboard',
+              'Ve nombre, ciudad e interés antes de abrir',
               'Teléfono y email completos al desbloquear',
               'Seguimiento y notas por lead',
-              'Conecta con Zapier, n8n o Make',
+              'Sin mensualidades — pagas solo lo que abres',
               '$100 de vuelta cuando llegas a $1,000 en leads',
             ].map((f) => (
               <li key={f} className="flex items-start gap-2.5">
@@ -285,10 +286,10 @@ function CTA() {
     <section className="py-16 md:py-24 bg-slate-950">
       <div className="max-w-3xl mx-auto px-5 text-center">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">
-          ¿Tienes campañas corriendo en Meta?
+          ¿Listo para recibir leads de calidad?
         </h2>
         <p className="text-slate-400 text-base md:text-xl mb-8 md:mb-10">
-          Entonces ya tienes leads. Activa LeadUnlock y empieza a verlos hoy.
+          Activa tu cuenta, nosotros creamos tu campaña personalizada y los leads empiezan a llegar solos.
         </p>
         <Link
           to="/register"
