@@ -38,21 +38,31 @@ function Hero() {
             Conecta con Meta Ads en minutos
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold text-white leading-tight mb-6">
-            Tus leads de Meta Ads,
-            <span className="text-green-400"> organizados y listos</span>
+            Sin gastar $2,000 en sistemas
+            <span className="text-green-400"> complicados de marketing</span>
           </h1>
-          <p className="text-xl text-slate-400 mb-10 leading-relaxed">
-            Cada persona que llena tu anuncio aparece en tu dashboard.
-            Tú decides cuáles abrir y pagar. Sin mensualidades, sin contratos.
+          <p className="text-xl text-slate-400 mb-8 leading-relaxed">
+            Empieza con <strong className="text-white">$100 reembolsables</strong> y recibe tus leads de Meta Ads directo en tu dashboard.
+            Solo pagas por los contactos que quieres abrir.
+            <strong className="text-white"> Sin mensualidades. Sin contratos. Solo pagas lo que necesitas.</strong>
           </p>
+
+          <div className="flex flex-wrap justify-center gap-3 mb-10">
+            {['✓ Desde $100 para empezar', '✓ Sin mensualidades', '✓ Pagas solo por lead', '✓ $100 reembolsables'].map(item => (
+              <span key={item} className="text-sm bg-green-500/10 border border-green-500/20 text-green-300 px-4 py-2 rounded-full">
+                {item}
+              </span>
+            ))}
+          </div>
+
           <Link
             to="/register"
             className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-400 text-white font-semibold px-10 py-4 rounded-xl transition-colors text-lg"
           >
-            Activar mi cuenta <ArrowRight size={20} />
+            Empezar con $100 <ArrowRight size={20} />
           </Link>
           <p className="text-slate-500 text-sm mt-5">
-            Activación única de $100 · reembolsable
+            Pago único · reembolsable al llegar a $1,000 en leads
           </p>
         </div>
       </div>
