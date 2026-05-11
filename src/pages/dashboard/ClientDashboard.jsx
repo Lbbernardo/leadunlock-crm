@@ -47,7 +47,7 @@ export default function ClientDashboard() {
     setLoading(true)
     supabase.rpc('get_client_leads', { p_client_id: clientId })
       .then(({ data, error }) => {
-        console.log('[Dashboard] rpc result:', { data, error })
+        console.log('[Dashboard] rpc result:', { data, error: error?.message, code: error?.code, details: error?.details })
         if (!error) setLeads(data || [])
         setLoading(false)
       })
