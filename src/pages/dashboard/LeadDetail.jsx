@@ -36,21 +36,19 @@ export default function LeadDetail() {
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    // Using mock data — replace with Supabase fetch:
-    // supabase.rpc('get_client_leads', ...).eq('id', id).single()
-    const mockLead = MOCK_LEADS[id]
-    if (mockLead) {
-      setLead(mockLead)
-      setNotes(mockLead.notes || '')
-      setStatus(mockLead.status)
-    }
+    supabase.from('leads').select('*').eq('id', id).single()
+      .then(({ data }) => {
+        if (data) {
+          setLead(data)
+          setNotes(data.notes || '')
+          setStatus(data.status)
+        }
+      })
   }, [id])
 
   async function handleSave() {
     setSaving(true)
-    // Replace with real Supabase update:
-    // await supabase.from('leads').update({ notes, status }).eq('id', id)
-    await new Promise((r) => setTimeout(r, 500))
+    await supabase.from('leads').update({ notes, status }).eq('id', id)
     setLead((prev) => ({ ...prev, notes, status }))
     setSaving(false)
     setSaved(true)

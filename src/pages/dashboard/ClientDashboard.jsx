@@ -71,8 +71,7 @@ export default function ClientDashboard() {
   const totalLeads = leads.length
   const unlockedLeads = leads.filter((l) => l.is_unlocked).length
   const lockedLeads = leads.filter((l) => !l.is_unlocked).length
-  const leadPrice = clientData?.lead_price || 20
-  const totalSpent = unlockedLeads * leadPrice
+  const totalSpent = leads.filter((l) => l.is_unlocked).reduce((sum, l) => sum + (l.price ? Math.round(l.price) : 12), 0)
 
   function handleUnlock(lead) {
     setSelectedLead(lead)
