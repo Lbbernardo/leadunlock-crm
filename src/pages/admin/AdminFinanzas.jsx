@@ -64,7 +64,7 @@ export default function AdminFinanzas() {
     setLoading(true)
     const [clientsRes, leadsRes, unlocksRes] = await Promise.all([
       supabase.from('clients').select('id, company_name, status, created_at'),
-      supabase.from('leads').select('id, client_id, acquisition_cost, price, is_locked, is_unlocked'),
+      supabase.from('leads').select('id, client_id, acquisition_cost, is_locked'),
       supabase.from('lead_unlocks').select('id, client_id, amount_paid'),
     ])
 
@@ -77,7 +77,7 @@ export default function AdminFinanzas() {
       const unlocks  = rawUnlocks.filter((u) => u.client_id === c.id)
 
       const leads_total    = leads.length
-      const leads_unlocked = leads.filter((l) => !l.is_locked || l.is_unlocked).length
+      const leads_unlocked = leads.filter((l) => !l.is_locked).length
       const revenue_leads  = unlocks.reduce((s, u) => s + (u.amount_paid || 0), 0)
       const meta_cost      = leads.reduce((s, l) => s + (l.acquisition_cost || 0), 0)
       const activation_paid    = c.status !== 'pending'
@@ -86,7 +86,7 @@ export default function AdminFinanzas() {
 
       const avg_price = leads_unlocked > 0
         ? revenue_leads / leads_unlocked
-        : leads.find((l) => l.price)?.price ?? MIN_LEAD_PRICE
+        : MIN_LEAD_PRICE
 
       return {
         id: c.id,
