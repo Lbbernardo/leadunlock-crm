@@ -45,6 +45,9 @@ export function AuthProvider({ children }) {
       .select('*, clients(*)')
       .eq('id', userId)
       .single()
+    if (data && data.clients && !Array.isArray(data.clients)) {
+      data.clients = [data.clients]
+    }
     setProfile(data)
     setLoading(false)
   }
