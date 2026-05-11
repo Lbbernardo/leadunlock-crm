@@ -49,7 +49,7 @@ function CheckoutForm({ lead, clientId, amount, onSuccess, onClose }) {
   async function handleFreeUnlock() {
     setLoading(true)
     try {
-      const { error } = await supabase.from('lead_unlocks').insert({ lead_id: lead.id, client_id: clientId })
+      const { error } = await supabase.from('lead_unlocks').insert({ lead_id: lead.id, client_id: clientId, amount_paid: 0 })
       if (error) throw new Error(error.message)
       await supabase.from('leads').update({ is_locked: false }).eq('id', lead.id)
       onSuccess()
