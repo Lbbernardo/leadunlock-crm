@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Users, Unlock, DollarSign, TrendingUp } from 'lucide-react'
+import { Users, Unlock, DollarSign, TrendingUp, AlertTriangle, CreditCard } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import LeadCard from '../../components/leads/LeadCard'
 import LeadFilters from '../../components/leads/LeadFilters'
@@ -31,6 +32,39 @@ function StatCard({ icon: Icon, label, value, color }) {
       <p className="text-3xl font-bold text-slate-900">{value}</p>
     </div>
   )
+}
+
+function PaymentMethodBanner({ clientData }) {
+  if (!clientData) return null
+  if (clientData.status === 'payment_required') {
+    return (
+      <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-2xl p-4 mb-6">
+        <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+        <div className="flex-1">
+          <p className="text-red-700 font-semibold text-sm">Tu tarjeta fue rechazada</p>
+          <p className="text-red-600 text-xs mt-0.5">No podrás desbloquear leads hasta que actualices tu método de pago.</p>
+        </div>
+        <Link to="/dashboard/profile" className="flex items-center gap-1.5 text-xs font-semibold text-red-700 bg-red-100 hover:bg-red-200 border border-red-300 px-3 py-1.5 rounded-xl transition-colors flex-shrink-0">
+          <CreditCard size={13} /> Actualizar
+        </Link>
+      </div>
+    )
+  }
+  if (!clientData.payment_method_last4) {
+    return (
+      <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6">
+        <AlertTriangle size={18} className="text-amber-500 flex-shrink-0 mt-0.5" />
+        <div className="flex-1">
+          <p className="text-amber-800 font-semibold text-sm">Sin método de pago activo</p>
+          <p className="text-amber-700 text-xs mt-0.5">Agrega una tarjeta para poder desbloquear tus leads.</p>
+        </div>
+        <Link to="/dashboard/profile" className="flex items-center gap-1.5 text-xs font-semibold text-amber-800 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-3 py-1.5 rounded-xl transition-colors flex-shrink-0">
+          <CreditCard size={13} /> Agregar tarjeta
+        </Link>
+      </div>
+    )
+  }
+  return null
 }
 
 export default function ClientDashboard() {
@@ -91,6 +125,8 @@ export default function ClientDashboard() {
           <h1 className="text-2xl font-bold text-slate-900">Dashboard de Leads</h1>
           <p className="text-slate-500 mt-1">Gestiona y desbloquea tus leads de campañas</p>
         </div>
+
+        <PaymentMethodBanner clientData={clientData} />
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard icon={Users} label="Total leads" value={totalLeads} color="bg-blue-50 text-blue-600" />

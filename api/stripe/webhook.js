@@ -60,6 +60,26 @@ export default async function handler(req, res) {
         status: 'succeeded',
         description: `Desbloqueo lead #${lead_id}`,
       }).onConflict('stripe_payment_intent_id').ignore()
+
+      // Si el pago se recuperó, restaurar status a active
+      await supabase
+        .from('clients')
+        .update({ status: 'active' })
+        .eq('id', client_id)
+        .eq('status', 'payment_required')
+    }
+  }
+
+  if (event.type === 'payment_intent.payment_failed') {
+    const pi = event.data.object
+    const { client_id } = pi.metadata
+
+    // Solo marcar si era un cobro off-session (desbloqueo de lead con tarjeta guardada)
+    if (client_id && pi.off_session) {
+      await supabase
+        .from('clients')
+        .update({ status: 'payment_required' })
+        .eq('id', client_id)
     }
   }
 
