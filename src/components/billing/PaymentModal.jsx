@@ -114,7 +114,8 @@ function CheckoutForm({ lead, clientId, amount, onSuccess, onClose }) {
 export default function PaymentModal({ open, onClose, lead, clientId, onSuccess }) {
   if (!lead) return null
 
-  const amount = 20
+  const cost = lead.acquisition_cost || 0
+  const amount = Math.max(12, Math.round(cost * 3))
 
   function handleSuccess() {
     onSuccess(lead.id)

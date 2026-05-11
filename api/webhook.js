@@ -39,6 +39,7 @@ export default async function handler(req, res) {
     campaign_name,
     product_interest,
     source,
+    cost,
     client_id: bodyClientId,
   } = req.body
 
@@ -89,6 +90,7 @@ export default async function handler(req, res) {
       source: source || 'webhook',
       is_locked: true,
       status: 'new',
+      acquisition_cost: cost ? parseFloat(cost) : 0,
     })
     .select()
     .single()
