@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Zap, CheckCircle, ArrowRight, Lock, Unlock, BarChart3, Shield, Clock, DollarSign } from 'lucide-react'
+import { Zap, CheckCircle, ArrowRight, Lock, Unlock, BarChart3, Shield, Clock, DollarSign, TrendingUp } from 'lucide-react'
 
 function Navbar() {
   return (
@@ -38,12 +38,12 @@ function Hero() {
             Conecta con Meta Ads en minutos
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold text-white leading-tight mb-6">
-            Recibe leads sin pagar
-            <span className="text-green-400"> instalación costosa</span> de CRM
+            Recibe leads y paga
+            <span className="text-green-400"> solo los que cierras</span>
           </h1>
           <p className="text-xl text-slate-400 mb-10 leading-relaxed">
             Tus campañas de Meta Ads generan leads. Nosotros los entregamos en tu dashboard.
-            Solo pagas $20 por los contactos que quieras desbloquear.
+            Solo pagas <strong className="text-white">desde $12 por lead</strong> para ver el contacto completo.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
@@ -81,14 +81,14 @@ function HowItWorks() {
       icon: Lock,
       step: '02',
       title: 'Recibe leads automáticamente',
-      desc: 'Cada lead de tus campañas llega a tu dashboard con información básica visible: nombre, ciudad e interés.',
+      desc: 'Cada lead llega a tu dashboard con información básica visible: nombre, ciudad e interés. Sin costo.',
       color: 'text-blue-400 bg-blue-500/10',
     },
     {
       icon: Unlock,
       step: '03',
       title: 'Desbloquea los que te interesan',
-      desc: 'Paga $20 por lead para ver teléfono, email y datos completos. Solo pagas por lo que realmente quieres.',
+      desc: 'Paga desde $12 por lead para ver teléfono, email y datos completos. El precio varía según el costo de la campaña.',
       color: 'text-purple-400 bg-purple-500/10',
     },
   ]
@@ -119,12 +119,48 @@ function HowItWorks() {
   )
 }
 
+function PriceExplainer() {
+  return (
+    <section className="py-20 bg-slate-950">
+      <div className="max-w-4xl mx-auto px-6 text-center">
+        <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-medium px-4 py-2 rounded-full mb-8">
+          <TrendingUp size={13} />
+          Precio justo basado en costo real
+        </div>
+        <h2 className="text-4xl font-bold text-white mb-6">
+          El precio del lead refleja<br />
+          <span className="text-green-400">lo que costó conseguirlo</span>
+        </h2>
+        <p className="text-slate-400 text-lg mb-12 leading-relaxed">
+          No cobramos un precio fijo arbitrario. Cada lead tiene un precio basado en el costo real de la campaña que lo generó. Siempre mínimo $12, siempre transparente.
+        </p>
+        <div className="grid sm:grid-cols-3 gap-6 text-left">
+          {[
+            { label: 'Lead de campaña económica', cost: '$3 costo', price: '$12', note: 'precio mínimo garantizado' },
+            { label: 'Lead de campaña estándar', cost: '$8 costo', price: '$24', note: '3× el costo de adquisición' },
+            { label: 'Lead de nicho premium', cost: '$15 costo', price: '$45', note: '3× el costo de adquisición' },
+          ].map((item) => (
+            <div key={item.label} className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <p className="text-slate-400 text-sm mb-3">{item.label}</p>
+              <div className="flex items-baseline justify-between mb-1">
+                <span className="text-xs text-slate-500">{item.cost}</span>
+                <span className="text-2xl font-extrabold text-green-400">{item.price}</span>
+              </div>
+              <p className="text-xs text-slate-500 text-right">{item.note}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function Features() {
   const features = [
     { icon: BarChart3, title: 'Dashboard en tiempo real', desc: 'Ve todos tus leads ordenados, filtrados por campaña, estado y fecha.' },
     { icon: Shield, title: 'Datos seguros', desc: 'Los contactos están protegidos hasta que decides desbloquearlos.' },
     { icon: Clock, title: 'Webhooks instantáneos', desc: 'Compatible con Meta Ads, Zapier, Make, n8n y GoHighLevel.' },
-    { icon: DollarSign, title: 'Sin suscripción forzada', desc: 'Plan base gratuito. Paga solo por los leads que abres.' },
+    { icon: DollarSign, title: 'Sin suscripción forzada', desc: 'Paga solo por los leads que abres. Sin mensualidad obligatoria.' },
   ]
 
   return (
@@ -156,12 +192,12 @@ function Pricing() {
       name: 'Gratis',
       price: '$0',
       period: 'siempre gratis',
-      desc: 'Para probar y ver leads entrantes',
+      desc: 'Para ver leads entrantes sin compromiso',
       features: [
         'Recibe leads ilimitados',
         'Ver nombre, ciudad e interés',
         'Dashboard básico',
-        'Webhook básico',
+        'Webhook con Meta Ads, n8n, Zapier',
       ],
       cta: 'Empezar gratis',
       href: '/register',
@@ -169,53 +205,37 @@ function Pricing() {
     },
     {
       name: 'Pay per Lead',
-      price: '$20',
+      price: 'Desde $12',
       period: 'por lead desbloqueado',
-      desc: 'Paga solo lo que necesitas',
+      desc: 'Paga solo por los contactos que quieres cerrar',
       features: [
         'Todo lo del plan gratis',
         'Teléfono y email completos',
-        'Notas y seguimiento',
-        'Historial de pagos',
+        'Notas y seguimiento de status',
+        'Historial de desbloqueos',
+        'Precio basado en costo real de campaña',
         'Soporte por email',
       ],
       cta: 'Crear cuenta',
       href: '/register',
       highlighted: true,
     },
-    {
-      name: 'Pro',
-      price: '$97',
-      period: 'al mes',
-      desc: 'Para agencias y equipos de ventas',
-      features: [
-        'Todo lo de Pay per Lead',
-        'Hasta 10 leads desbloqueados incluidos',
-        'Múltiples campañas',
-        'Panel de análisis avanzado',
-        'API completa',
-        'Soporte prioritario',
-      ],
-      cta: 'Hablar con ventas',
-      href: '/register',
-      highlighted: false,
-    },
   ]
 
   return (
     <section className="py-24 bg-white">
-      <div className="max-w-6xl mx-auto px-6">
+      <div className="max-w-4xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-slate-900 mb-4">Precios simples y transparentes</h2>
           <p className="text-xl text-slate-500">Sin sorpresas. Sin letra pequeña.</p>
         </div>
-        <div className="grid md:grid-cols-3 gap-8 items-start">
+        <div className="grid md:grid-cols-2 gap-8 items-center">
           {plans.map((plan) => (
             <div
               key={plan.name}
               className={`rounded-2xl p-8 border-2 transition-all ${
                 plan.highlighted
-                  ? 'border-green-500 bg-slate-950 shadow-2xl shadow-green-500/10 scale-105'
+                  ? 'border-green-500 bg-slate-950 shadow-2xl shadow-green-500/10'
                   : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-lg'
               }`}
             >
@@ -261,6 +281,31 @@ function Pricing() {
             </div>
           ))}
         </div>
+        <p className="text-center text-slate-400 text-sm mt-8">
+          ¿Volumen alto? <Link to="/register" className="text-green-600 hover:underline font-medium">Contáctanos</Link> para planes personalizados.
+        </p>
+      </div>
+    </section>
+  )
+}
+
+function CTA() {
+  return (
+    <section className="py-24 bg-slate-950">
+      <div className="max-w-3xl mx-auto px-6 text-center">
+        <h2 className="text-4xl font-bold text-white mb-4">
+          Empieza a recibir leads hoy
+        </h2>
+        <p className="text-slate-400 text-xl mb-10">
+          Crea tu cuenta gratis, conecta tu campaña y empieza a ver leads en minutos.
+        </p>
+        <Link
+          to="/register"
+          className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-400 text-white font-semibold px-10 py-4 rounded-xl transition-colors text-lg"
+        >
+          Crear cuenta gratis <ArrowRight size={20} />
+        </Link>
+        <p className="text-slate-600 text-sm mt-5">Sin tarjeta de crédito requerida</p>
       </div>
     </section>
   )
@@ -274,7 +319,7 @@ function Footer() {
           <div className="w-7 h-7 bg-green-500 rounded-lg flex items-center justify-center">
             <Zap size={14} className="text-white" />
           </div>
-          <span className="font-bold text-white">LeadUnlock CRM</span>
+          <span className="font-bold text-white">LeadUnlock</span>
         </div>
         <p className="text-slate-500 text-sm">
           © {new Date().getFullYear()} LeadUnlock. Todos los derechos reservados.
@@ -294,8 +339,10 @@ export default function Landing() {
       <Navbar />
       <Hero />
       <HowItWorks />
+      <PriceExplainer />
       <Features />
       <Pricing />
+      <CTA />
       <Footer />
     </div>
   )
