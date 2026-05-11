@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Building2, MapPin, Phone, Mail, CreditCard, AlertTriangle, Check, Save, User } from 'lucide-react'
+import { Building2, MapPin, Phone, Mail, CreditCard, AlertTriangle, Check, Save, User, Plus, X, Lock } from 'lucide-react'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import Button from '../../components/ui/Button'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder')
 
 const BRAND_LABELS = {
   visa: 'Visa',
@@ -13,6 +17,18 @@ const BRAND_LABELS = {
   diners: 'Diners Club',
   jcb: 'JCB',
   unionpay: 'UnionPay',
+}
+
+const CARD_OPTIONS = {
+  style: {
+    base: {
+      fontSize: '14px',
+      color: '#0f172a',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      '::placeholder': { color: '#94a3b8' },
+    },
+    invalid: { color: '#ef4444' },
+  },
 }
 
 function CardIcon({ brand }) {
@@ -28,13 +44,112 @@ function CardIcon({ brand }) {
   )
 }
 
+function AddCardForm({ onSuccess, onClose }) {
+  const stripe = useStripe()
+  const elements = useElements()
+  const { user } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [cardComplete, setCardComplete] = useState(false)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!stripe || !elements || !cardComplete) return
+    setLoading(true)
+    setError(null)
+
+    try {
+      // 1. Crear SetupIntent
+      const res = await fetch('/api/stripe/create-setup-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user?.id }),
+      })
+      const { clientSecret, error: apiErr } = await res.json()
+      if (apiErr) throw new Error(apiErr)
+
+      // 2. Confirmar con Stripe (valida que la tarjeta es real)
+      const { error: stripeErr, setupIntent } = await stripe.confirmCardSetup(clientSecret, {
+        payment_method: { card: elements.getElement(CardElement) },
+      })
+      if (stripeErr) throw new Error(stripeErr.message)
+      if (setupIntent.status !== 'succeeded') throw new Error('No se pudo verificar la tarjeta')
+
+      // 3. Guardar en Supabase
+      const saveRes = await fetch('/api/stripe/confirm-setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ setupIntentId: setupIntent.id, userId: user?.id }),
+      })
+      const saveData = await saveRes.json()
+      if (!saveData.success) throw new Error(saveData.error || 'Error al guardar tarjeta')
+
+      onSuccess({ last4: saveData.last4, brand: saveData.brand })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <div className="p-4 border border-slate-200 rounded-xl bg-slate-50">
+        <CardElement
+          options={CARD_OPTIONS}
+          onChange={e => {
+            setCardComplete(e.complete)
+            if (e.error) setError(e.error.message)
+            else setError(null)
+          }}
+        />
+      </div>
+
+      {error && (
+        <div className="flex items-start gap-2 mt-3 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
+          <AlertTriangle size={14} className="text-red-500 flex-shrink-0 mt-0.5" />
+          <p className="text-red-600 text-xs">{error}</p>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 mt-3">
+        <div className="flex items-center gap-1.5 text-xs text-slate-400">
+          <Lock size={12} />
+          Encriptado con Stripe
+        </div>
+      </div>
+
+      <div className="flex gap-3 mt-5">
+        <Button
+          type="submit"
+          loading={loading}
+          disabled={!cardComplete || loading}
+          className="flex-1"
+        >
+          <Check size={15} />
+          Guardar tarjeta
+        </Button>
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-4 py-2 border border-slate-200 rounded-xl text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+        >
+          Cancelar
+        </button>
+      </div>
+    </form>
+  )
+}
+
 export default function Profile() {
-  const { user, clientId } = useAuth()
+  const { user } = useAuth()
   const [profile, setProfile] = useState(null)
   const [form, setForm] = useState({ company_name: '', phone: '', city: '' })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [showAddCard, setShowAddCard] = useState(false)
+  const [cardAdded, setCardAdded] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -67,6 +182,13 @@ export default function Profile() {
     setTimeout(() => setSaved(false), 2500)
   }
 
+  function handleCardSuccess({ last4, brand }) {
+    setProfile(p => ({ ...p, payment_method_last4: last4, payment_method_brand: brand }))
+    setShowAddCard(false)
+    setCardAdded(true)
+    setTimeout(() => setCardAdded(false), 3000)
+  }
+
   const hasPaymentMethod = !!profile?.payment_method_last4
 
   if (loading) {
@@ -97,6 +219,14 @@ export default function Profile() {
                 Para poder desbloquear leads necesitas tener una tarjeta guardada. Agrega un método de pago para continuar recibiendo tus contactos.
               </p>
             </div>
+          </div>
+        )}
+
+        {/* Toast tarjeta agregada */}
+        {cardAdded && (
+          <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-2xl px-4 py-3 mb-6">
+            <Check size={16} className="text-green-600" />
+            <p className="text-green-700 text-sm font-medium">Tarjeta verificada y guardada correctamente</p>
           </div>
         )}
 
@@ -186,25 +316,57 @@ export default function Profile() {
             )}
           </div>
 
-          {hasPaymentMethod ? (
-            <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-xl p-4">
+          {hasPaymentMethod && (
+            <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4">
               <CardIcon brand={profile.payment_method_brand} />
               <div className="flex-1">
                 <p className="font-medium text-slate-900 text-sm">
                   {BRAND_LABELS[profile.payment_method_brand] || 'Tarjeta'} ···· {profile.payment_method_last4}
                 </p>
-                <p className="text-xs text-slate-500 mt-0.5">Tarjeta guardada · usada para activación de cuenta</p>
+                <p className="text-xs text-slate-500 mt-0.5">Tarjeta guardada · predeterminada para desbloquear leads</p>
               </div>
               <span className="text-xs bg-green-100 text-green-700 font-medium px-2 py-1 rounded-full">Principal</span>
             </div>
-          ) : (
-            <div className="text-center py-8 border-2 border-dashed border-slate-200 rounded-xl">
-              <CreditCard size={28} className="text-slate-300 mx-auto mb-3" />
-              <p className="text-slate-500 text-sm font-medium">Sin método de pago</p>
-              <p className="text-slate-400 text-xs mt-1">
-                La tarjeta se guarda automáticamente cuando realizas tu primer pago.
-              </p>
+          )}
+
+          {/* Formulario agregar tarjeta */}
+          {showAddCard ? (
+            <div className="border border-slate-200 rounded-xl p-4 mb-4">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-semibold text-slate-900">
+                  {hasPaymentMethod ? 'Reemplazar tarjeta' : 'Agregar tarjeta'}
+                </p>
+                <button
+                  onClick={() => setShowAddCard(false)}
+                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <Elements stripe={stripePromise}>
+                <AddCardForm onSuccess={handleCardSuccess} onClose={() => setShowAddCard(false)} />
+              </Elements>
             </div>
+          ) : (
+            !hasPaymentMethod && (
+              <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl mb-4">
+                <CreditCard size={28} className="text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-500 text-sm font-medium">Sin método de pago</p>
+                <p className="text-slate-400 text-xs mt-1 mb-4">
+                  Necesitas una tarjeta activa para desbloquear leads.
+                </p>
+              </div>
+            )
+          )}
+
+          {!showAddCard && (
+            <button
+              onClick={() => setShowAddCard(true)}
+              className="flex items-center gap-2 text-sm font-medium text-slate-700 border border-slate-200 rounded-xl px-4 py-2.5 hover:bg-slate-50 hover:border-slate-300 transition-colors w-full sm:w-auto"
+            >
+              <Plus size={15} />
+              {hasPaymentMethod ? 'Cambiar tarjeta' : 'Agregar método de pago'}
+            </button>
           )}
 
           <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2">
