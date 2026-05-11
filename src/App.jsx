@@ -7,9 +7,7 @@ import ForgotPassword from './pages/auth/ForgotPassword'
 import ClientDashboard from './pages/dashboard/ClientDashboard'
 import LeadDetail from './pages/dashboard/LeadDetail'
 import Billing from './pages/dashboard/Billing'
-import Integraciones from './pages/dashboard/Integraciones'
-import Roadmap from './pages/dashboard/Roadmap'
-import Estado from './pages/dashboard/Estado'
+import Help from './pages/dashboard/Help'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminFinanzas from './pages/admin/AdminFinanzas'
 import Onboarding from './pages/onboarding/Onboarding'
@@ -53,9 +51,7 @@ export default function App() {
           <Route path="/dashboard" element={<ProtectedRoute><ClientDashboard /></ProtectedRoute>} />
           <Route path="/dashboard/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
           <Route path="/dashboard/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
-          <Route path="/dashboard/integraciones" element={<ProtectedRoute><Integraciones /></ProtectedRoute>} />
-          <Route path="/dashboard/roadmap" element={<ProtectedRoute><Roadmap /></ProtectedRoute>} />
-          <Route path="/dashboard/estado" element={<ProtectedRoute><Estado /></ProtectedRoute>} />
+          <Route path="/dashboard/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/finanzas" element={<ProtectedRoute adminOnly><AdminFinanzas /></ProtectedRoute>} />
           <Route path="/onboarding" element={<Onboarding />} />
