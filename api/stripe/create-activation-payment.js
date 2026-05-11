@@ -9,8 +9,9 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const paymentIntent = await stripe.paymentIntents.create({
-    amount: 10000, // $100 en centavos
+    amount: 10000,
     currency: 'usd',
+    setup_future_usage: 'off_session',
     metadata: { type: 'account_activation' },
     description: 'Activación cuenta LeadUnlock CRM',
   })

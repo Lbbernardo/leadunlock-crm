@@ -343,7 +343,7 @@ function PaymentForm({ data, onSuccess, onBack }) {
   const [couponInput, setCouponInput] = useState('')
   const [appliedCoupon, setAppliedCoupon] = useState(null)
   const [couponError, setCouponError] = useState(null)
-  const { isMock } = useAuth()
+  const { isMock, user } = useAuth()
 
   const discount = appliedCoupon ? DISCOUNT_CODES[appliedCoupon] : null
   const finalAmount = discount ? Math.round(100 * (1 - discount.pct / 100)) : 100
@@ -384,7 +384,14 @@ function PaymentForm({ data, onSuccess, onBack }) {
         payment_method: { card: elements.getElement(CardElement) },
       })
       if (stripeErr) throw new Error(stripeErr.message)
-      if (paymentIntent.status === 'succeeded') onSuccess()
+      if (paymentIntent.status === 'succeeded') {
+        await fetch('/api/stripe/confirm-activation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paymentIntentId: paymentIntent.id, userId: user?.id }),
+        })
+        onSuccess()
+      }
     } catch (err) {
       setError(err.message)
       setLoading(false)

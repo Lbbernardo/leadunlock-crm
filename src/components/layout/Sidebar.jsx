@@ -1,11 +1,12 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, CreditCard, LogOut, Zap, Shield, DollarSign, HelpCircle } from 'lucide-react'
+import { LayoutDashboard, CreditCard, LogOut, Zap, Shield, DollarSign, HelpCircle, User, BookOpen } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import clsx from 'clsx'
 
 const navItems = [
   { label: 'Leads', icon: LayoutDashboard, href: '/dashboard' },
   { label: 'Facturación', icon: CreditCard, href: '/dashboard/billing' },
+  { label: 'Perfil', icon: User, href: '/dashboard/profile' },
   { label: 'Ayuda', icon: HelpCircle, href: '/dashboard/help' },
 ]
 
@@ -49,6 +50,7 @@ export default function Sidebar() {
             {[
               { label: 'Cuentas', href: '/admin', icon: Shield },
               { label: 'Finanzas', href: '/admin/finanzas', icon: DollarSign },
+              { label: 'Manual', href: '/admin/manual', icon: BookOpen },
             ].map(item => (
               <Link
                 key={item.href}

@@ -8,8 +8,10 @@ import ClientDashboard from './pages/dashboard/ClientDashboard'
 import LeadDetail from './pages/dashboard/LeadDetail'
 import Billing from './pages/dashboard/Billing'
 import Help from './pages/dashboard/Help'
+import Profile from './pages/dashboard/Profile'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminFinanzas from './pages/admin/AdminFinanzas'
+import Manual from './pages/admin/Manual'
 import Onboarding from './pages/onboarding/Onboarding'
 
 function ProtectedRoute({ children, adminOnly = false }) {
@@ -52,8 +54,10 @@ export default function App() {
           <Route path="/dashboard/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
           <Route path="/dashboard/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
           <Route path="/dashboard/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
+          <Route path="/dashboard/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/finanzas" element={<ProtectedRoute adminOnly><AdminFinanzas /></ProtectedRoute>} />
+          <Route path="/admin/manual" element={<ProtectedRoute adminOnly><Manual /></ProtectedRoute>} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
