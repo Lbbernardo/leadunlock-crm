@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Zap, CheckCircle, ArrowRight, Lock, Unlock, BarChart3, Shield, Clock, DollarSign, TrendingUp, Award, RotateCcw } from 'lucide-react'
+import { Zap, CheckCircle, ArrowRight, Lock, Unlock, BarChart3, Shield, Clock, RotateCcw, Users } from 'lucide-react'
 
 function Navbar() {
   return (
@@ -19,7 +19,7 @@ function Navbar() {
             to="/register"
             className="bg-green-500 hover:bg-green-400 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
           >
-            Crear cuenta gratis
+            Empezar ahora
           </Link>
         </div>
       </div>
@@ -38,29 +38,21 @@ function Hero() {
             Conecta con Meta Ads en minutos
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold text-white leading-tight mb-6">
-            Recibe leads y paga
-            <span className="text-green-400"> solo los que cierras</span>
+            Tus leads de Meta Ads,
+            <span className="text-green-400"> organizados y listos</span>
           </h1>
           <p className="text-xl text-slate-400 mb-10 leading-relaxed">
-            Tus campañas de Meta Ads generan leads. Nosotros los entregamos en tu dashboard.
-            Solo pagas <strong className="text-white">desde $12 por lead</strong> para ver el contacto completo.
+            Cada persona que llena tu anuncio aparece en tu dashboard.
+            Tú decides cuáles abrir y pagar. Sin mensualidades, sin contratos.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link
-              to="/register"
-              className="flex items-center gap-2 bg-green-500 hover:bg-green-400 text-white font-semibold px-8 py-4 rounded-xl transition-colors text-lg w-full sm:w-auto justify-center"
-            >
-              Empezar gratis <ArrowRight size={20} />
-            </Link>
-            <Link
-              to="/login"
-              className="flex items-center gap-2 border border-slate-700 hover:border-slate-600 text-slate-300 hover:text-white font-medium px-8 py-4 rounded-xl transition-colors text-lg w-full sm:w-auto justify-center"
-            >
-              Ver demo
-            </Link>
-          </div>
+          <Link
+            to="/register"
+            className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-400 text-white font-semibold px-10 py-4 rounded-xl transition-colors text-lg"
+          >
+            Activar mi cuenta <ArrowRight size={20} />
+          </Link>
           <p className="text-slate-500 text-sm mt-5">
-            Sin tarjeta de crédito · Sin instalación · Leads reales desde Meta
+            Activación única de $100 · reembolsable
           </p>
         </div>
       </div>
@@ -73,22 +65,22 @@ function HowItWorks() {
     {
       icon: Zap,
       step: '01',
-      title: 'Conecta tus campañas',
-      desc: 'Vincula tu cuenta de Meta Ads o usa nuestro webhook con Zapier, Make o n8n. Tarda menos de 5 minutos.',
+      title: 'Conecta tu campaña de Meta',
+      desc: 'Vinculamos tu cuenta de Meta Ads con LeadUnlock. Cada nuevo lead que generes llega directo a tu dashboard. Tarda menos de 5 minutos.',
       color: 'text-green-400 bg-green-500/10',
     },
     {
       icon: Lock,
       step: '02',
-      title: 'Recibe leads automáticamente',
-      desc: 'Cada lead llega a tu dashboard con información básica visible: nombre, ciudad e interés. Sin costo.',
+      title: 'Ve quién llegó',
+      desc: 'Verás el nombre, la ciudad y el interés de cada persona. Los datos de contacto están protegidos hasta que decidas abrirlos.',
       color: 'text-blue-400 bg-blue-500/10',
     },
     {
       icon: Unlock,
       step: '03',
-      title: 'Desbloquea los que te interesan',
-      desc: 'Paga desde $12 por lead para ver teléfono, email y datos completos. El precio varía según el costo de la campaña.',
+      title: 'Abre los que te interesan',
+      desc: 'Paga solo por los leads que quieres contactar. Ves el teléfono, el email y puedes hacer seguimiento desde la misma plataforma.',
       color: 'text-purple-400 bg-purple-500/10',
     },
   ]
@@ -97,20 +89,18 @@ function HowItWorks() {
     <section className="py-24 bg-white">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-slate-900 mb-4">Cómo funciona</h2>
-          <p className="text-xl text-slate-500">Tres pasos para tener leads listos para cerrar</p>
+          <h2 className="text-4xl font-bold text-slate-900 mb-4">Así de simple funciona</h2>
+          <p className="text-xl text-slate-500">Sin complicaciones técnicas ni configuraciones largas</p>
         </div>
         <div className="grid md:grid-cols-3 gap-8">
           {steps.map((step) => (
-            <div key={step.step} className="relative">
-              <div className="bg-slate-50 rounded-2xl p-8 h-full border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 ${step.color}`}>
-                  <step.icon size={28} />
-                </div>
-                <div className="text-xs font-bold text-slate-400 mb-3 tracking-widest">PASO {step.step}</div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3">{step.title}</h3>
-                <p className="text-slate-500 leading-relaxed">{step.desc}</p>
+            <div key={step.step} className="bg-slate-50 rounded-2xl p-8 border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 ${step.color}`}>
+                <step.icon size={28} />
               </div>
+              <div className="text-xs font-bold text-slate-400 mb-3 tracking-widest">PASO {step.step}</div>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">{step.title}</h3>
+              <p className="text-slate-500 leading-relaxed">{step.desc}</p>
             </div>
           ))}
         </div>
@@ -119,99 +109,49 @@ function HowItWorks() {
   )
 }
 
-function Activation() {
+function ActivationModel() {
   return (
-    <section className="py-24 bg-slate-900">
-      <div className="max-w-5xl mx-auto px-6">
+    <section className="py-24 bg-slate-950">
+      <div className="max-w-4xl mx-auto px-6">
         <div className="text-center mb-14">
-          <div className="inline-flex items-center gap-2 bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs font-medium px-4 py-2 rounded-full mb-6">
-            <Award size={13} />
-            Tu inversión inicial se devuelve
-          </div>
           <h2 className="text-4xl font-bold text-white mb-4">
             Empieza con $100 —<br />
             <span className="text-green-400">y te los devolvemos</span>
           </h2>
-          <p className="text-slate-400 text-xl max-w-2xl mx-auto leading-relaxed">
-            Para activar tu cuenta necesitas $100. Ese dinero arranca tus campañas.
-            Cuando alcances <strong className="text-white">$1,000 en leads desbloqueados</strong>, te regresamos los $100 completos.
+          <p className="text-slate-400 text-xl leading-relaxed">
+            Para activar LeadUnlock pagas $100 una sola vez.
+            Eso es todo lo que necesitas para empezar a recibir y abrir leads.
+            <br />
+            <strong className="text-white">Cuando hayas comprado $1,000 en leads, te devolvemos los $100 completos.</strong>
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 text-center">
-            <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <DollarSign size={22} className="text-green-400" />
-            </div>
-            <p className="text-2xl font-extrabold text-white mb-1">$100</p>
-            <p className="text-slate-400 text-sm">Activación única para arrancar</p>
-          </div>
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 text-center">
-            <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <TrendingUp size={22} className="text-blue-400" />
-            </div>
-            <p className="text-2xl font-extrabold text-white mb-1">$1,000</p>
-            <p className="text-slate-400 text-sm">En leads desbloqueados para calificar</p>
-          </div>
-          <div className="bg-slate-800 border border-green-500/30 rounded-2xl p-6 text-center ring-1 ring-green-500/20">
-            <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-              <RotateCcw size={22} className="text-green-400" />
-            </div>
-            <p className="text-2xl font-extrabold text-green-400 mb-1">$100 de vuelta</p>
-            <p className="text-slate-400 text-sm">Te devolvemos tu inversión inicial</p>
-          </div>
-        </div>
-
-        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex flex-col sm:flex-row items-center gap-6">
-          <div className="flex-1">
-            <p className="text-white font-semibold mb-1">¿Por qué los $100 de activación?</p>
-            <p className="text-slate-400 text-sm leading-relaxed">
-              Garantizan que estás comprometido a trabajar tus leads. No es una tarifa — es el arranque de tu pipeline.
-              Y cuando demuestras que cierras negocios llegando a $1,000 en leads, te los regresamos como reconocimiento.
-            </p>
-          </div>
-          <Link
-            to="/register"
-            className="flex-shrink-0 flex items-center gap-2 bg-green-500 hover:bg-green-400 text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm whitespace-nowrap"
-          >
-            Activar mi cuenta <ArrowRight size={16} />
-          </Link>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function PriceExplainer() {
-  return (
-    <section className="py-20 bg-slate-950">
-      <div className="max-w-4xl mx-auto px-6 text-center">
-        <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-medium px-4 py-2 rounded-full mb-8">
-          <TrendingUp size={13} />
-          Precio justo basado en costo real
-        </div>
-        <h2 className="text-4xl font-bold text-white mb-6">
-          El precio del lead refleja<br />
-          <span className="text-green-400">lo que costó conseguirlo</span>
-        </h2>
-        <p className="text-slate-400 text-lg mb-12 leading-relaxed">
-          No cobramos un precio fijo arbitrario. Cada lead tiene un precio basado en el costo real de la campaña que lo generó. Siempre mínimo $12, siempre transparente.
-        </p>
-        <div className="grid sm:grid-cols-3 gap-6 text-left">
+        <div className="grid sm:grid-cols-3 gap-4 mb-10">
           {[
-            { label: 'Lead de campaña económica', cost: '$3 costo', price: '$12', note: 'precio mínimo garantizado' },
-            { label: 'Lead de campaña estándar', cost: '$8 costo', price: '$24', note: '3× el costo de adquisición' },
-            { label: 'Lead de nicho premium', cost: '$15 costo', price: '$45', note: '3× el costo de adquisición' },
+            { number: '01', title: 'Pagas $100 al activar', desc: 'Un solo pago para arrancar. Sin mensualidades.' },
+            { number: '02', title: 'Empiezas a abrir leads', desc: 'Cada lead que abres suma hacia tu meta de $1,000.' },
+            { number: '03', title: 'Llegaste a $1,000 → te devolvemos $100', desc: 'Cuando acumulas $1,000 en leads comprados, regresa tu inversión inicial.' },
           ].map((item) => (
-            <div key={item.label} className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-              <p className="text-slate-400 text-sm mb-3">{item.label}</p>
-              <div className="flex items-baseline justify-between mb-1">
-                <span className="text-xs text-slate-500">{item.cost}</span>
-                <span className="text-2xl font-extrabold text-green-400">{item.price}</span>
+            <div key={item.number} className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+              <div className="w-8 h-8 bg-green-500/10 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-green-400 text-xs font-bold">{item.number}</span>
               </div>
-              <p className="text-xs text-slate-500 text-right">{item.note}</p>
+              <p className="text-white font-semibold mb-2 text-sm">{item.title}</p>
+              <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
             </div>
           ))}
+        </div>
+
+        <div className="bg-green-500/10 border border-green-500/20 rounded-2xl p-6 flex items-start gap-4">
+          <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5">
+            <RotateCcw size={18} className="text-green-400" />
+          </div>
+          <div>
+            <p className="text-green-300 font-semibold mb-1">¿Por qué los $100?</p>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              No es una tarifa de acceso — es para asegurarnos de trabajar con personas comprometidas a hacer crecer su negocio. Y como muestra de eso, te los regresamos cuando llegas a $1,000 en leads abiertos.
+            </p>
+          </div>
         </div>
       </div>
     </section>
@@ -220,17 +160,17 @@ function PriceExplainer() {
 
 function Features() {
   const features = [
-    { icon: BarChart3, title: 'Dashboard en tiempo real', desc: 'Ve todos tus leads ordenados, filtrados por campaña, estado y fecha.' },
-    { icon: Shield, title: 'Datos seguros', desc: 'Los contactos están protegidos hasta que decides desbloquearlos.' },
-    { icon: Clock, title: 'Webhooks instantáneos', desc: 'Compatible con Meta Ads, Zapier, Make, n8n y GoHighLevel.' },
-    { icon: DollarSign, title: 'Sin suscripción forzada', desc: 'Paga solo por los leads que abres. Sin mensualidad obligatoria.' },
+    { icon: BarChart3, title: 'Todo en un dashboard', desc: 'Ve todos tus leads en un solo lugar. Filtra por campaña, estado o fecha.' },
+    { icon: Shield, title: 'Contactos protegidos', desc: 'El teléfono y email de cada lead solo se muestran cuando decides abrirlo.' },
+    { icon: Clock, title: 'Llegan solos', desc: 'Conectas una vez con Meta Ads y los leads llegan automáticamente. Sin trabajo manual.' },
+    { icon: Users, title: 'Seguimiento fácil', desc: 'Agrega notas, cambia el estado del lead y lleva un historial de cada contacto.' },
   ]
 
   return (
     <section className="py-24 bg-slate-50">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-slate-900 mb-4">Todo lo que necesitas</h2>
+          <h2 className="text-4xl font-bold text-slate-900 mb-4">Todo lo que necesitas para trabajar tus leads</h2>
           <p className="text-xl text-slate-500">Sin complicaciones. Sin contratos.</p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -250,104 +190,52 @@ function Features() {
 }
 
 function Pricing() {
-  const plans = [
-    {
-      name: 'Gratis',
-      price: '$0',
-      period: 'siempre gratis',
-      desc: 'Para ver leads entrantes sin compromiso',
-      features: [
-        'Recibe leads ilimitados',
-        'Ver nombre, ciudad e interés',
-        'Dashboard básico',
-        'Webhook con Meta Ads, n8n, Zapier',
-      ],
-      cta: 'Empezar gratis',
-      href: '/register',
-      highlighted: false,
-    },
-    {
-      name: 'Activa tu cuenta',
-      price: '$100',
-      period: 'pago único · reembolsable',
-      desc: 'Arranca tu pipeline y desbloquea leads desde $12 c/u',
-      features: [
-        'Todo lo del plan gratis',
-        'Teléfono y email completos por lead',
-        'Leads desde $12 según campaña',
-        'Notas y seguimiento de status',
-        'Historial de desbloqueos',
-        '$100 devueltos al llegar a $1,000 en leads',
-        'Soporte por email',
-      ],
-      cta: 'Activar mi cuenta — $100',
-      href: '/register',
-      highlighted: true,
-    },
-  ]
-
   return (
     <section className="py-24 bg-white">
-      <div className="max-w-4xl mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-slate-900 mb-4">Precios simples y transparentes</h2>
-          <p className="text-xl text-slate-500">Sin sorpresas. Sin letra pequeña.</p>
+      <div className="max-w-md mx-auto px-6">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold text-slate-900 mb-4">Un solo precio para empezar</h2>
+          <p className="text-xl text-slate-500">Sin planes confusos. Sin letra pequeña.</p>
         </div>
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`rounded-2xl p-8 border-2 transition-all ${
-                plan.highlighted
-                  ? 'border-green-500 bg-slate-950 shadow-2xl shadow-green-500/10'
-                  : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-lg'
-              }`}
-            >
-              {plan.highlighted && (
-                <div className="inline-flex items-center bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full mb-4">
-                  MÁS POPULAR
-                </div>
-              )}
-              <h3 className={`text-2xl font-bold mb-1 ${plan.highlighted ? 'text-white' : 'text-slate-900'}`}>
-                {plan.name}
-              </h3>
-              <div className="mb-1">
-                <span className={`text-4xl font-extrabold ${plan.highlighted ? 'text-green-400' : 'text-slate-900'}`}>
-                  {plan.price}
-                </span>
-                <span className={`text-sm ml-1 ${plan.highlighted ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {plan.period}
-                </span>
-              </div>
-              <p className={`text-sm mb-6 ${plan.highlighted ? 'text-slate-400' : 'text-slate-500'}`}>
-                {plan.desc}
-              </p>
-              <ul className="space-y-3 mb-8">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2">
-                    <CheckCircle size={16} className="text-green-500 flex-shrink-0 mt-0.5" />
-                    <span className={`text-sm ${plan.highlighted ? 'text-slate-300' : 'text-slate-600'}`}>
-                      {f}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                to={plan.href}
-                className={`block text-center font-semibold py-3 rounded-xl transition-colors ${
-                  plan.highlighted
-                    ? 'bg-green-500 hover:bg-green-400 text-white'
-                    : 'border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700'
-                }`}
-              >
-                {plan.cta}
-              </Link>
-            </div>
-          ))}
+
+        <div className="rounded-2xl border-2 border-green-500 bg-slate-950 p-8 shadow-2xl shadow-green-500/10">
+          <div className="inline-flex items-center bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full mb-4">
+            ÚNICO PLAN
+          </div>
+          <h3 className="text-2xl font-bold text-white mb-1">LeadUnlock</h3>
+          <div className="mb-1">
+            <span className="text-4xl font-extrabold text-green-400">$100</span>
+            <span className="text-sm text-slate-400 ml-2">activación única · reembolsable</span>
+          </div>
+          <p className="text-slate-400 text-sm mb-6">Luego pagas solo por los leads que abres, desde $12 c/u</p>
+
+          <ul className="space-y-3 mb-8">
+            {[
+              'Recibe leads ilimitados de Meta Ads',
+              'Ve nombre, ciudad e interés de cada lead',
+              'Abre solo los contactos que te interesan',
+              'Teléfono y email completos al desbloquear',
+              'Seguimiento y notas por lead',
+              'Conecta con Zapier, n8n o Make',
+              '$100 de vuelta cuando llegas a $1,000 en leads',
+            ].map((f) => (
+              <li key={f} className="flex items-start gap-2">
+                <CheckCircle size={16} className="text-green-500 flex-shrink-0 mt-0.5" />
+                <span className="text-slate-300 text-sm">{f}</span>
+              </li>
+            ))}
+          </ul>
+
+          <Link
+            to="/register"
+            className="block text-center bg-green-500 hover:bg-green-400 text-white font-semibold py-3 rounded-xl transition-colors"
+          >
+            Activar mi cuenta — $100
+          </Link>
+          <p className="text-center text-slate-500 text-xs mt-3">
+            Pago único. Sin suscripción mensual.
+          </p>
         </div>
-        <p className="text-center text-slate-400 text-sm mt-8">
-          ¿Volumen alto? <Link to="/register" className="text-green-600 hover:underline font-medium">Contáctanos</Link> para planes personalizados.
-        </p>
       </div>
     </section>
   )
@@ -358,18 +246,18 @@ function CTA() {
     <section className="py-24 bg-slate-950">
       <div className="max-w-3xl mx-auto px-6 text-center">
         <h2 className="text-4xl font-bold text-white mb-4">
-          Empieza a recibir leads hoy
+          ¿Tienes campañas corriendo en Meta?
         </h2>
         <p className="text-slate-400 text-xl mb-10">
-          Crea tu cuenta gratis, conecta tu campaña y empieza a ver leads en minutos.
+          Entonces ya tienes leads. Activa LeadUnlock y empieza a verlos hoy.
         </p>
         <Link
           to="/register"
           className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-400 text-white font-semibold px-10 py-4 rounded-xl transition-colors text-lg"
         >
-          Crear cuenta gratis <ArrowRight size={20} />
+          Activar mi cuenta <ArrowRight size={20} />
         </Link>
-        <p className="text-slate-600 text-sm mt-5">Sin tarjeta de crédito requerida</p>
+        <p className="text-slate-600 text-sm mt-5">$100 de activación · reembolsable a los $1,000 en leads</p>
       </div>
     </section>
   )
@@ -403,8 +291,7 @@ export default function Landing() {
       <Navbar />
       <Hero />
       <HowItWorks />
-      <Activation />
-      <PriceExplainer />
+      <ActivationModel />
       <Features />
       <Pricing />
       <CTA />
