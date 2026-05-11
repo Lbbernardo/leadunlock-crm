@@ -42,10 +42,15 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(!isMock)
 
   useEffect(() => {
+    console.log('[Dashboard] clientId:', clientId, 'isMock:', isMock)
     if (isMock || !clientId) { setLoading(false); return }
     setLoading(true)
     supabase.rpc('get_client_leads', { p_client_id: clientId })
-      .then(({ data, error }) => { if (!error) setLeads(data || []); setLoading(false) })
+      .then(({ data, error }) => {
+        console.log('[Dashboard] rpc result:', { data, error })
+        if (!error) setLeads(data || [])
+        setLoading(false)
+      })
   }, [clientId, isMock])
 
   const filtered = leads.filter((lead) => {
