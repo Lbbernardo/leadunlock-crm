@@ -24,6 +24,30 @@ const LEAD_CATEGORIES = [
   { id: 'real-estate',        label: 'Bienes raíces',         icon: '🏠', description: 'Compra, venta y renta',      locked: true },
 ]
 
+const US_CITIES = [
+  'Atlanta, GA', 'Austin, TX', 'Baltimore, MD', 'Boston, MA', 'Charlotte, NC',
+  'Chicago, IL', 'Cleveland, OH', 'Columbus, OH', 'Dallas, TX', 'Denver, CO',
+  'Detroit, MI', 'El Paso, TX', 'Fort Worth, TX', 'Fresno, CA', 'Houston, TX',
+  'Indianapolis, IN', 'Jacksonville, FL', 'Kansas City, MO', 'Las Vegas, NV',
+  'Long Beach, CA', 'Los Angeles, CA', 'Louisville, KY', 'Memphis, TN',
+  'Mesa, AZ', 'Miami, FL', 'Milwaukee, WI', 'Minneapolis, MN', 'Nashville, TN',
+  'New Orleans, LA', 'New York, NY', 'Newark, NJ', 'Oklahoma City, OK',
+  'Omaha, NE', 'Orlando, FL', 'Philadelphia, PA', 'Phoenix, AZ',
+  'Portland, OR', 'Raleigh, NC', 'Sacramento, CA', 'San Antonio, TX',
+  'San Diego, CA', 'San Francisco, CA', 'San Jose, CA', 'Seattle, WA',
+  'Tampa, FL', 'Tucson, AZ', 'Tulsa, OK', 'Virginia Beach, VA',
+  'Washington, DC', 'Hialeah, FL', 'Fort Lauderdale, FL', 'St. Petersburg, FL',
+  'Orlando, FL', 'Cape Coral, FL', 'Tallahassee, FL', 'Pembroke Pines, FL',
+  'Hollywood, FL', 'Miramar, FL', 'Gainesville, FL', 'Coral Springs, FL',
+  'Brooklyn, NY', 'Queens, NY', 'Bronx, NY', 'Staten Island, NY', 'Buffalo, NY',
+  'Aurora, CO', 'Colorado Springs, CO', 'Henderson, NV', 'North Las Vegas, NV',
+  'Chandler, AZ', 'Scottsdale, AZ', 'Gilbert, AZ', 'Glendale, AZ',
+  'Riverside, CA', 'Anaheim, CA', 'Stockton, CA', 'Bakersfield, CA',
+  'Oakland, CA', 'San Bernardino, CA', 'Santa Ana, CA',
+  'Arlington, TX', 'Corpus Christi, TX', 'Laredo, TX', 'Lubbock, TX',
+  'Garland, TX', 'Irving, TX', 'Plano, TX', 'Frisco, TX',
+]
+
 const BUDGETS = [
   { label: '$500 - $1,000 / mes', value: '500-1000' },
   { label: '$1,000 - $3,000 / mes', value: '1000-3000' },
@@ -145,16 +169,19 @@ function Step1({ data, onChange, onNext }) {
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-slate-300 mb-2">Ciudad / Estado</label>
+          <label className="block text-sm font-medium text-slate-300 mb-2">Ciudad</label>
           <div className="relative">
-            <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-            <input
-              type="text"
+            <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            <select
               value={data.city}
               onChange={e => onChange({ ...data, city: e.target.value })}
-              placeholder="Miami, FL"
-              className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
-            />
+              className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 appearance-none"
+            >
+              <option value="">Selecciona tu ciudad</option>
+              {US_CITIES.map(city => (
+                <option key={city} value={city}>{city}</option>
+              ))}
+            </select>
           </div>
         </div>
         <div>
@@ -238,7 +265,7 @@ function Step2({ data, onChange, onNext, onBack }) {
         />
         {data.leadsPerMonth && (
           <p className="text-xs text-slate-500 mt-1.5">
-            Estimado: ${(data.leadsPerMonth * 20).toLocaleString()} / mes en desbloqueos
+            Estimado: desde ${(data.leadsPerMonth * 12).toLocaleString()} / mes en leads
           </p>
         )}
       </div>
@@ -246,7 +273,7 @@ function Step2({ data, onChange, onNext, onBack }) {
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">
           <Tag size={14} className="inline mr-1" />
-          Presupuesto mensual para campañas
+          Presupuesto mensual para leads
         </label>
         <div className="grid grid-cols-2 gap-3">
           {BUDGETS.map(b => (
@@ -435,8 +462,8 @@ function PaymentForm({ data, onSuccess, onBack }) {
         </div>
         <div className="text-right">
           {discount && <p className="text-slate-500 text-sm line-through">$100</p>}
-          <span className={`text-3xl font-extrabold ${isFree ? 'text-green-400' : 'text-white'}`}>
-            {isFree ? 'GRATIS' : `$${finalAmount}`}
+          <span className="text-3xl font-extrabold text-white">
+            ${finalAmount}
           </span>
         </div>
       </div>
@@ -453,7 +480,7 @@ function PaymentForm({ data, onSuccess, onBack }) {
 
       {(isMock || isFree) && (
         <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 text-xs text-blue-400">
-          {isFree ? '✅ Código aplicado — no se requiere tarjeta.' : 'Modo demo activo — el pago se simulará sin cargo real.'}
+          {isFree ? '✅ Código aplicado — activación sin costo.' : 'Modo demo activo — el pago se simulará sin cargo real.'}
         </div>
       )}
 
@@ -469,7 +496,7 @@ function PaymentForm({ data, onSuccess, onBack }) {
         </Button>
         <Button type="submit" loading={loading} className="flex-1 py-3 text-base">
           <CreditCard size={18} />
-          {isFree ? 'Activar cuenta gratis' : `Pagar $${finalAmount} y activar cuenta`}
+          {isFree ? `Activar cuenta — $${finalAmount}` : `Pagar $${finalAmount} y activar cuenta`}
         </Button>
       </div>
     </form>
@@ -513,9 +540,9 @@ function Step4({ data }) {
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide">¿Qué sigue?</h3>
         {[
           { step: '1', text: 'Nuestro equipo revisa tu briefing de campaña', time: 'Hoy' },
-          { step: '2', text: 'Creamos y activamos tus campañas en Meta Ads', time: '24-48h' },
+          { step: '2', text: 'Creamos y activamos tu campaña personalizada en Meta Ads', time: '24-48h' },
           { step: '3', text: 'Los leads empiezan a llegar a tu dashboard', time: 'En 48h' },
-          { step: '4', text: 'Desbloquea los leads que te interesan por $20 c/u', time: 'Tú decides' },
+          { step: '4', text: 'Abre los leads que te interesan y empieza a cerrar negocios', time: 'Tú decides' },
         ].map(item => (
           <div key={item.step} className="flex items-start gap-3">
             <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white mt-0.5">
