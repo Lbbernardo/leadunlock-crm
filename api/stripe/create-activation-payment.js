@@ -8,13 +8,14 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { amount } = req.body
+  const { amount, email } = req.body
   const amountInCents = amount && amount > 0 ? Math.round(amount * 100) : 10000
 
   const paymentIntent = await stripe.paymentIntents.create({
     amount: amountInCents,
     currency: 'usd',
     setup_future_usage: 'off_session',
+    receipt_email: email || undefined,
     metadata: { type: 'account_activation' },
     description: 'Activación cuenta LeadUnlock CRM',
   })

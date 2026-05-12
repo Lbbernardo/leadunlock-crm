@@ -376,7 +376,7 @@ function PaymentForm({ data, onSuccess, onBack }) {
       const res = await fetch('/api/stripe/create-activation-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: finalAmount, description: 'Activación cuenta LeadUnlock' }),
+        body: JSON.stringify({ amount: finalAmount, email: user?.email, description: 'Activación cuenta LeadUnlock' }),
       })
       const { clientSecret, error: apiErr } = await res.json()
       if (apiErr) throw new Error(apiErr)
