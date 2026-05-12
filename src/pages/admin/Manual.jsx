@@ -1,4 +1,4 @@
-import { BookOpen, Users, CreditCard, Zap, Webhook, BarChart2, ShieldCheck, ChevronDown, ChevronUp } from 'lucide-react'
+import { BookOpen, Users, CreditCard, Zap, Webhook, BarChart2, ShieldCheck, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 
@@ -47,9 +47,24 @@ Al pagar, se llama a /api/stripe/confirm-activation que:
       },
       {
         heading: '3. Campaña en Meta Ads',
-        body: `Después del onboarding, TÚ (admin) creas manualmente la campaña en Meta Ads para ese cliente. Los leads se envían al webhook de LeadUnlock con el nombre de la campaña o el client_id.
+        body: `Después del onboarding, TÚ (admin) creas la campaña en Meta Ads para ese cliente y conectas el formulario a Make.
 
-El sistema auto-enruta el lead al cliente correcto si el nombre de la campaña coincide con una campaña activa en la tabla "campaigns".`,
+FLUJO AUTOMATIZADO:
+Meta Lead Ads → Make (us2.make.com) → /api/make-lead → Supabase → Dashboard
+
+PASOS PARA CADA CLIENTE NUEVO:
+1. Crear el formulario de Lead Ads en Meta Ads Manager para ese cliente
+2. Obtener el Form ID del formulario (número largo en la URL o en el panel)
+3. En LeadUnlock Admin → Campañas → registrar campaña con:
+   - Nombre: cualquier nombre descriptivo
+   - Cliente: el cliente correspondiente
+   - Fuente: Meta Ads
+   - Meta Form ID: el ID numérico del formulario de Meta
+4. Make recoge los leads automáticamente cada 15 minutos
+5. El lead aparece en el dashboard del cliente
+
+Make escenario: "Integration Facebook Lead Ads, HTTP" en us2.make.com
+Endpoint: POST https://unlocklead.click/api/make-lead`,
       },
       {
         heading: '4. Leads y desbloqueo',
@@ -144,6 +159,39 @@ Los datos vienen directamente de Supabase calculados en tiempo real.`,
     ],
   },
   {
+    icon: Trash2,
+    title: 'Limpieza pendiente',
+    color: 'text-orange-400',
+    bg: 'bg-orange-500/10',
+    content: [
+      {
+        heading: 'Cosas que no usamos y hay que limpiar',
+        body: `1. WORKFLOW DE N8N — el escenario "LeadUnlock — Meta Ads Universal" en Railway ya no se usa.
+   Tiene un Webhook Trigger, Code node y HTTP Request que fueron reemplazados por Make.
+   Acción: pausar o eliminar ese workflow en n8n para no consumir recursos.
+
+2. FACEBOOK LEAD ADS TRIGGER — el nodo de n8n que intentamos usar (Facebook Lead Ads Trigger)
+   fue abandonado por inestable. Ya no existe en el workflow pero la credencial OAuth quedó en n8n.
+   Acción: eliminar la credencial de Facebook en n8n → Credentials.
+
+3. ENDPOINT /api/meta-webhook — creado para recibir leads directamente de Meta sin Make.
+   No se usa porque la Facebook App necesita verificación de negocio para estar en Live mode.
+   Puede quedarse como respaldo o eliminarse.
+   Archivo: api/meta-webhook.js
+
+4. VARIABLE META_VERIFY_TOKEN en Vercel — usada por /api/meta-webhook.
+   Si se elimina ese endpoint, también eliminar esta variable.
+
+5. CAMPAÑA "test" en LeadUnlock Admin — si creaste campañas de prueba durante el desarrollo,
+   elimínalas desde Admin → Campañas para mantener el sistema limpio.
+
+6. BUG PENDIENTE: clientes quedan en status "pending" después del onboarding.
+   Fix: ejecutar en Supabase SQL Editor:
+   CREATE POLICY "clients_own_update" ON public.clients FOR UPDATE USING (user_id = auth.uid());`,
+      },
+    ],
+  },
+  {
     icon: ShieldCheck,
     title: 'Base de datos y seguridad',
     color: 'text-rose-400',
@@ -169,7 +217,19 @@ VITE_SUPABASE_ANON_KEY
 SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY
 STRIPE_SECRET_KEY
-VITE_STRIPE_PUBLISHABLE_KEY`,
+VITE_STRIPE_PUBLISHABLE_KEY
+WEBHOOK_SECRET              — token para /api/webhook (x-webhook-token)
+META_VERIFY_TOKEN           — token de verificación webhook Meta (leadunlock2026)
+META_PAGE_ACCESS_TOKEN      — token de página Facebook (nunca expira, página RetiroLatino)`,
+      },
+      {
+        heading: 'Columna meta_form_id en campaigns',
+        body: `La tabla campaigns tiene una columna meta_form_id (TEXT) que conecta el formulario de Meta con el cliente.
+
+SQL aplicado en Supabase:
+ALTER TABLE public.campaigns ADD COLUMN IF NOT EXISTS meta_form_id TEXT;
+
+Cuando llega un lead desde Make, el sistema busca en campaigns la fila con ese meta_form_id para saber a qué cliente asignarlo.`,
       },
     ],
   },
