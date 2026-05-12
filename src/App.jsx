@@ -14,6 +14,7 @@ import AdminFinanzas from './pages/admin/AdminFinanzas'
 import Manual from './pages/admin/Manual'
 import Onboarding from './pages/onboarding/Onboarding'
 import Privacy from './pages/Privacy'
+import ResetPassword from './pages/auth/ResetPassword'
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { user, profile, loading } = useAuth()
@@ -61,6 +62,7 @@ export default function App() {
           <Route path="/admin/manual" element={<ProtectedRoute adminOnly><Manual /></ProtectedRoute>} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
