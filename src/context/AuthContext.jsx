@@ -3,8 +3,10 @@ import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext({})
 
-const IS_MOCK = !import.meta.env.VITE_SUPABASE_URL ||
+const IS_MOCK = import.meta.env.DEV && (
+  !import.meta.env.VITE_SUPABASE_URL ||
   import.meta.env.VITE_SUPABASE_URL.includes('placeholder')
+)
 
 const MOCK_USER = { id: 'mock-user-id', email: 'demo@leadunlock.com' }
 const MOCK_PROFILE = {
