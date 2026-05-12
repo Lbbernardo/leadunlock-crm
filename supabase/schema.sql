@@ -180,8 +180,8 @@ BEGIN
     SELECT
       l.id,
       l.full_name,
-      CASE WHEN lu.id IS NOT NULL THEN l.phone ELSE NULL END,
-      CASE WHEN lu.id IS NOT NULL THEN l.email ELSE NULL END,
+      CASE WHEN (NOT l.is_locked OR lu.id IS NOT NULL) THEN l.phone ELSE NULL END,
+      CASE WHEN (NOT l.is_locked OR lu.id IS NOT NULL) THEN l.email ELSE NULL END,
       l.city,
       l.state,
       l.product_interest,
@@ -189,9 +189,9 @@ BEGIN
       l.campaign_name,
       l.is_locked,
       l.status,
-      CASE WHEN lu.id IS NOT NULL THEN l.notes ELSE NULL END,
+      CASE WHEN (NOT l.is_locked OR lu.id IS NOT NULL) THEN l.notes ELSE NULL END,
       l.created_at,
-      (lu.id IS NOT NULL)::BOOLEAN
+      (NOT l.is_locked OR lu.id IS NOT NULL)::BOOLEAN
     FROM public.leads l
     LEFT JOIN public.lead_unlocks lu
       ON lu.lead_id = l.id AND lu.client_id = p_client_id
