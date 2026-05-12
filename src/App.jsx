@@ -13,6 +13,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminFinanzas from './pages/admin/AdminFinanzas'
 import Manual from './pages/admin/Manual'
 import Onboarding from './pages/onboarding/Onboarding'
+import Privacy from './pages/Privacy'
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const { user, profile, loading } = useAuth()
@@ -59,6 +60,7 @@ export default function App() {
           <Route path="/admin/finanzas" element={<ProtectedRoute adminOnly><AdminFinanzas /></ProtectedRoute>} />
           <Route path="/admin/manual" element={<ProtectedRoute adminOnly><Manual /></ProtectedRoute>} />
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/privacy" element={<Privacy />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
