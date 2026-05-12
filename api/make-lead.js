@@ -108,7 +108,9 @@ export default async function handler(req, res) {
     .single()
 
   if (client?.phone) {
-    const msg = `LeadUnlock: Nuevo lead recibido!\nNombre: ${full_name}\nTel: ${fields.phone_number || fields.phone || 'N/A'}\nEmail: ${fields.email || 'N/A'}\nVe a unlocklead.click para verlo.`
+    const nameParts = full_name.trim().split(' ')
+    const maskedName = nameParts[0][0] + '. ' + (nameParts[1] || '')
+    const msg = `LeadUnlock: Tienes un nuevo lead!\nNombre: ${maskedName.trim()}\n\nEntra a unlocklead.click para ver los datos completos y desbloquearlo.`
     await sendWhatsApp(client.phone, msg)
   }
 
