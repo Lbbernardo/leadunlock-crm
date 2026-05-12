@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { supabase } from './lib/supabase'
 import Landing from './pages/Landing'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
@@ -13,6 +15,7 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminFinanzas from './pages/admin/AdminFinanzas'
 import Manual from './pages/admin/Manual'
 import Onboarding from './pages/onboarding/Onboarding'
+import Building from './pages/dashboard/Building'
 import Privacy from './pages/Privacy'
 import ResetPassword from './pages/auth/ResetPassword'
 
@@ -35,18 +38,28 @@ function ProtectedRoute({ children, adminOnly = false }) {
   return children
 }
 
-// Solo para rutas del dashboard de clientes — requiere cuenta activa
+// Solo para rutas del dashboard de clientes — requiere cuenta activa y campaña configurada
 function ClientRoute({ children }) {
-  const { user, profile, clientData, loading } = useAuth()
+  const { user, profile, clientData, loading, isMock } = useAuth()
+  const [campaignReady, setCampaignReady] = useState(isMock ? true : null)
 
-  if (loading) return <Spinner />
+  useEffect(() => {
+    if (isMock || !clientData?.id) return
+    supabase
+      .from('campaigns')
+      .select('id', { count: 'exact', head: true })
+      .eq('client_id', clientData.id)
+      .not('meta_form_id', 'is', null)
+      .then(({ count }) => setCampaignReady(count > 0))
+  }, [clientData?.id, isMock])
+
+  if (loading || campaignReady === null) return <Spinner />
   if (!user) return <Navigate to="/login" replace />
-
-  const isAdmin = profile?.role === 'admin'
-  if (isAdmin) return <Navigate to="/admin" replace />
+  if (profile?.role === 'admin') return <Navigate to="/admin" replace />
 
   const status = clientData?.status
   if (status === 'pending' || !status) return <Navigate to="/onboarding" replace />
+  if (!campaignReady) return <Navigate to="/building" replace />
 
   return children
 }
@@ -76,6 +89,7 @@ export default function App() {
           <Route path="/admin/finanzas" element={<ProtectedRoute adminOnly><AdminFinanzas /></ProtectedRoute>} />
           <Route path="/admin/manual" element={<ProtectedRoute adminOnly><Manual /></ProtectedRoute>} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+          <Route path="/building" element={<ProtectedRoute><Building /></ProtectedRoute>} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="*" element={<Navigate to="/" replace />} />
