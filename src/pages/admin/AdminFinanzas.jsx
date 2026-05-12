@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { DollarSign, TrendingUp, Users, Unlock, Pause, Play, Award, ChevronDown, RefreshCw } from 'lucide-react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { Badge } from '../../components/ui/Badge'
@@ -55,6 +56,7 @@ function CreditBar({ unlocked }) {
 }
 
 export default function AdminFinanzas() {
+  const navigate = useNavigate()
   const [clients, setClients] = useState([])
   const [expanded, setExpanded] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -403,7 +405,10 @@ export default function AdminFinanzas() {
                                     : <><Play size={14} /> Activar cuenta</>}
                                 </button>
 
-                                <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); navigate(`/admin?client=${client.id}`) }}
+                                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+                                >
                                   <Unlock size={14} /> Ver leads del cliente
                                 </button>
                               </div>

@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 import { Users, TrendingUp, DollarSign, Edit2, Zap, ToggleLeft, ToggleRight, Copy, Check, Trash2, Link, ChevronDown, Lock, Unlock, RefreshCw, Activity, ArrowUpRight } from 'lucide-react'
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -42,8 +43,9 @@ function CopyWebhook({ clientId }) {
   )
 }
 
-function ClientRow({ client, onRefresh }) {
-  const [expanded, setExpanded] = useState(false)
+function ClientRow({ client, onRefresh, initialExpanded = false }) {
+  const rowRef = useRef(null)
+  const [expanded, setExpanded] = useState(initialExpanded)
   const [clientLeads, setClientLeads] = useState([])
   const [loadingLeads, setLoadingLeads] = useState(false)
   const [editMode, setEditMode] = useState(false)
@@ -53,6 +55,23 @@ function ClientRow({ client, onRefresh }) {
   const [creditLoading, setCreditLoading] = useState(false)
   const [creditMsg, setCreditMsg] = useState(null)
   const [currentBalance, setCurrentBalance] = useState(client.balance)
+
+  useEffect(() => {
+    if (initialExpanded) {
+      fetchLeads()
+      setEditForm({
+        company_name: client.company_name !== '(sin nombre)' ? client.company_name : '',
+        phone: client.phone || '',
+        city: client.city || '',
+        status: client.status || 'pending',
+        leads_per_month: client.leads_per_month || '',
+        budget: client.budget || '',
+        goal: client.goal || '',
+        target_audience: client.target_audience || '',
+      })
+      setTimeout(() => rowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300)
+    }
+  }, [initialExpanded])
 
   const statusColor = { active: 'green', pending: 'yellow', paused: 'slate' }[client.status] || 'slate'
   const statusLabel = { active: 'Activo', pending: 'Pendiente', paused: 'Pausado' }[client.status] || client.status
@@ -142,7 +161,7 @@ function ClientRow({ client, onRefresh }) {
   }
 
   return (
-    <div>
+    <div ref={rowRef}>
       <div className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 cursor-pointer transition-colors" onClick={handleExpand}>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-slate-900 text-sm">{client.company_name}</p>
@@ -494,7 +513,9 @@ const EMPTY_CAMPAIGN_FORM = { name: '', client_id: '', source: 'Meta Ads', meta_
 
 export default function AdminDashboard() {
   const { isMock } = useAuth()
+  const location = useLocation()
   const [activeTab, setActiveTab] = useState('overview')
+  const [highlightClientId, setHighlightClientId] = useState(null)
   const [clients, setClients] = useState([])
   const [leads, setLeads] = useState([])
   const [categories, setCategories] = useState(INITIAL_CATEGORIES)
@@ -508,6 +529,15 @@ export default function AdminDashboard() {
     fetchData()
     fetchCampaigns()
   }, [isMock])
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const clientParam = params.get('client')
+    if (clientParam) {
+      setActiveTab('clients')
+      setHighlightClientId(clientParam)
+    }
+  }, [location.search])
 
   async function fetchCampaigns() {
     const { data } = await supabase
@@ -869,7 +899,14 @@ export default function AdminDashboard() {
               {clients.length === 0 && (
                 <p className="text-center text-slate-400 text-sm py-12">No hay clientes registrados aún.</p>
               )}
-              {clients.map(client => <ClientRow key={client.id} client={client} onRefresh={fetchData} />)}
+              {clients.map(client => (
+                <ClientRow
+                  key={client.id}
+                  client={client}
+                  onRefresh={fetchData}
+                  initialExpanded={client.id === highlightClientId}
+                />
+              ))}
             </div>
           )}
 
