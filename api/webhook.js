@@ -20,6 +20,24 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY,
 )
 
+async function sendSMS(to, message) {
+  if (!to || !process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_PHONE_NUMBER) return
+  const phone = to.replace(/\D/g, '')
+  if (phone.length < 10) return
+  const toFormatted = `+${phone.replace(/^\+/, '').startsWith('1') ? phone.replace(/^\+/, '') : '1' + phone.replace(/^\+/, '')}`
+  await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: 'Basic ' + Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64'),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({ From: process.env.TWILIO_PHONE_NUMBER, To: toFormatted, Body: message }).toString(),
+    }
+  )
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -103,6 +121,14 @@ export default async function handler(req, res) {
   if (error) {
     console.error('Lead insert error:', error)
     return res.status(500).json({ error: 'Failed to create lead' })
+  }
+
+  // Notificación al admin
+  if (process.env.ADMIN_PHONE) {
+    const nameParts = (full_name || '').trim().split(' ')
+    const maskedName = nameParts[0]?.[0] ? nameParts[0][0] + '. ' + (nameParts[1] || '') : full_name
+    const adminMsg = `LeadUnlock — Lead nuevo\nCliente: ${client_id}\nNombre: ${maskedName.trim()}\nFuente: ${source || 'webhook'}\n\nunlocklead.click/admin`
+    await sendSMS(process.env.ADMIN_PHONE, adminMsg).catch(() => {})
   }
 
   return res.status(201).json({ success: true, lead_id: lead.id })

@@ -246,7 +246,7 @@ export default function AdminFinanzas() {
                               )}
                             </div>
                             <p className="text-xs text-slate-400">
-                              {client.leads_total} leads · {client.leads_unlocked} desbloqueados · ${client.lead_price}/lead
+                              {client.leads_total} leads · {client.leads_unlocked} desbloqueados
                             </p>
                           </div>
 
@@ -286,7 +286,6 @@ export default function AdminFinanzas() {
                                   ['Leads desbloqueados', client.leads_unlocked],
                                   ['Leads bloqueados', client.leads_total - client.leads_unlocked],
                                   ['Tasa de desbloqueo', `${unlockRate}%`],
-                                  ['Precio por lead', `$${client.lead_price}`],
                                   ['Miembro desde', new Date(client.activated_at).toLocaleDateString('es-MX', { dateStyle: 'medium' })],
                                 ].map(([label, val]) => (
                                   <div key={label} className="flex justify-between text-sm">
@@ -314,17 +313,9 @@ export default function AdminFinanzas() {
                                     <span className="text-slate-700">Total cobrado</span>
                                     <span className="text-slate-900">${client.activation_amount + client.revenue_leads}</span>
                                   </div>
-                                  <div className="flex justify-between">
-                                    <span className="text-slate-500">Precio por lead</span>
-                                    <span className="font-semibold text-slate-900">${client.lead_price}</span>
-                                  </div>
                                   <div className="border-t border-slate-100 pt-2 flex justify-between">
                                     <span className="text-slate-500">Saldo disponible</span>
                                     <span className="font-bold text-blue-600">${client.balance.toLocaleString()}</span>
-                                  </div>
-                                  <div className="flex justify-between text-xs text-slate-400">
-                                    <span>Leads que puede desbloquear</span>
-                                    <span>{Math.floor(client.balance / client.lead_price)}</span>
                                   </div>
                                 </div>
                               </div>

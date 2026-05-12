@@ -543,7 +543,7 @@ function StatCard({ icon: Icon, label, value, sub, color }) {
   )
 }
 
-const EMPTY_CAMPAIGN_FORM = { name: '', client_id: '', source: 'Meta Ads', meta_form_id: '' }
+const EMPTY_CAMPAIGN_FORM = { name: '', client_id: '', source: 'Meta Ads', meta_form_id: '', interest_category: '' }
 
 export default function AdminDashboard() {
   const { isMock, user: adminUser } = useAuth()
@@ -623,7 +623,7 @@ export default function AdminDashboard() {
   async function fetchCampaigns() {
     const { data } = await supabase
       .from('campaigns')
-      .select('id, name, source, is_active, created_at, client_id, meta_form_id, clients(company_name)')
+      .select('id, name, source, is_active, created_at, client_id, meta_form_id, interest_category, clients(company_name)')
       .order('created_at', { ascending: false })
     if (data) setCampaigns(data)
   }
@@ -709,6 +709,7 @@ export default function AdminDashboard() {
       client_id: campaignForm.client_id,
       source: campaignForm.source,
       meta_form_id: campaignForm.meta_form_id.trim() || null,
+      interest_category: campaignForm.interest_category.trim() || null,
     })
     if (!error) { setCampaignForm(EMPTY_CAMPAIGN_FORM); await fetchCampaigns() }
     setCampaignLoading(false)
@@ -1051,6 +1052,15 @@ export default function AdminDashboard() {
                       className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400"
                     />
                   </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Categoría de interés <span className="text-slate-400">(aparece en el detalle del lead)</span></label>
+                    <input
+                      value={campaignForm.interest_category}
+                      onChange={e => setCampaignForm(p => ({ ...p, interest_category: e.target.value }))}
+                      placeholder="Ej. Fondo de retiro, Seguro de vida, Medicare..."
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400"
+                    />
+                  </div>
                 </div>
                 <button type="submit" disabled={campaignLoading} className="mt-3 px-5 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50">
                   {campaignLoading ? 'Guardando...' : '+ Registrar campaña'}
@@ -1067,7 +1077,12 @@ export default function AdminDashboard() {
                   {campaigns.map(camp => (
                     <div key={camp.id} className={`flex items-center gap-4 p-4 rounded-xl border ${camp.is_active ? 'border-green-200 bg-green-50' : 'border-slate-200 bg-slate-50'}`}>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-900 text-sm">{camp.name}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-slate-900 text-sm">{camp.name}</p>
+                          {camp.interest_category && (
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">{camp.interest_category}</span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-500 mt-0.5">{camp.clients?.company_name || '—'} · {camp.source}{camp.meta_form_id ? ` · Form: ${camp.meta_form_id}` : ''}</p>
                       </div>
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${camp.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-500'}`}>

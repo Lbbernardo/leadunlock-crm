@@ -10,21 +10,17 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY,
 )
 
-async function sendWhatsApp(to, message) {
-  if (!to) return
+async function sendSMS(to, message) {
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_PHONE_NUMBER) {
+    console.error('SMS: faltan credenciales Twilio')
+    return
+  }
+  if (!to) { console.error('SMS: número destino vacío'); return }
   const phone = to.replace(/\D/g, '')
-  if (phone.length < 10) return
-
-  const from = 'whatsapp:+14155238886'
-  const toFormatted = `whatsapp:+${phone.startsWith('1') ? phone : '1' + phone}`
-
-  const body = new URLSearchParams({
-    From: from,
-    To: toFormatted,
-    Body: message,
-  })
-
-  await fetch(
+  if (phone.length < 10) { console.error('SMS: número muy corto:', phone); return }
+  const toFormatted = `+${phone.replace(/^\+/, '').startsWith('1') ? phone.replace(/^\+/, '') : '1' + phone.replace(/^\+/, '')}`
+  console.log(`SMS: enviando de ${process.env.TWILIO_PHONE_NUMBER} a ${toFormatted}`)
+  const res = await fetch(
     `https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`,
     {
       method: 'POST',
@@ -32,9 +28,12 @@ async function sendWhatsApp(to, message) {
         Authorization: 'Basic ' + Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64'),
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body: body.toString(),
+      body: new URLSearchParams({ From: process.env.TWILIO_PHONE_NUMBER, To: toFormatted, Body: message }).toString(),
     }
   )
+  const data = await res.json()
+  if (data.error_code) console.error('SMS error Twilio:', data.error_code, data.message)
+  else console.log('SMS enviado, SID:', data.sid)
 }
 
 export default async function handler(req, res) {
@@ -107,11 +106,20 @@ export default async function handler(req, res) {
     .eq('id', campaign.client_id)
     .single()
 
+  const nameParts = full_name.trim().split(' ')
+  const maskedName = nameParts[0][0] + '. ' + (nameParts[1] || '')
+  const clientLabel = client?.company_name || 'Cliente desconocido'
+
+  // Notificación al cliente
   if (client?.phone) {
-    const nameParts = full_name.trim().split(' ')
-    const maskedName = nameParts[0][0] + '. ' + (nameParts[1] || '')
     const msg = `LeadUnlock: Tienes un nuevo lead!\nNombre: ${maskedName.trim()}\n\nEntra a unlocklead.click para ver los datos completos y desbloquearlo.`
-    await sendWhatsApp(client.phone, msg)
+    await sendSMS(client.phone, msg)
+  }
+
+  // Notificación al admin
+  if (process.env.ADMIN_PHONE) {
+    const adminMsg = `LeadUnlock — Lead nuevo\nCliente: ${clientLabel}\nNombre: ${maskedName.trim()}\n\nunlocklead.click/admin`
+    await sendSMS(process.env.ADMIN_PHONE, adminMsg)
   }
 
   return res.status(201).json({ success: true })
