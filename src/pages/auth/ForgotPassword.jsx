@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Zap, Mail, CheckCircle } from 'lucide-react'
+import { Unlock, Mail, CheckCircle } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/ui/Button'
 
@@ -24,7 +24,7 @@ export default function ForgotPassword() {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-6">
             <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center">
-              <Zap size={20} className="text-white" />
+              <Unlock size={20} className="text-white" />
             </div>
             <span className="font-bold text-white text-xl">LeadUnlock</span>
           </Link>

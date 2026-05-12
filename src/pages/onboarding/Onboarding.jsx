@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
-import { Zap, Building2, MapPin, Tag, Users, ChevronRight, Check, CreditCard, AlertCircle, Briefcase } from 'lucide-react'
+import { Unlock, Building2, MapPin, Tag, Users, ChevronRight, Check, CreditCard, AlertCircle, Briefcase } from 'lucide-react'
 import Button from '../../components/ui/Button'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
@@ -616,7 +616,7 @@ function OnboardingContent() {
       <div className="w-full max-w-lg">
         <div className="flex items-center justify-center gap-2 mb-8">
           <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center">
-            <Zap size={18} className="text-white" />
+            <Unlock size={18} className="text-white" />
           </div>
           <span className="font-bold text-white text-xl">LeadUnlock CRM</span>
         </div>

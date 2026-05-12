@@ -1,25 +1,30 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, CreditCard, LogOut, Zap, Shield, DollarSign, HelpCircle, User, BookOpen } from 'lucide-react'
+import { LayoutDashboard, CreditCard, LogOut, Unlock, Shield, DollarSign, HelpCircle, User, BookOpen } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import clsx from 'clsx'
 
-const navItems = [
+const clientNavItems = [
   { label: 'Leads', icon: LayoutDashboard, href: '/dashboard' },
   { label: 'Facturación', icon: CreditCard, href: '/dashboard/billing' },
   { label: 'Perfil', icon: User, href: '/dashboard/profile' },
   { label: 'Ayuda', icon: HelpCircle, href: '/dashboard/help' },
 ]
 
+const adminNavItems = [
+  { label: 'Perfil', icon: User, href: '/dashboard/profile' },
+]
+
 export default function Sidebar() {
   const { pathname } = useLocation()
   const { profile, isAdmin, signOut } = useAuth()
+  const navItems = isAdmin ? adminNavItems : clientNavItems
 
   return (
     <aside className="w-64 bg-slate-950 flex flex-col h-full">
       <div className="p-6 border-b border-slate-800">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-            <Zap size={16} className="text-white" />
+            <Unlock size={16} className="text-white" />
           </div>
           <span className="font-bold text-white text-lg">LeadUnlock</span>
         </div>

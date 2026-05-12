@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Users, TrendingUp, DollarSign, Plus, Edit2, Zap, ToggleLeft, ToggleRight, Copy, Check, Trash2, Link, Lock, Unlock } from 'lucide-react'
+import { Users, TrendingUp, DollarSign, Edit2, Zap, ToggleLeft, ToggleRight, Copy, Check, Trash2, Link } from 'lucide-react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
-import Button from '../../components/ui/Button'
-import Modal from '../../components/ui/Modal'
-import { Badge, StatusBadge } from '../../components/ui/Badge'
+import { Badge } from '../../components/ui/Badge'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 
@@ -15,11 +13,6 @@ const INITIAL_CATEGORIES = [
   { id: 'auto-insurance',     name: 'Seguros de auto',       icon: '🚗', description: 'Seguros vehiculares',                  is_active: false },
   { id: 'real-estate',        name: 'Bienes raíces',         icon: '🏠', description: 'Compra, venta y renta de propiedades', is_active: false },
 ]
-
-const EMPTY_LEAD_FORM = {
-  full_name: '', phone: '', email: '', city: '', state: '',
-  product_interest: '', source: '', campaign_name: '', client_id: '', acquisition_cost: '',
-}
 
 const PROD_BASE_URL = 'https://unlocklead.click'
 
@@ -164,10 +157,7 @@ export default function AdminDashboard() {
   const [campaigns, setCampaigns] = useState([])
   const [campaignForm, setCampaignForm] = useState(EMPTY_CAMPAIGN_FORM)
   const [campaignLoading, setCampaignLoading] = useState(false)
-  const [leadForm, setLeadForm] = useState(EMPTY_LEAD_FORM)
-  const [leadModalOpen, setLeadModalOpen] = useState(false)
   const [loadingData, setLoadingData] = useState(!isMock)
-  const [costEdits, setCostEdits] = useState({})
 
   useEffect(() => {
     if (isMock) return
@@ -244,54 +234,6 @@ export default function AdminDashboard() {
   const unlockRate = totalLeads > 0 ? Math.round((totalUnlocked / totalLeads) * 100) : 0
   const activeCategories = categories.filter(c => c.is_active).length
 
-  function handleLeadFormChange(e) {
-    setLeadForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
-  }
-
-  async function handleCreateLead(e) {
-    e.preventDefault()
-    const client = clients.find(c => c.id === leadForm.client_id)
-    const { data, error } = await supabase.from('leads').insert({
-      full_name: leadForm.full_name,
-      phone: leadForm.phone || null,
-      email: leadForm.email || null,
-      city: leadForm.city || null,
-      state: leadForm.state || null,
-      product_interest: leadForm.product_interest || null,
-      source: leadForm.source || null,
-      campaign_name: leadForm.campaign_name || null,
-      client_id: leadForm.client_id || null,
-      acquisition_cost: leadForm.acquisition_cost ? parseFloat(leadForm.acquisition_cost) : 0,
-      is_locked: true,
-      status: 'new',
-    }).select().single()
-    if (error) { alert('Error al crear lead: ' + error.message); return }
-    setLeads(prev => [{
-      ...data,
-      client_name: client?.company_name || '—',
-      price: Math.max(12, Math.round((data.acquisition_cost || 0) * 3)),
-    }, ...prev])
-    setLeadForm(EMPTY_LEAD_FORM)
-    setLeadModalOpen(false)
-  }
-
-  async function toggleLock(leadId) {
-    const lead = leads.find(l => l.id === leadId)
-    const newLocked = !lead.is_locked
-    await supabase.from('leads').update({ is_locked: newLocked }).eq('id', leadId)
-    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, is_locked: newLocked } : l))
-  }
-
-  async function saveCost(leadId, value) {
-    const cost = parseFloat(value) || 0
-    await supabase.from('leads').update({ acquisition_cost: cost }).eq('id', leadId)
-    setLeads(prev => prev.map(l => l.id === leadId ? {
-      ...l,
-      acquisition_cost: cost,
-      price: Math.max(12, Math.round(cost * 3)),
-    } : l))
-  }
-
   function toggleCategory(categoryId) {
     setCategories(prev => prev.map(c => c.id === categoryId ? { ...c, is_active: !c.is_active } : c))
   }
@@ -321,7 +263,6 @@ export default function AdminDashboard() {
 
   const tabs = [
     { id: 'clients', label: 'Clientes' },
-    { id: 'leads', label: `Leads (${totalLeads})` },
     { id: 'campaigns', label: 'Campañas' },
     { id: 'categories', label: 'Categorías' },
   ]
@@ -349,9 +290,6 @@ export default function AdminDashboard() {
             </div>
             <h1 className="text-2xl font-bold text-slate-900">Administración</h1>
           </div>
-          <Button onClick={() => setLeadModalOpen(true)}>
-            <Plus size={16} /> Crear lead
-          </Button>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -385,65 +323,6 @@ export default function AdminDashboard() {
                 <p className="text-center text-slate-400 text-sm py-12">No hay clientes registrados aún.</p>
               )}
               {clients.map(client => <ClientRow key={client.id} client={client} />)}
-            </div>
-          )}
-
-          {activeTab === 'leads' && (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50">
-                    {['Nombre', 'Ciudad', 'Interés', 'Cliente', 'Costo $', 'Precio $', 'Estado', 'Bloqueo', ''].map(h => (
-                      <th key={h} className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide px-4 py-3">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {leads.map(lead => (
-                    <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-slate-900 text-sm">{lead.full_name}</p>
-                        <p className="text-xs text-slate-400">{lead.email}</p>
-                      </td>
-                      <td className="px-4 py-3 text-slate-500 text-sm">{lead.city || '—'}</td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">{lead.product_interest || '—'}</span>
-                      </td>
-                      <td className="px-4 py-3 text-slate-500 text-sm">{lead.client_name}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
-                          <span className="text-slate-400 text-xs">$</span>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            defaultValue={lead.acquisition_cost || 0}
-                            onBlur={e => saveCost(lead.id, e.target.value)}
-                            className="w-16 px-2 py-1 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-500/20"
-                          />
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm font-semibold text-green-600">${lead.price}</span>
-                      </td>
-                      <td className="px-4 py-3"><StatusBadge status={lead.status} /></td>
-                      <td className="px-4 py-3">
-                        <Badge color={lead.is_locked ? 'yellow' : 'green'}>
-                          {lead.is_locked ? 'Bloqueado' : 'Desbloqueado'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <button onClick={() => toggleLock(lead.id)} className="text-slate-400 hover:text-blue-500 transition-colors p-1" title={lead.is_locked ? 'Desbloquear' : 'Bloquear'}>
-                          {lead.is_locked ? <Unlock size={14} /> : <Lock size={14} />}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {leads.length === 0 && (
-                    <tr><td colSpan={9} className="text-center text-slate-400 text-sm py-12">No hay leads aún.</td></tr>
-                  )}
-                </tbody>
-              </table>
             </div>
           )}
 
@@ -575,74 +454,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <Modal open={leadModalOpen} onClose={() => setLeadModalOpen(false)} title="Crear lead manualmente" size="lg">
-        <form onSubmit={handleCreateLead} className="grid grid-cols-2 gap-4">
-          {[
-            { name: 'full_name', label: 'Nombre completo', required: true },
-            { name: 'phone', label: 'Teléfono' },
-            { name: 'email', label: 'Email', type: 'email' },
-            { name: 'city', label: 'Ciudad' },
-            { name: 'state', label: 'Estado/Provincia' },
-            { name: 'product_interest', label: 'Interés de producto' },
-            { name: 'campaign_name', label: 'Campaña' },
-            { name: 'source', label: 'Fuente' },
-          ].map(({ name, label, type = 'text', required }) => (
-            <div key={name}>
-              <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
-              <input
-                type={type}
-                name={name}
-                required={required}
-                value={leadForm[name]}
-                onChange={handleLeadFormChange}
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400"
-              />
-            </div>
-          ))}
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Costo de adquisición ($)</label>
-            <input
-              type="number"
-              name="acquisition_cost"
-              min="0"
-              step="0.01"
-              placeholder="0.00"
-              value={leadForm.acquisition_cost}
-              onChange={handleLeadFormChange}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400"
-            />
-            {leadForm.acquisition_cost && (
-              <p className="text-xs text-green-600 mt-1">
-                Precio al cliente: ${Math.max(12, Math.round(parseFloat(leadForm.acquisition_cost) * 3))}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Asignar a cliente</label>
-            <select
-              name="client_id"
-              required
-              value={leadForm.client_id}
-              onChange={handleLeadFormChange}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400"
-            >
-              <option value="">Seleccionar cliente</option>
-              {clients.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.company_name && c.company_name !== '(sin nombre)' ? `${c.company_name} — ${c.email}` : c.email || c.id}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="col-span-2 flex gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={() => setLeadModalOpen(false)} className="flex-1">Cancelar</Button>
-            <Button type="submit" className="flex-1">Crear lead</Button>
-          </div>
-        </form>
-      </Modal>
     </DashboardLayout>
   )
 }

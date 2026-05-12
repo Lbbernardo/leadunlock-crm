@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Zap, CheckCircle, ArrowRight, Lock, Unlock, BarChart3, Shield, Clock, RotateCcw, Users, Menu, X } from 'lucide-react'
+import { Unlock, CheckCircle, ArrowRight, Lock, BarChart3, Shield, Clock, RotateCcw, Users, Menu, X } from 'lucide-react'
 
 function Navbar() {
   const [open, setOpen] = useState(false)
@@ -9,7 +9,7 @@ function Navbar() {
       <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Zap size={16} className="text-white" />
+            <Unlock size={16} className="text-white" />
           </div>
           <span className="font-bold text-white text-lg">LeadUnlock</span>
         </div>
@@ -99,7 +99,7 @@ function Hero() {
 function HowItWorks() {
   const steps = [
     {
-      icon: Zap,
+      icon: Unlock,
       step: '01',
       title: 'Creamos tu campaña personalizada',
       desc: 'Diseñamos y lanzamos una campaña de Meta Ads hecha a la medida de tu negocio. Tú no tienes que hacer nada técnico — nosotros nos encargamos.',
@@ -200,7 +200,7 @@ function ActivationModel() {
 
 function Features() {
   const features = [
-    { icon: Zap, title: 'Campaña hecha para ti', desc: 'Nosotros creamos y gestionamos tu campaña de Meta Ads según tu negocio, tu nicho y tu audiencia.' },
+    { icon: Unlock, title: 'Campaña hecha para ti', desc: 'Nosotros creamos y gestionamos tu campaña de Meta Ads según tu negocio, tu nicho y tu audiencia.' },
     { icon: BarChart3, title: 'Todo en un dashboard', desc: 'Ve todos tus leads en un solo lugar. Filtra por estado, fecha o campaña.' },
     { icon: Shield, title: 'Contactos protegidos', desc: 'El teléfono y email de cada lead solo se revelan cuando decides abrirlo.' },
     { icon: Users, title: 'Seguimiento fácil', desc: 'Agrega notas, cambia el estado y lleva un historial completo de cada contacto.' },
@@ -309,7 +309,7 @@ function Footer() {
       <div className="max-w-6xl mx-auto px-5 flex flex-col items-center gap-4 md:flex-row md:justify-between">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 bg-green-500 rounded-lg flex items-center justify-center">
-            <Zap size={14} className="text-white" />
+            <Unlock size={14} className="text-white" />
           </div>
           <span className="font-bold text-white">LeadUnlock</span>
         </div>
