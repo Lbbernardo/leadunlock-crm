@@ -16,22 +16,37 @@ import Onboarding from './pages/onboarding/Onboarding'
 import Privacy from './pages/Privacy'
 import ResetPassword from './pages/auth/ResetPassword'
 
+const Spinner = () => (
+  <div className="min-h-screen flex items-center justify-center bg-slate-950">
+    <div className="flex flex-col items-center gap-3">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400" />
+      <p className="text-slate-400 text-sm">Cargando...</p>
+    </div>
+  </div>
+)
+
 function ProtectedRoute({ children, adminOnly = false }) {
   const { user, profile, loading } = useAuth()
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950">
-        <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-400" />
-          <p className="text-slate-400 text-sm">Cargando...</p>
-        </div>
-      </div>
-    )
-  }
-
+  if (loading) return <Spinner />
   if (!user) return <Navigate to="/login" replace />
   if (adminOnly && profile?.role !== 'admin') return <Navigate to="/dashboard" replace />
+
+  return children
+}
+
+// Solo para rutas del dashboard de clientes — requiere cuenta activa
+function ClientRoute({ children }) {
+  const { user, profile, clientData, loading } = useAuth()
+
+  if (loading) return <Spinner />
+  if (!user) return <Navigate to="/login" replace />
+
+  const isAdmin = profile?.role === 'admin'
+  if (isAdmin) return <Navigate to="/admin" replace />
+
+  const status = clientData?.status
+  if (status === 'pending' || !status) return <Navigate to="/onboarding" replace />
 
   return children
 }
@@ -52,11 +67,11 @@ export default function App() {
           <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
           <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><ClientDashboard /></ProtectedRoute>} />
-          <Route path="/dashboard/leads/:id" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
-          <Route path="/dashboard/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
-          <Route path="/dashboard/help" element={<ProtectedRoute><Help /></ProtectedRoute>} />
-          <Route path="/dashboard/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ClientRoute><ClientDashboard /></ClientRoute>} />
+          <Route path="/dashboard/leads/:id" element={<ClientRoute><LeadDetail /></ClientRoute>} />
+          <Route path="/dashboard/billing" element={<ClientRoute><Billing /></ClientRoute>} />
+          <Route path="/dashboard/help" element={<ClientRoute><Help /></ClientRoute>} />
+          <Route path="/dashboard/profile" element={<ClientRoute><Profile /></ClientRoute>} />
           <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/finanzas" element={<ProtectedRoute adminOnly><AdminFinanzas /></ProtectedRoute>} />
           <Route path="/admin/manual" element={<ProtectedRoute adminOnly><Manual /></ProtectedRoute>} />
