@@ -49,6 +49,10 @@ function ClientRow({ client, onRefresh }) {
   const [editMode, setEditMode] = useState(false)
   const [editForm, setEditForm] = useState({})
   const [saving, setSaving] = useState(false)
+  const [creditAmount, setCreditAmount] = useState('')
+  const [creditLoading, setCreditLoading] = useState(false)
+  const [creditMsg, setCreditMsg] = useState(null)
+  const [currentBalance, setCurrentBalance] = useState(client.balance)
 
   const statusColor = { active: 'green', pending: 'yellow', paused: 'slate' }[client.status] || 'slate'
   const statusLabel = { active: 'Activo', pending: 'Pendiente', paused: 'Pausado' }[client.status] || client.status
@@ -108,6 +112,33 @@ function ClientRow({ client, onRefresh }) {
   async function handleToggleLock(leadId, currentLocked) {
     await supabase.from('leads').update({ is_locked: !currentLocked }).eq('id', leadId)
     setClientLeads(prev => prev.map(l => l.id === leadId ? { ...l, is_locked: !currentLocked } : l))
+  }
+
+  async function handleAddCredit(e) {
+    e.stopPropagation()
+    const amount = parseFloat(creditAmount)
+    if (!amount || amount <= 0) return
+    setCreditLoading(true)
+    setCreditMsg(null)
+    try {
+      const res = await fetch('/api/admin/add-credit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId: client.id, amount }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setCurrentBalance(data.new_balance)
+        setCreditAmount('')
+        setCreditMsg({ type: 'ok', text: `+$${amount} agregado. Nuevo saldo: $${data.new_balance}` })
+      } else {
+        setCreditMsg({ type: 'err', text: data.error || 'Error al agregar crédito' })
+      }
+    } catch {
+      setCreditMsg({ type: 'err', text: 'Error de conexión' })
+    }
+    setCreditLoading(false)
+    setTimeout(() => setCreditMsg(null), 4000)
   }
 
   return (
@@ -281,6 +312,93 @@ function ClientRow({ client, onRefresh }) {
             </div>
           </div>
 
+          {/* Gestión de crédito */}
+          <div className="px-6 py-5 border-t border-slate-200 bg-slate-50/50">
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Estado del crédito */}
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Crédito de cuenta</p>
+                <div className="flex items-end gap-4 mb-3">
+                  <div>
+                    <p className="text-xs text-slate-400 mb-0.5">Saldo disponible</p>
+                    <p className={`text-2xl font-bold ${currentBalance > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      ${currentBalance.toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400 mb-0.5">Leads disponibles</p>
+                    <p className="text-2xl font-bold text-slate-700">
+                      {Math.floor(currentBalance / (client.lead_price || 20))}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400 mb-0.5">Precio por lead</p>
+                    <p className="text-lg font-semibold text-slate-600">${client.lead_price || 20}</p>
+                  </div>
+                </div>
+                {/* Progress toward $1,000 / 50 leads */}
+                <div>
+                  <div className="flex justify-between text-xs text-slate-400 mb-1">
+                    <span>Consumido: ${client.revenue.toLocaleString()} de $1,000</span>
+                    <span>{client.leads_unlocked} de 50 leads</span>
+                  </div>
+                  <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-green-500 rounded-full transition-all"
+                      style={{ width: `${Math.min(100, (client.revenue / 1000) * 100)}%` }}
+                    />
+                  </div>
+                  {client.revenue >= 1000 || client.leads_unlocked >= 50 ? (
+                    <p className="text-xs text-green-600 font-semibold mt-1">Meta alcanzada</p>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Agregar crédito */}
+              <div>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Agregar crédito</p>
+                <div className="flex gap-2 mb-2">
+                  {[100, 200, 500, 1000].map(preset => (
+                    <button
+                      key={preset}
+                      onClick={e => { e.stopPropagation(); setCreditAmount(String(preset)) }}
+                      className={`px-3 py-1.5 text-xs rounded-lg border font-medium transition-colors ${
+                        creditAmount === String(preset)
+                          ? 'bg-green-500 text-white border-green-500'
+                          : 'border-slate-200 text-slate-600 hover:border-green-400 hover:text-green-600 bg-white'
+                      }`}
+                    >
+                      ${preset}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Otro monto..."
+                    value={creditAmount}
+                    onChange={e => setCreditAmount(e.target.value)}
+                    onClick={e => e.stopPropagation()}
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-green-400 bg-white"
+                  />
+                  <button
+                    onClick={handleAddCredit}
+                    disabled={creditLoading || !creditAmount}
+                    className="px-4 py-2 bg-green-500 hover:bg-green-600 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-colors"
+                  >
+                    {creditLoading ? '…' : '+ Agregar'}
+                  </button>
+                </div>
+                {creditMsg && (
+                  <p className={`text-xs mt-2 font-medium ${creditMsg.type === 'ok' ? 'text-green-600' : 'text-red-500'}`}>
+                    {creditMsg.text}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Historial de leads */}
           <div className="px-6 py-5">
             <div className="flex items-center justify-between mb-4">
@@ -432,6 +550,8 @@ export default function AdminDashboard() {
             leads_unlocked: clientUnlocks.length,
             revenue,
             total_cost,
+            balance: c.balance || 0,
+            lead_price: c.lead_price || 20,
             created_at: c.created_at,
           }
         })

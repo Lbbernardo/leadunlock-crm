@@ -52,6 +52,19 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }
 
+  async function refreshProfile() {
+    if (!user?.id) return
+    const { data } = await supabase
+      .from('users')
+      .select('*, clients(*)')
+      .eq('id', user.id)
+      .single()
+    if (data) {
+      if (data.clients && !Array.isArray(data.clients)) data.clients = [data.clients]
+      setProfile(data)
+    }
+  }
+
   const signIn = IS_MOCK
     ? async () => ({ error: null })
     : (email, password) => supabase.auth.signInWithPassword({ email, password })
@@ -77,7 +90,7 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider value={{
       user, profile, isAdmin, clientId, clientData, loading,
-      signIn, signUp, signOut, resetPassword, isMock: IS_MOCK,
+      signIn, signUp, signOut, resetPassword, refreshProfile, isMock: IS_MOCK,
     }}>
       {children}
     </AuthContext.Provider>
