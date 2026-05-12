@@ -11,6 +11,7 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
 
 const DISCOUNT_CODES = {
   'PRUEBA100': { pct: 100, label: '100% de descuento (modo prueba)' },
+  'TEST90':    { pct: 90,  label: '90% de descuento — Prueba interna' },
   'WELCOME50': { pct: 50,  label: '50% de descuento — Bienvenida' },
   'PARTNER25': { pct: 25,  label: '25% de descuento — Partner' },
 }
