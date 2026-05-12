@@ -252,6 +252,19 @@ function Step2({ data, onChange, onNext, onBack }) {
       </div>
 
       <div>
+        <label className="block text-sm font-medium text-slate-300 mb-2">
+          ¿En qué estado(s) quieres vender?
+          <span className="text-slate-500 font-normal ml-1 text-xs">Preferiblemente donde tengas tu licencia</span>
+        </label>
+        <input
+          value={data.targetState}
+          onChange={e => onChange({ ...data, targetState: e.target.value })}
+          placeholder="Ej: Florida, Texas, California"
+          className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+        />
+      </div>
+
+      <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">¿Cuántos leads necesitas al mes?</label>
         <input
           type="number"
@@ -575,7 +588,7 @@ function Step4({ data }) {
 const EMPTY = {
   companyName: '', categories: [], city: '', phone: '',
   productDescription: '', targetAudience: '', leadsPerMonth: '',
-  budget: '', goal: '',
+  budget: '', goal: '', targetState: '',
 }
 
 function OnboardingContent() {
@@ -600,6 +613,7 @@ function OnboardingContent() {
           leads_per_month: data.leadsPerMonth ? parseInt(data.leadsPerMonth) : null,
           budget: data.budget,
           goal: data.goal,
+          target_state: data.targetState || null,
           categories: categoryLabels,
           status: 'active',
         })

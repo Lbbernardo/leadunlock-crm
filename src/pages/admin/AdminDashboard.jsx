@@ -68,6 +68,8 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
         budget: client.budget || '',
         goal: client.goal || '',
         target_audience: client.target_audience || '',
+        product_description: client.product_description || '',
+        target_state: client.target_state || '',
       })
       setTimeout(() => rowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300)
     }
@@ -100,6 +102,8 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
         budget: client.budget || '',
         goal: client.goal || '',
         target_audience: client.target_audience || '',
+        product_description: client.product_description || '',
+        target_state: client.target_state || '',
       })
     }
     setExpanded(e => !e)
@@ -116,6 +120,8 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
       budget: editForm.budget || null,
       goal: editForm.goal || null,
       target_audience: editForm.target_audience || null,
+      product_description: editForm.product_description || null,
+      target_state: editForm.target_state || null,
     }).eq('id', client.id)
     setSaving(false)
     setEditMode(false)
@@ -293,6 +299,26 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
               {editMode ? (
                 <div className="space-y-2">
                   <div>
+                    <label className="text-xs text-slate-400 block mb-1">Producto / servicio</label>
+                    <textarea
+                      rows={2}
+                      value={editForm.product_description || ''}
+                      onChange={e => setEditForm(p => ({ ...p, product_description: e.target.value }))}
+                      onClick={e => e.stopPropagation()}
+                      className="w-full px-2 py-1 text-xs border border-slate-300 rounded-lg resize-none focus:outline-none focus:border-green-400 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Estado(s) de venta</label>
+                    <input
+                      value={editForm.target_state || ''}
+                      onChange={e => setEditForm(p => ({ ...p, target_state: e.target.value }))}
+                      onClick={e => e.stopPropagation()}
+                      placeholder="Ej. Florida, Texas"
+                      className="w-full px-2 py-1 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-green-400 bg-white"
+                    />
+                  </div>
+                  <div>
                     <label className="text-xs text-slate-400 block mb-1">Objetivo</label>
                     <textarea
                       rows={2}
@@ -315,6 +341,14 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
                 </div>
               ) : (
                 <>
+                  <div className="mb-2">
+                    <p className="text-xs text-slate-400 mb-0.5">Producto / servicio</p>
+                    <p className="text-xs text-slate-900 leading-relaxed">{client.product_description || '—'}</p>
+                  </div>
+                  <div className="mb-2">
+                    <p className="text-xs text-slate-400 mb-0.5">Estado(s) de venta</p>
+                    <p className="text-xs text-slate-900">{client.target_state || '—'}</p>
+                  </div>
                   <div className="mb-2">
                     <p className="text-xs text-slate-400 mb-0.5">Objetivo</p>
                     <p className="text-xs text-slate-900">{client.goal || '—'}</p>
@@ -596,7 +630,7 @@ export default function AdminDashboard() {
     setLoadingData(true)
     try {
       const [{ data: clientsData }, { data: usersData }, { data: leadsData }, { data: unlocksData }] = await Promise.all([
-        supabase.from('clients').select('id, company_name, lead_price, balance, created_at, user_id, phone, city, categories, budget, leads_per_month, target_audience, goal, status').order('created_at', { ascending: false }),
+        supabase.from('clients').select('id, company_name, lead_price, balance, created_at, user_id, phone, city, categories, budget, leads_per_month, target_audience, goal, product_description, target_state, status').order('created_at', { ascending: false }),
         supabase.from('users').select('id, email, full_name, role'),
         supabase.from('leads').select('id, full_name, email, phone, city, product_interest, is_locked, status, created_at, client_id, acquisition_cost').order('created_at', { ascending: false }).limit(1000),
         supabase.from('lead_unlocks').select('id, client_id, amount_paid'),
@@ -624,6 +658,8 @@ export default function AdminDashboard() {
             leads_per_month: c.leads_per_month || 0,
             target_audience: c.target_audience || '',
             goal: c.goal || '',
+            product_description: c.product_description || '',
+            target_state: c.target_state || '',
             status: c.status || 'pending',
             leads_total: clientLeads.length,
             leads_unlocked: clientUnlocks.length,
