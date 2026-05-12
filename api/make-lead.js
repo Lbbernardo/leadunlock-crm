@@ -10,6 +10,26 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY,
 )
 
+async function sendEmail(subject, html) {
+  if (!process.env.RESEND_API_KEY || !process.env.ADMIN_EMAIL) return
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'LeadUnlock <onboarding@resend.dev>',
+      to: process.env.ADMIN_EMAIL,
+      subject,
+      html,
+    }),
+  }).then(r => r.json()).then(d => {
+    if (d.id) console.log('Email enviado:', d.id)
+    else console.error('Email error:', JSON.stringify(d))
+  }).catch(e => console.error('Email fetch error:', e.message))
+}
+
 async function sendSMS(to, message) {
   if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_PHONE_NUMBER) {
     console.error('SMS: faltan credenciales Twilio')
@@ -116,11 +136,23 @@ export default async function handler(req, res) {
     await sendSMS(client.phone, msg)
   }
 
-  // Notificación al admin
+  // Notificación al admin — SMS
   if (process.env.ADMIN_PHONE) {
     const adminMsg = `LeadUnlock — Lead nuevo\nCliente: ${clientLabel}\nNombre: ${maskedName.trim()}\n\nunlocklead.click/admin`
     await sendSMS(process.env.ADMIN_PHONE, adminMsg)
   }
+
+  // Notificación al admin — Email
+  await sendEmail(
+    `Lead nuevo — ${clientLabel}`,
+    `<div style="font-family:sans-serif;max-width:480px;margin:auto;padding:24px;border:1px solid #e2e8f0;border-radius:12px">
+      <h2 style="color:#16a34a;margin:0 0 16px">🔔 Lead nuevo</h2>
+      <p style="margin:0 0 8px;color:#475569"><strong>Cliente:</strong> ${clientLabel}</p>
+      <p style="margin:0 0 8px;color:#475569"><strong>Nombre:</strong> ${full_name}</p>
+      <p style="margin:0 0 24px;color:#475569"><strong>Fuente:</strong> Meta Ads</p>
+      <a href="https://unlocklead.click/admin" style="background:#16a34a;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">Ver en el dashboard</a>
+    </div>`
+  )
 
   return res.status(201).json({ success: true })
 }
