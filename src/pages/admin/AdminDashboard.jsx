@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Users, TrendingUp, DollarSign, Edit2, Zap, ToggleLeft, ToggleRight, Copy, Check, Trash2, Link } from 'lucide-react'
+import { Users, TrendingUp, DollarSign, Edit2, Zap, ToggleLeft, ToggleRight, Copy, Check, Trash2, Link, ChevronDown, Lock, Unlock, RefreshCw } from 'lucide-react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
-import { Badge } from '../../components/ui/Badge'
+import { Badge, StatusBadge } from '../../components/ui/Badge'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 
@@ -38,15 +38,77 @@ function CopyWebhook({ clientId }) {
   )
 }
 
-function ClientRow({ client }) {
+function ClientRow({ client, onRefresh }) {
   const [expanded, setExpanded] = useState(false)
+  const [clientLeads, setClientLeads] = useState([])
+  const [loadingLeads, setLoadingLeads] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [editForm, setEditForm] = useState({})
+  const [saving, setSaving] = useState(false)
+
   const statusColor = { active: 'green', pending: 'yellow', paused: 'slate' }[client.status] || 'slate'
   const statusLabel = { active: 'Activo', pending: 'Pendiente', paused: 'Pausado' }[client.status] || client.status
   const unlockRate = client.leads_total > 0 ? Math.round((client.leads_unlocked / client.leads_total) * 100) : 0
 
+  async function fetchLeads() {
+    setLoadingLeads(true)
+    const { data } = await supabase
+      .from('leads')
+      .select('*')
+      .eq('client_id', client.id)
+      .order('created_at', { ascending: false })
+    if (data) setClientLeads(data)
+    setLoadingLeads(false)
+  }
+
+  function handleExpand() {
+    if (!expanded) {
+      fetchLeads()
+      setEditForm({
+        company_name: client.company_name !== '(sin nombre)' ? client.company_name : '',
+        phone: client.phone || '',
+        city: client.city || '',
+        status: client.status || 'pending',
+        leads_per_month: client.leads_per_month || '',
+        budget: client.budget || '',
+        goal: client.goal || '',
+        target_audience: client.target_audience || '',
+      })
+    }
+    setExpanded(e => !e)
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    await supabase.from('clients').update({
+      company_name: editForm.company_name || null,
+      phone: editForm.phone || null,
+      city: editForm.city || null,
+      status: editForm.status,
+      leads_per_month: editForm.leads_per_month ? parseInt(editForm.leads_per_month) : null,
+      budget: editForm.budget || null,
+      goal: editForm.goal || null,
+      target_audience: editForm.target_audience || null,
+    }).eq('id', client.id)
+    setSaving(false)
+    setEditMode(false)
+    onRefresh()
+  }
+
+  async function handleDeleteLead(leadId) {
+    if (!confirm('¿Eliminar este lead permanentemente?')) return
+    await supabase.from('leads').delete().eq('id', leadId)
+    setClientLeads(prev => prev.filter(l => l.id !== leadId))
+  }
+
+  async function handleToggleLock(leadId, currentLocked) {
+    await supabase.from('leads').update({ is_locked: !currentLocked }).eq('id', leadId)
+    setClientLeads(prev => prev.map(l => l.id === leadId ? { ...l, is_locked: !currentLocked } : l))
+  }
+
   return (
     <div>
-      <div className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 cursor-pointer transition-colors" onClick={() => setExpanded(e => !e)}>
+      <div className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 cursor-pointer transition-colors" onClick={handleExpand}>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-slate-900 text-sm">{client.company_name}</p>
           <p className="text-xs text-slate-500">{client.email}{client.city ? ` · ${client.city}` : ''}</p>
@@ -74,56 +136,216 @@ function ClientRow({ client }) {
           <p className="font-semibold text-green-600 text-sm">${client.revenue}</p>
         </div>
         <Badge color={statusColor}>{statusLabel}</Badge>
-        <Edit2 size={14} className={`text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+        <ChevronDown size={14} className={`text-slate-400 transition-transform flex-shrink-0 ${expanded ? 'rotate-180' : ''}`} />
       </div>
 
       {expanded && (
-        <div className="bg-slate-50 border-t border-slate-100 px-6 py-5 grid md:grid-cols-3 gap-6">
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Información de contacto</p>
-            {[
-              ['Email', client.email],
-              ['Teléfono', client.phone || '—'],
-              ['Ciudad', client.city || '—'],
-              ['Leads/mes solicitados', client.leads_per_month || '—'],
-              ['Presupuesto campaña', client.budget || '—'],
-            ].map(([label, val]) => (
-              <div key={label} className="flex justify-between text-sm">
-                <span className="text-slate-500">{label}</span>
-                <span className="font-medium text-slate-900 text-right ml-4">{val}</span>
-              </div>
-            ))}
-          </div>
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Métricas</p>
-            {[
-              ['Total leads', client.leads_total],
-              ['Desbloqueados', client.leads_unlocked],
-              ['Bloqueados', client.leads_total - client.leads_unlocked],
-              ['Tasa conversión', `${unlockRate}%`],
-              ['Ingresos leads', `$${client.revenue}`],
-              ['Costo adquisición', `$${client.total_cost.toFixed(2)}`],
-              ['Utilidad neta', `$${(client.revenue - client.total_cost).toFixed(2)}`],
-            ].map(([label, val]) => (
-              <div key={label} className="flex justify-between text-sm">
-                <span className="text-slate-500">{label}</span>
-                <span className="font-medium text-slate-900">{val}</span>
-              </div>
-            ))}
-          </div>
-          <div className="space-y-3">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Campaña & Webhook</p>
+        <div className="bg-slate-50 border-t border-slate-200">
+          {/* Info + Métricas + Webhook */}
+          <div className="px-6 py-5 grid md:grid-cols-3 gap-6 border-b border-slate-200">
+            {/* Col 1: Info editable */}
             <div>
-              <p className="text-xs text-slate-500 mb-1">Objetivo</p>
-              <p className="text-sm text-slate-900">{client.goal || '—'}</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Cuenta</p>
+                {!editMode
+                  ? <button onClick={e => { e.stopPropagation(); setEditMode(true) }} className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 font-medium">
+                      <Edit2 size={10} /> Editar
+                    </button>
+                  : <div className="flex gap-3">
+                      <button onClick={() => setEditMode(false)} className="text-xs text-slate-400 hover:text-slate-600">Cancelar</button>
+                      <button onClick={handleSave} disabled={saving} className="text-xs text-green-600 hover:text-green-700 font-semibold">
+                        {saving ? 'Guardando…' : 'Guardar'}
+                      </button>
+                    </div>
+                }
+              </div>
+              {editMode ? (
+                <div className="space-y-2">
+                  {[
+                    { label: 'Empresa', key: 'company_name' },
+                    { label: 'Teléfono', key: 'phone' },
+                    { label: 'Ciudad', key: 'city' },
+                    { label: 'Leads/mes', key: 'leads_per_month', type: 'number' },
+                    { label: 'Presupuesto', key: 'budget' },
+                  ].map(({ label, key, type = 'text' }) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <span className="text-xs text-slate-400 w-20 flex-shrink-0">{label}</span>
+                      <input
+                        type={type}
+                        value={editForm[key] || ''}
+                        onChange={e => setEditForm(p => ({ ...p, [key]: e.target.value }))}
+                        onClick={e => e.stopPropagation()}
+                        className="flex-1 px-2 py-1 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-green-400 bg-white"
+                      />
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400 w-20 flex-shrink-0">Estado</span>
+                    <select
+                      value={editForm.status}
+                      onChange={e => setEditForm(p => ({ ...p, status: e.target.value }))}
+                      onClick={e => e.stopPropagation()}
+                      className="flex-1 px-2 py-1 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-green-400 bg-white"
+                    >
+                      <option value="active">Activo</option>
+                      <option value="pending">Pendiente</option>
+                      <option value="paused">Pausado</option>
+                    </select>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {[
+                    ['Email', client.email],
+                    ['Teléfono', client.phone || '—'],
+                    ['Ciudad', client.city || '—'],
+                    ['Leads/mes', client.leads_per_month || '—'],
+                    ['Presupuesto', client.budget || '—'],
+                    ['Estado', statusLabel],
+                  ].map(([label, val]) => (
+                    <div key={label} className="flex justify-between">
+                      <span className="text-xs text-slate-400">{label}</span>
+                      <span className="text-xs font-medium text-slate-900 text-right ml-4 max-w-[60%] truncate">{val}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* Col 2: Métricas financieras */}
             <div>
-              <p className="text-xs text-slate-500 mb-1">Audiencia objetivo</p>
-              <p className="text-sm text-slate-900 leading-relaxed">{client.target_audience || '—'}</p>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Métricas</p>
+              <div className="space-y-1.5">
+                {[
+                  ['Total leads', client.leads_total],
+                  ['Desbloqueados', client.leads_unlocked],
+                  ['Bloqueados', client.leads_total - client.leads_unlocked],
+                  ['Conversión', `${unlockRate}%`],
+                  ['Ingresos leads', `$${client.revenue}`],
+                  ['Costo adquisición', `$${client.total_cost.toFixed(2)}`],
+                  ['Utilidad neta', `$${(client.revenue - client.total_cost).toFixed(2)}`],
+                ].map(([label, val]) => (
+                  <div key={label} className="flex justify-between">
+                    <span className="text-xs text-slate-400">{label}</span>
+                    <span className="text-xs font-medium text-slate-900">{val}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="pt-3 border-t border-slate-200">
-              <CopyWebhook clientId={client.id} />
+
+            {/* Col 3: Campaña + Webhook */}
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Campaña & Webhook</p>
+              {editMode ? (
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Objetivo</label>
+                    <textarea
+                      rows={2}
+                      value={editForm.goal || ''}
+                      onChange={e => setEditForm(p => ({ ...p, goal: e.target.value }))}
+                      onClick={e => e.stopPropagation()}
+                      className="w-full px-2 py-1 text-xs border border-slate-300 rounded-lg resize-none focus:outline-none focus:border-green-400 bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400 block mb-1">Audiencia objetivo</label>
+                    <textarea
+                      rows={3}
+                      value={editForm.target_audience || ''}
+                      onChange={e => setEditForm(p => ({ ...p, target_audience: e.target.value }))}
+                      onClick={e => e.stopPropagation()}
+                      className="w-full px-2 py-1 text-xs border border-slate-300 rounded-lg resize-none focus:outline-none focus:border-green-400 bg-white"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-2">
+                    <p className="text-xs text-slate-400 mb-0.5">Objetivo</p>
+                    <p className="text-xs text-slate-900">{client.goal || '—'}</p>
+                  </div>
+                  <div className="mb-3">
+                    <p className="text-xs text-slate-400 mb-0.5">Audiencia objetivo</p>
+                    <p className="text-xs text-slate-900 leading-relaxed">{client.target_audience || '—'}</p>
+                  </div>
+                </>
+              )}
+              <div className="pt-3 border-t border-slate-200">
+                <CopyWebhook clientId={client.id} />
+              </div>
             </div>
+          </div>
+
+          {/* Historial de leads */}
+          <div className="px-6 py-5">
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">
+                Historial de leads ({clientLeads.length})
+              </p>
+              <button
+                onClick={e => { e.stopPropagation(); fetchLeads() }}
+                className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <RefreshCw size={11} /> Actualizar
+              </button>
+            </div>
+
+            {loadingLeads ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-500" />
+              </div>
+            ) : clientLeads.length === 0 ? (
+              <p className="text-center text-slate-400 text-sm py-8">No hay leads para esta cuenta.</p>
+            ) : (
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full bg-white text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100">
+                      {['Nombre', 'Teléfono', 'Email', 'Ciudad', 'Interés', 'Status', 'Bloqueo', 'Fecha', ''].map(h => (
+                        <th key={h} className="text-left font-semibold text-slate-400 uppercase tracking-wide px-3 py-2.5">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {clientLeads.map(lead => (
+                      <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-3 py-2.5 font-medium text-slate-900">{lead.full_name}</td>
+                        <td className="px-3 py-2.5 text-slate-500">{lead.phone || '—'}</td>
+                        <td className="px-3 py-2.5 text-slate-500">{lead.email || '—'}</td>
+                        <td className="px-3 py-2.5 text-slate-500">{lead.city || '—'}</td>
+                        <td className="px-3 py-2.5">
+                          {lead.product_interest
+                            ? <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full font-medium">{lead.product_interest}</span>
+                            : <span className="text-slate-300">—</span>}
+                        </td>
+                        <td className="px-3 py-2.5"><StatusBadge status={lead.status} /></td>
+                        <td className="px-3 py-2.5">
+                          <button
+                            onClick={e => { e.stopPropagation(); handleToggleLock(lead.id, lead.is_locked) }}
+                            className={`flex items-center gap-1 px-2 py-0.5 rounded-full font-medium transition-colors ${lead.is_locked ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
+                          >
+                            {lead.is_locked ? <><Lock size={10} /> Bloqueado</> : <><Unlock size={10} /> Libre</>}
+                          </button>
+                        </td>
+                        <td className="px-3 py-2.5 text-slate-400">
+                          {new Date(lead.created_at).toLocaleDateString('es-MX', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <button
+                            onClick={e => { e.stopPropagation(); handleDeleteLead(lead.id) }}
+                            className="text-slate-300 hover:text-red-500 transition-colors p-1"
+                            title="Eliminar lead"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -322,7 +544,7 @@ export default function AdminDashboard() {
               {clients.length === 0 && (
                 <p className="text-center text-slate-400 text-sm py-12">No hay clientes registrados aún.</p>
               )}
-              {clients.map(client => <ClientRow key={client.id} client={client} />)}
+              {clients.map(client => <ClientRow key={client.id} client={client} onRefresh={fetchData} />)}
             </div>
           )}
 
