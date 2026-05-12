@@ -1,6 +1,7 @@
 // POST /api/make-lead
 // Recibe lead_id y form_id desde Make, obtiene datos de Facebook Graph API,
-// enruta al cliente correcto por meta_form_id en campaigns.
+// enruta al cliente correcto por meta_form_id en campaigns,
+// y envía notificación WhatsApp al cliente via Twilio.
 
 import { createClient } from '@supabase/supabase-js'
 
@@ -8,6 +9,33 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
 )
+
+async function sendWhatsApp(to, message) {
+  if (!to) return
+  const phone = to.replace(/\D/g, '')
+  if (phone.length < 10) return
+
+  const from = 'whatsapp:+14155238886'
+  const toFormatted = `whatsapp:+${phone.startsWith('1') ? phone : '1' + phone}`
+
+  const body = new URLSearchParams({
+    From: from,
+    To: toFormatted,
+    Body: message,
+  })
+
+  await fetch(
+    `https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_ACCOUNT_SID}/Messages.json`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: 'Basic ' + Buffer.from(`${process.env.TWILIO_ACCOUNT_SID}:${process.env.TWILIO_AUTH_TOKEN}`).toString('base64'),
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: body.toString(),
+    }
+  )
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -70,6 +98,18 @@ export default async function handler(req, res) {
   if (error) {
     console.error('Lead insert error:', error)
     return res.status(500).json({ error: 'Failed to create lead' })
+  }
+
+  // Fetch client phone for WhatsApp notification
+  const { data: client } = await supabase
+    .from('clients')
+    .select('phone, company_name')
+    .eq('id', campaign.client_id)
+    .single()
+
+  if (client?.phone) {
+    const msg = `LeadUnlock: Nuevo lead recibido!\nNombre: ${full_name}\nTel: ${fields.phone_number || fields.phone || 'N/A'}\nEmail: ${fields.email || 'N/A'}\nVe a unlocklead.click para verlo.`
+    await sendWhatsApp(client.phone, msg)
   }
 
   return res.status(201).json({ success: true })
