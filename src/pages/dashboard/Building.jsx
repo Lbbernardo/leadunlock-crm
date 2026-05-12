@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CheckCircle, Clock, Zap } from 'lucide-react'
+import { CheckCircle, Clock, Zap, LogOut } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 
@@ -12,17 +12,17 @@ const STEPS = [
 ]
 
 export default function Building() {
-  const { clientId, isMock } = useAuth()
+  const { clientId, clientData, profile, signOut, isMock } = useAuth()
   const navigate = useNavigate()
   const [dots, setDots] = useState('.')
 
-  // Animar los puntos
+  const firstName = (profile?.full_name || clientData?.company_name || '').split(' ')[0]
+
   useEffect(() => {
     const t = setInterval(() => setDots(d => d.length >= 3 ? '.' : d + '.'), 600)
     return () => clearInterval(t)
   }, [])
 
-  // Verificar si la campaña ya tiene form ID — se revisa cada 15 segundos
   useEffect(() => {
     if (isMock) { navigate('/dashboard', { replace: true }); return }
     if (!clientId) return
@@ -45,8 +45,13 @@ export default function Building() {
     return () => clearInterval(interval)
   }, [clientId, isMock, navigate])
 
+  async function handleSignOut() {
+    await signOut()
+    navigate('/login', { replace: true })
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-md">
 
         {/* Logo */}
@@ -71,19 +76,22 @@ export default function Building() {
           </div>
         </div>
 
-        {/* Texto principal */}
+        {/* Saludo + mensaje */}
         <div className="text-center mb-10">
+          {firstName && (
+            <p className="text-green-400 font-semibold text-lg mb-1">Hola, {firstName} 👋</p>
+          )}
           <h1 className="text-2xl font-bold text-white mb-3">
-            Estamos construyendo tus campañas y tu sistema{dots}
+            Estamos trabajando para ti{dots}
           </h1>
           <p className="text-slate-400 text-sm leading-relaxed">
-            Nuestro equipo está configurando tu campaña en Meta Ads y conectando tu sistema de leads.
-            Esta página se actualizará automáticamente cuando todo esté listo.
+            Te avisamos cuando todo esté listo. Vuelve pronto — esta página
+            se actualiza automáticamente.
           </p>
         </div>
 
         {/* Timeline de pasos */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 mb-6">
           {STEPS.map((step, i) => (
             <div key={i} className="flex items-center gap-4">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
@@ -109,9 +117,18 @@ export default function Building() {
           ))}
         </div>
 
-        <p className="text-center text-xs text-slate-600 mt-6">
+        <p className="text-center text-xs text-slate-600 mb-8">
           Verificando automáticamente cada 15 segundos
         </p>
+
+        {/* Cerrar sesión */}
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-800 text-slate-500 hover:text-slate-300 hover:border-slate-600 transition-colors text-sm"
+        >
+          <LogOut size={15} />
+          Cerrar sesión
+        </button>
       </div>
     </div>
   )
