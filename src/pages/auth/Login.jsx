@@ -30,16 +30,18 @@ export default function Login() {
           .eq('id', userId)
           .single()
 
-        if (userData?.role !== 'admin') {
-          const { data: clientData } = await supabase
-            .from('clients')
-            .select('status')
-            .eq('user_id', userId)
-            .single()
-          if (clientData?.status === 'pending') {
-            navigate('/onboarding')
-            return
-          }
+        if (userData?.role === 'admin') {
+          navigate('/admin')
+          return
+        }
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('status')
+          .eq('user_id', userId)
+          .single()
+        if (clientData?.status === 'pending') {
+          navigate('/onboarding')
+          return
         }
       }
       navigate('/dashboard')

@@ -1,5 +1,9 @@
-import { useState, useEffect } from 'react'
-import { Users, TrendingUp, DollarSign, Edit2, Zap, ToggleLeft, ToggleRight, Copy, Check, Trash2, Link, ChevronDown, Lock, Unlock, RefreshCw } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Users, TrendingUp, DollarSign, Edit2, Zap, ToggleLeft, ToggleRight, Copy, Check, Trash2, Link, ChevronDown, Lock, Unlock, RefreshCw, Activity, ArrowUpRight } from 'lucide-react'
+import {
+  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+} from 'recharts'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { Badge, StatusBadge } from '../../components/ui/Badge'
 import { supabase } from '../../lib/supabase'
@@ -372,7 +376,7 @@ const EMPTY_CAMPAIGN_FORM = { name: '', client_id: '', source: 'Meta Ads', meta_
 
 export default function AdminDashboard() {
   const { isMock } = useAuth()
-  const [activeTab, setActiveTab] = useState('clients')
+  const [activeTab, setActiveTab] = useState('overview')
   const [clients, setClients] = useState([])
   const [leads, setLeads] = useState([])
   const [categories, setCategories] = useState(INITIAL_CATEGORIES)
@@ -401,7 +405,7 @@ export default function AdminDashboard() {
       const [{ data: clientsData }, { data: usersData }, { data: leadsData }, { data: unlocksData }] = await Promise.all([
         supabase.from('clients').select('id, company_name, lead_price, balance, created_at, user_id, phone, city, categories, budget, leads_per_month, target_audience, goal, status').order('created_at', { ascending: false }),
         supabase.from('users').select('id, email, full_name'),
-        supabase.from('leads').select('id, full_name, email, phone, city, product_interest, is_locked, status, created_at, client_id, acquisition_cost').order('created_at', { ascending: false }).limit(200),
+        supabase.from('leads').select('id, full_name, email, phone, city, product_interest, is_locked, status, created_at, client_id, acquisition_cost').order('created_at', { ascending: false }).limit(1000),
         supabase.from('lead_unlocks').select('id, client_id, amount_paid'),
       ])
 
@@ -483,10 +487,52 @@ export default function AdminDashboard() {
     await fetchCampaigns()
   }
 
+  // --- Chart data ---
+  const now = new Date()
+  const thisMonth = now.getMonth()
+  const thisYear = now.getFullYear()
+
+  const leadsThisMonth = leads.filter(l => {
+    const d = new Date(l.created_at)
+    return d.getMonth() === thisMonth && d.getFullYear() === thisYear
+  })
+
+  const leadsPerDay = useMemo(() => {
+    const days = Array.from({ length: 30 }, (_, i) => {
+      const d = new Date()
+      d.setDate(d.getDate() - (29 - i))
+      return d.toISOString().split('T')[0]
+    })
+    return days.map(date => ({
+      fecha: date.slice(5),
+      leads: leads.filter(l => l.created_at?.startsWith(date)).length,
+    }))
+  }, [leads])
+
+  const leadsPerClient = useMemo(() =>
+    [...clients]
+      .sort((a, b) => b.leads_total - a.leads_total)
+      .slice(0, 6)
+      .map(c => ({
+        nombre: c.company_name.split(' ')[0],
+        leads: c.leads_total,
+        desbloqueados: c.leads_unlocked,
+      }))
+  , [clients])
+
+  const accountStatusData = useMemo(() => [
+    { name: 'Activos',    value: clients.filter(c => c.status === 'active').length,  color: '#22c55e' },
+    { name: 'Pendientes', value: clients.filter(c => c.status === 'pending').length, color: '#f59e0b' },
+    { name: 'Pausados',   value: clients.filter(c => c.status === 'paused').length,  color: '#64748b' },
+  ].filter(d => d.value > 0), [clients])
+
+  const recentLeads = leads.slice(0, 8)
+
   const tabs = [
-    { id: 'clients', label: 'Clientes' },
-    { id: 'campaigns', label: 'Campañas' },
-    { id: 'categories', label: 'Categorías' },
+    { id: 'overview',    label: 'Resumen' },
+    { id: 'clients',     label: 'Clientes' },
+    { id: 'campaigns',   label: 'Campañas' },
+    { id: 'categories',  label: 'Categorías' },
   ]
 
   if (loadingData) {
@@ -538,6 +584,165 @@ export default function AdminDashboard() {
               </button>
             ))}
           </div>
+
+          {activeTab === 'overview' && (
+            <div className="p-6 space-y-6">
+              {/* KPI cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  {
+                    label: 'Cuentas activas',
+                    value: clients.filter(c => c.status === 'active').length,
+                    sub: `de ${clients.length} total`,
+                    color: 'bg-blue-500',
+                    icon: Users,
+                  },
+                  {
+                    label: 'Leads este mes',
+                    value: leadsThisMonth.length,
+                    sub: `${leads.length} histórico`,
+                    color: 'bg-green-500',
+                    icon: TrendingUp,
+                  },
+                  {
+                    label: 'Desbloqueados',
+                    value: totalUnlocked,
+                    sub: `${unlockRate}% conversión`,
+                    color: 'bg-emerald-500',
+                    icon: Unlock,
+                  },
+                  {
+                    label: 'Ingresos totales',
+                    value: `$${totalRevenue.toLocaleString()}`,
+                    sub: `Utilidad $${(totalRevenue - totalCost).toFixed(0)}`,
+                    color: 'bg-violet-500',
+                    icon: DollarSign,
+                  },
+                ].map(({ label, value, sub, color, icon: Icon }) => (
+                  <div key={label} className="bg-white rounded-2xl border border-slate-200 p-5">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className={`w-9 h-9 ${color} rounded-xl flex items-center justify-center`}>
+                        <Icon size={16} className="text-white" />
+                      </div>
+                      <ArrowUpRight size={14} className="text-slate-300" />
+                    </div>
+                    <p className="text-2xl font-bold text-slate-900">{value}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{label}</p>
+                    <p className="text-xs text-slate-300 mt-0.5">{sub}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Área: leads últimos 30 días + Pie: estado cuentas */}
+              <div className="grid md:grid-cols-3 gap-6">
+                <div className="md:col-span-2 bg-white rounded-2xl border border-slate-200 p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm font-semibold text-slate-700">Leads últimos 30 días</p>
+                    <span className="text-xs text-slate-400">{leadsThisMonth.length} este mes</span>
+                  </div>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <AreaChart data={leadsPerDay} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#22c55e" stopOpacity={0.2} />
+                          <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                      <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} interval={4} />
+                      <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <Tooltip
+                        contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12, fontSize: 12 }}
+                        labelStyle={{ color: '#64748b' }}
+                      />
+                      <Area type="monotone" dataKey="leads" stroke="#22c55e" strokeWidth={2} fill="url(#colorLeads)" name="Leads" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-slate-200 p-5">
+                  <p className="text-sm font-semibold text-slate-700 mb-4">Estado de cuentas</p>
+                  {accountStatusData.length === 0 ? (
+                    <div className="flex items-center justify-center h-40 text-slate-300 text-sm">Sin cuentas aún</div>
+                  ) : (
+                    <>
+                      <ResponsiveContainer width="100%" height={150}>
+                        <PieChart>
+                          <Pie data={accountStatusData} cx="50%" cy="50%" innerRadius={45} outerRadius={65} paddingAngle={3} dataKey="value">
+                            {accountStatusData.map((entry, i) => (
+                              <Cell key={i} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="flex flex-col gap-1.5 mt-2">
+                        {accountStatusData.map(d => (
+                          <div key={d.name} className="flex items-center justify-between text-xs">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2.5 h-2.5 rounded-full" style={{ background: d.color }} />
+                              <span className="text-slate-500">{d.name}</span>
+                            </div>
+                            <span className="font-semibold text-slate-800">{d.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Bar: leads por cliente + Actividad reciente */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <div className="bg-white rounded-2xl border border-slate-200 p-5">
+                  <p className="text-sm font-semibold text-slate-700 mb-4">Leads por cliente</p>
+                  {leadsPerClient.length === 0 ? (
+                    <div className="flex items-center justify-center h-40 text-slate-300 text-sm">Sin datos</div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart data={leadsPerClient} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                        <XAxis dataKey="nombre" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
+                        <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} allowDecimals={false} />
+                        <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }} />
+                        <Legend wrapperStyle={{ fontSize: 11 }} />
+                        <Bar dataKey="leads" name="Total" fill="#bfdbfe" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="desbloqueados" name="Desbloqueados" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+
+                <div className="bg-white rounded-2xl border border-slate-200 p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Activity size={14} className="text-slate-400" />
+                    <p className="text-sm font-semibold text-slate-700">Actividad reciente</p>
+                  </div>
+                  {recentLeads.length === 0 ? (
+                    <div className="flex items-center justify-center h-40 text-slate-300 text-sm">Sin actividad</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {recentLeads.map(lead => {
+                        const clientName = clients.find(c => c.id === lead.client_id)?.company_name || '—'
+                        return (
+                          <div key={lead.id} className="flex items-center gap-3">
+                            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${lead.is_locked ? 'bg-yellow-400' : 'bg-green-400'}`} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-slate-800 truncate">{lead.full_name}</p>
+                              <p className="text-xs text-slate-400 truncate">{clientName}</p>
+                            </div>
+                            <span className="text-xs text-slate-300 flex-shrink-0">
+                              {new Date(lead.created_at).toLocaleDateString('es-MX', { month: 'short', day: 'numeric' })}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {activeTab === 'clients' && (
             <div className="divide-y divide-slate-100">
