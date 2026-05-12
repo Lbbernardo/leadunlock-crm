@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Wallet, Unlock, DollarSign, TrendingUp, AlertTriangle, CheckCircle, PhoneCall } from 'lucide-react'
+import { Wallet, Unlock, DollarSign, TrendingUp, CheckCircle } from 'lucide-react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
@@ -28,8 +28,7 @@ export default function Billing() {
   const totalSpent = unlockedLeads.reduce((sum, l) => sum + Number(l.amount), 0)
   const progressPct = Math.min(100, (totalSpent / THRESHOLD_AMOUNT) * 100)
   const leadsPct = Math.min(100, (unlockedLeads.length / THRESHOLD_LEADS) * 100)
-  const isLowBalance = balance > 0 && balance < leadPrice * 3
-  const isNoBalance = balance === 0
+  const hasCredit = balance > 0
 
   useEffect(() => {
     if (isMock || !clientId) return
@@ -71,32 +70,16 @@ export default function Billing() {
           <p className="text-slate-500 mt-1">Tu saldo y historial de desbloqueos</p>
         </div>
 
-        {/* Balance alert */}
-        {isNoBalance && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-5 flex items-start gap-4">
-            <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <AlertTriangle size={20} className="text-red-500" />
-            </div>
-            <div className="flex-1">
-              <p className="font-semibold text-red-800">Sin crédito disponible</p>
-              <p className="text-sm text-red-700 mt-0.5">
-                No puedes desbloquear leads hasta que tu asesor recargue tu cuenta.
-              </p>
-            </div>
-            <a href="mailto:soporte@unlocklead.click" className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-xl transition-colors">
-              <PhoneCall size={14} /> Contactar
-            </a>
-          </div>
-        )}
-        {isLowBalance && (
-          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-4">
-            <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
-              <AlertTriangle size={20} className="text-amber-500" />
+        {/* Aviso de crédito al llegar a $1,000 */}
+        {progressPct >= 100 && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-2xl p-5 flex items-start gap-4">
+            <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <CheckCircle size={20} className="text-green-500" />
             </div>
             <div>
-              <p className="font-semibold text-amber-800">Crédito bajo</p>
-              <p className="text-sm text-amber-700 mt-0.5">
-                Te quedan menos de 3 leads ({leadsAvailable} disponibles). Contacta a tu asesor para recargar.
+              <p className="font-semibold text-green-800">¡Alcanzaste $1,000 en leads!</p>
+              <p className="text-sm text-green-700 mt-0.5">
+                Tu crédito de $100 de activación ha sido devuelto a tu cuenta. Úsalo para desbloquear más leads.
               </p>
             </div>
           </div>
@@ -104,12 +87,12 @@ export default function Billing() {
 
         {/* KPI cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <div className={`rounded-2xl border p-5 ${isNoBalance ? 'bg-red-50 border-red-200' : isLowBalance ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200'}`}>
+          <div className={`rounded-2xl border p-5 ${hasCredit ? 'bg-green-50 border-green-200' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-medium text-slate-500">Crédito disponible</p>
-              <Wallet size={16} className={isNoBalance ? 'text-red-500' : isLowBalance ? 'text-amber-500' : 'text-green-500'} />
+              <Wallet size={16} className={hasCredit ? 'text-green-500' : 'text-slate-400'} />
             </div>
-            <p className={`text-2xl font-bold ${isNoBalance ? 'text-red-600' : isLowBalance ? 'text-amber-600' : 'text-green-600'}`}>
+            <p className={`text-2xl font-bold ${hasCredit ? 'text-green-600' : 'text-slate-400'}`}>
               ${balance.toLocaleString()}
             </p>
             <p className="text-xs text-slate-400 mt-0.5">${leadPrice} por lead</p>
