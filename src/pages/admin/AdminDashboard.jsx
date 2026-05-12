@@ -55,6 +55,10 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
   const [creditLoading, setCreditLoading] = useState(false)
   const [creditMsg, setCreditMsg] = useState(null)
   const [currentBalance, setCurrentBalance] = useState(client.balance)
+  const [addLeadOpen, setAddLeadOpen] = useState(false)
+  const [addLeadForm, setAddLeadForm] = useState({ full_name: '', phone: '', email: '', city: '', state: '', product_interest: '', campaign_name: '', is_locked: true })
+  const [addLeadLoading, setAddLeadLoading] = useState(false)
+  const [addLeadError, setAddLeadError] = useState(null)
 
   useEffect(() => {
     if (initialExpanded) {
@@ -132,6 +136,35 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
     if (!confirm('¿Eliminar este lead permanentemente?')) return
     await supabase.from('leads').delete().eq('id', leadId)
     setClientLeads(prev => prev.filter(l => l.id !== leadId))
+  }
+
+  async function handleAddLead(e) {
+    e.stopPropagation()
+    if (!addLeadForm.full_name.trim()) { setAddLeadError('El nombre es requerido.'); return }
+    setAddLeadLoading(true)
+    setAddLeadError(null)
+    const { data, error } = await supabase.from('leads').insert({
+      client_id: client.id,
+      full_name: addLeadForm.full_name.trim(),
+      phone: addLeadForm.phone.trim() || null,
+      email: addLeadForm.email.trim() || null,
+      city: addLeadForm.city.trim() || null,
+      state: addLeadForm.state.trim() || null,
+      product_interest: addLeadForm.product_interest.trim() || null,
+      campaign_name: addLeadForm.campaign_name.trim() || null,
+      is_locked: addLeadForm.is_locked,
+      source: 'Manual',
+      status: 'new',
+      acquisition_cost: 0,
+    }).select().single()
+    if (error) {
+      setAddLeadError(error.message)
+    } else {
+      setClientLeads(prev => [data, ...prev])
+      setAddLeadForm({ full_name: '', phone: '', email: '', city: '', state: '', product_interest: '', campaign_name: '', is_locked: true })
+      setAddLeadOpen(false)
+    }
+    setAddLeadLoading(false)
   }
 
   async function handleToggleLock(leadId, currentLocked) {
@@ -458,13 +491,70 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">
                 Historial de leads ({clientLeads.length})
               </p>
-              <button
-                onClick={e => { e.stopPropagation(); fetchLeads() }}
-                className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <RefreshCw size={11} /> Actualizar
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={e => { e.stopPropagation(); fetchLeads() }}
+                  className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <RefreshCw size={11} /> Actualizar
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); setAddLeadOpen(o => !o); setAddLeadError(null) }}
+                  className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 font-semibold transition-colors"
+                >
+                  <Plus size={11} /> Agregar lead
+                </button>
+              </div>
             </div>
+
+            {/* Formulario agregar lead */}
+            {addLeadOpen && (
+              <div className="mb-4 bg-white border border-green-200 rounded-xl p-4" onClick={e => e.stopPropagation()}>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">Nuevo lead manual</p>
+                <div className="grid sm:grid-cols-2 gap-2 mb-2">
+                  {[
+                    { label: 'Nombre *', key: 'full_name', placeholder: 'Juan Pérez' },
+                    { label: 'Teléfono', key: 'phone', placeholder: '+1 555 000 0000' },
+                    { label: 'Email', key: 'email', placeholder: 'juan@email.com' },
+                    { label: 'Ciudad', key: 'city', placeholder: 'Miami' },
+                    { label: 'Estado', key: 'state', placeholder: 'Florida' },
+                    { label: 'Interés', key: 'product_interest', placeholder: 'Fondo de retiro' },
+                    { label: 'Campaña', key: 'campaign_name', placeholder: 'Camp_Q1' },
+                  ].map(({ label, key, placeholder }) => (
+                    <div key={key}>
+                      <label className="text-xs text-slate-400 mb-0.5 block">{label}</label>
+                      <input
+                        value={addLeadForm[key]}
+                        onChange={e => setAddLeadForm(f => ({ ...f, [key]: e.target.value }))}
+                        placeholder={placeholder}
+                        className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white"
+                      />
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2 mt-1">
+                    <label className="text-xs text-slate-400">Bloqueado</label>
+                    <button
+                      onClick={() => setAddLeadForm(f => ({ ...f, is_locked: !f.is_locked }))}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${addLeadForm.is_locked ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}
+                    >
+                      {addLeadForm.is_locked ? <><Lock size={10} /> Bloqueado</> : <><Unlock size={10} /> Libre</>}
+                    </button>
+                  </div>
+                </div>
+                {addLeadError && <p className="text-xs text-red-500 mb-2">{addLeadError}</p>}
+                <div className="flex gap-2">
+                  <button
+                    onClick={e => { e.stopPropagation(); setAddLeadOpen(false) }}
+                    className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-50"
+                  >Cancelar</button>
+                  <button
+                    onClick={handleAddLead}
+                    disabled={addLeadLoading}
+                    className="px-3 py-1.5 text-xs bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold disabled:opacity-50"
+                  >{addLeadLoading ? 'Guardando…' : '+ Guardar lead'}</button>
+                </div>
+              </div>
+            )}
 
             {loadingLeads ? (
               <div className="flex justify-center py-8">
