@@ -561,6 +561,9 @@ export default function AdminDashboard() {
   const [codeForm, setCodeForm] = useState({ code: '', discount_pct: 20, max_uses: '', expires_at: '' })
   const [codeLoading, setCodeLoading] = useState(false)
   const [codeError, setCodeError] = useState(null)
+  const [leadsSearch, setLeadsSearch] = useState('')
+  const [leadsClientFilter, setLeadsClientFilter] = useState('')
+  const [leadsStatusFilter, setLeadsStatusFilter] = useState('all')
 
   useEffect(() => {
     if (isMock) return
@@ -634,8 +637,8 @@ export default function AdminDashboard() {
       const [{ data: clientsData }, { data: usersData }, { data: leadsData }, { data: unlocksData }] = await Promise.all([
         supabase.from('clients').select('id, company_name, lead_price, balance, created_at, user_id, phone, city, categories, budget, leads_per_month, target_audience, goal, product_description, target_state, status').order('created_at', { ascending: false }),
         supabase.from('users').select('id, email, full_name, role'),
-        supabase.from('leads').select('id, full_name, email, phone, city, product_interest, is_locked, status, created_at, client_id, acquisition_cost').order('created_at', { ascending: false }).limit(1000),
-        supabase.from('lead_unlocks').select('id, client_id, amount_paid'),
+        supabase.from('leads').select('id, full_name, email, phone, city, product_interest, is_locked, status, created_at, client_id, acquisition_cost, campaign_name').order('created_at', { ascending: false }).limit(1000),
+        supabase.from('lead_unlocks').select('id, client_id, lead_id, amount_paid'),
       ])
 
       if (clientsData) {
@@ -678,10 +681,14 @@ export default function AdminDashboard() {
       if (leadsData) {
         const clientsMap = {}
         clientsData?.forEach(c => { clientsMap[c.id] = c.company_name || '—' })
+        const unlocksMap = {}
+        unlocksData?.forEach(u => { if (u.lead_id) unlocksMap[u.lead_id] = Number(u.amount_paid || 0) })
         setLeads(leadsData.map(l => ({
           ...l,
           client_name: clientsMap[l.client_id] || '—',
-          price: Math.max(12, Math.round((l.acquisition_cost || 0) * 3)),
+          cost: Number(l.acquisition_cost || 0),
+          amount_paid: unlocksMap[l.id] || 0,
+          profit: (unlocksMap[l.id] || 0) - Number(l.acquisition_cost || 0),
         })))
       }
     } catch (e) {
@@ -695,6 +702,25 @@ export default function AdminDashboard() {
   const totalLeads = leads.length
   const totalUnlocked = leads.filter(l => !l.is_locked).length
   const unlockRate = totalLeads > 0 ? Math.round((totalUnlocked / totalLeads) * 100) : 0
+
+  const campaignCategoryMap = useMemo(() => {
+    const map = {}
+    campaigns.forEach(c => { if (c.name && c.interest_category) map[c.name] = c.interest_category })
+    return map
+  }, [campaigns])
+
+  const filteredLeads = useMemo(() => leads.filter(l => {
+    if (leadsClientFilter && l.client_id !== leadsClientFilter) return false
+    if (leadsStatusFilter === 'unlocked' && l.is_locked) return false
+    if (leadsStatusFilter === 'locked' && !l.is_locked) return false
+    if (leadsSearch) {
+      const q = leadsSearch.toLowerCase()
+      return (l.full_name || '').toLowerCase().includes(q) ||
+             (l.client_name || '').toLowerCase().includes(q) ||
+             (l.campaign_name || '').toLowerCase().includes(q)
+    }
+    return true
+  }), [leads, leadsClientFilter, leadsStatusFilter, leadsSearch])
   const activeCategories = categories.filter(c => c.is_active).length
 
   function toggleCategory(categoryId) {
@@ -769,6 +795,7 @@ export default function AdminDashboard() {
   const tabs = [
     { id: 'overview',    label: 'Resumen' },
     { id: 'clients',     label: 'Clientes' },
+    { id: 'leads',       label: 'Leads' },
     { id: 'campaigns',   label: 'Campañas' },
     { id: 'categories',  label: 'Categorías' },
     { id: 'codes',       label: 'Descuentos' },
@@ -998,6 +1025,114 @@ export default function AdminDashboard() {
               ))}
             </div>
           )}
+
+          {activeTab === 'leads' && (() => {
+            const totalCostLeads = filteredLeads.reduce((s, l) => s + l.cost, 0)
+            const totalPaidLeads = filteredLeads.reduce((s, l) => s + l.amount_paid, 0)
+            const totalProfitLeads = totalPaidLeads - totalCostLeads
+            const unlockedCount = filteredLeads.filter(l => !l.is_locked).length
+            return (
+              <div className="p-6">
+                {/* Métricas resumen */}
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                  {[
+                    { label: 'Total leads', value: filteredLeads.length, color: 'text-slate-900' },
+                    { label: 'Desbloqueados', value: `${unlockedCount} (${filteredLeads.length > 0 ? Math.round((unlockedCount / filteredLeads.length) * 100) : 0}%)`, color: 'text-green-600' },
+                    { label: 'Costo campaña', value: `$${totalCostLeads.toFixed(2)}`, color: 'text-red-500' },
+                    { label: 'Cobrado', value: `$${totalPaidLeads.toFixed(2)}`, color: 'text-blue-600' },
+                    { label: 'Ganancia', value: `$${totalProfitLeads.toFixed(2)}`, color: totalProfitLeads >= 0 ? 'text-green-600' : 'text-red-500' },
+                  ].map(({ label, value, color }) => (
+                    <div key={label} className="bg-white border border-slate-200 rounded-2xl p-4">
+                      <p className="text-xs text-slate-400 font-medium mb-1">{label}</p>
+                      <p className={`text-xl font-bold ${color}`}>{value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Filtros */}
+                <div className="flex flex-wrap gap-3 mb-4">
+                  <input
+                    type="text"
+                    placeholder="Buscar por nombre, cliente o campaña..."
+                    value={leadsSearch}
+                    onChange={e => setLeadsSearch(e.target.value)}
+                    className="flex-1 min-w-48 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-green-400"
+                  />
+                  <select
+                    value={leadsClientFilter}
+                    onChange={e => setLeadsClientFilter(e.target.value)}
+                    className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-green-400"
+                  >
+                    <option value="">Todos los clientes</option>
+                    {clients.map(c => <option key={c.id} value={c.id}>{c.company_name}</option>)}
+                  </select>
+                  <select
+                    value={leadsStatusFilter}
+                    onChange={e => setLeadsStatusFilter(e.target.value)}
+                    className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-green-400"
+                  >
+                    <option value="all">Todos</option>
+                    <option value="unlocked">Desbloqueados</option>
+                    <option value="locked">Bloqueados</option>
+                  </select>
+                </div>
+
+                {/* Tabla */}
+                {filteredLeads.length === 0 ? (
+                  <div className="text-center py-16 text-slate-400 text-sm">No hay leads con esos filtros.</div>
+                ) : (
+                  <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                    <table className="w-full bg-white text-xs">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100">
+                          {['Nombre', 'Cliente', 'Campaña / Categoría', 'Estado', 'Bloqueado', 'Costo', 'Cobrado', 'Ganancia', 'Fecha'].map(h => (
+                            <th key={h} className="text-left font-semibold text-slate-400 uppercase tracking-wide px-3 py-3">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {filteredLeads.map(lead => {
+                          const category = campaignCategoryMap[lead.campaign_name]
+                          const profit = lead.profit
+                          return (
+                            <tr key={lead.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-3 py-3">
+                                <p className="font-medium text-slate-900">{lead.full_name}</p>
+                                <p className="text-slate-400">{lead.city || '—'}</p>
+                              </td>
+                              <td className="px-3 py-3 font-medium text-slate-700">{lead.client_name}</td>
+                              <td className="px-3 py-3">
+                                <p className="text-slate-600">{lead.campaign_name || '—'}</p>
+                                {category && (
+                                  <span className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full font-medium">{category}</span>
+                                )}
+                              </td>
+                              <td className="px-3 py-3"><StatusBadge status={lead.status} /></td>
+                              <td className="px-3 py-3">
+                                <span className={`px-2 py-0.5 rounded-full font-semibold ${lead.is_locked ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'}`}>
+                                  {lead.is_locked ? 'Bloqueado' : 'Libre'}
+                                </span>
+                              </td>
+                              <td className="px-3 py-3 text-red-500 font-medium">${lead.cost.toFixed(2)}</td>
+                              <td className="px-3 py-3 text-blue-600 font-medium">${lead.amount_paid.toFixed(2)}</td>
+                              <td className="px-3 py-3">
+                                <span className={`font-semibold ${profit >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                  ${profit.toFixed(2)}
+                                </span>
+                              </td>
+                              <td className="px-3 py-3 text-slate-400">
+                                {new Date(lead.created_at).toLocaleDateString('es-MX', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
 
           {activeTab === 'campaigns' && (
             <div className="p-6">
