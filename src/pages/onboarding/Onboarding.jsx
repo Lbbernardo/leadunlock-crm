@@ -93,10 +93,7 @@ function Step1({ data, onChange, onNext }) {
   const valid = data.companyName && data.city && data.categories.length > 0
 
   function toggleCategory(id) {
-    const selected = data.categories.includes(id)
-      ? data.categories.filter(c => c !== id)
-      : [...data.categories, id]
-    onChange({ ...data, categories: selected })
+    onChange({ ...data, categories: [id] })
   }
 
   return (
@@ -124,7 +121,7 @@ function Step1({ data, onChange, onNext }) {
         <label className="block text-sm font-medium text-slate-300 mb-1.5">
           ¿Qué tipo de leads quieres recibir?
         </label>
-        <p className="text-xs text-slate-500 mb-3">Selecciona uno o más. Solo disponibles los nichos activos.</p>
+        <p className="text-xs text-slate-500 mb-3">Selecciona uno. Toda tu campaña se enfoca en un solo nicho.</p>
         <div className="grid grid-cols-2 gap-2">
           {LEAD_CATEGORIES.map(cat => {
             const isSelected = data.categories.includes(cat.id)
@@ -164,7 +161,7 @@ function Step1({ data, onChange, onNext }) {
           })}
         </div>
         {data.categories.length === 0 && (
-          <p className="text-xs text-amber-500 mt-2">Selecciona al menos una categoría para continuar.</p>
+          <p className="text-xs text-amber-500 mt-2">Selecciona un nicho para continuar.</p>
         )}
       </div>
 
