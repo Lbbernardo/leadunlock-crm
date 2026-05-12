@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Users, TrendingUp, DollarSign, Edit2, Zap, ToggleLeft, ToggleRight, Copy, Check, Trash2, Link, ChevronDown, Lock, Unlock, RefreshCw, Activity, ArrowUpRight } from 'lucide-react'
+import { Users, TrendingUp, DollarSign, Edit2, Zap, ToggleLeft, ToggleRight, Copy, Check, Trash2, Link, ChevronDown, Lock, Unlock, RefreshCw, Activity, ArrowUpRight, Tag, Plus, AlertCircle } from 'lucide-react'
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -512,7 +512,7 @@ function StatCard({ icon: Icon, label, value, sub, color }) {
 const EMPTY_CAMPAIGN_FORM = { name: '', client_id: '', source: 'Meta Ads', meta_form_id: '' }
 
 export default function AdminDashboard() {
-  const { isMock } = useAuth()
+  const { isMock, user: adminUser } = useAuth()
   const location = useLocation()
   const [activeTab, setActiveTab] = useState('overview')
   const [highlightClientId, setHighlightClientId] = useState(null)
@@ -523,11 +523,16 @@ export default function AdminDashboard() {
   const [campaignForm, setCampaignForm] = useState(EMPTY_CAMPAIGN_FORM)
   const [campaignLoading, setCampaignLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(!isMock)
+  const [codes, setCodes] = useState([])
+  const [codeForm, setCodeForm] = useState({ code: '', discount_pct: 20, max_uses: '', expires_at: '' })
+  const [codeLoading, setCodeLoading] = useState(false)
+  const [codeError, setCodeError] = useState(null)
 
   useEffect(() => {
     if (isMock) return
     fetchData()
     fetchCampaigns()
+    fetchCodes()
   }, [isMock])
 
   useEffect(() => {
@@ -538,6 +543,46 @@ export default function AdminDashboard() {
       setHighlightClientId(clientParam)
     }
   }, [location.search])
+
+  async function fetchCodes() {
+    const { data } = await supabase
+      .from('discount_codes')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (data) setCodes(data)
+  }
+
+  async function createCode() {
+    setCodeError(null)
+    const trimmed = codeForm.code.toUpperCase().trim()
+    if (!trimmed) return setCodeError('El código no puede estar vacío.')
+    if (!codeForm.discount_pct || codeForm.discount_pct < 1 || codeForm.discount_pct > 100)
+      return setCodeError('El descuento debe estar entre 1% y 100%.')
+    setCodeLoading(true)
+    const { error } = await supabase.from('discount_codes').insert({
+      code: trimmed,
+      discount_pct: parseInt(codeForm.discount_pct),
+      max_uses: codeForm.max_uses ? parseInt(codeForm.max_uses) : null,
+      expires_at: codeForm.expires_at || null,
+      active: true,
+    })
+    if (error) setCodeError(error.code === '23505' ? 'Ese código ya existe.' : error.message)
+    else {
+      setCodeForm({ code: '', discount_pct: 20, max_uses: '', expires_at: '' })
+      fetchCodes()
+    }
+    setCodeLoading(false)
+  }
+
+  async function toggleCode(id, active) {
+    await supabase.from('discount_codes').update({ active: !active }).eq('id', id)
+    setCodes(prev => prev.map(c => c.id === id ? { ...c, active: !active } : c))
+  }
+
+  async function deleteCode(id) {
+    await supabase.from('discount_codes').delete().eq('id', id)
+    setCodes(prev => prev.filter(c => c.id !== id))
+  }
 
   async function fetchCampaigns() {
     const { data } = await supabase
@@ -552,13 +597,17 @@ export default function AdminDashboard() {
     try {
       const [{ data: clientsData }, { data: usersData }, { data: leadsData }, { data: unlocksData }] = await Promise.all([
         supabase.from('clients').select('id, company_name, lead_price, balance, created_at, user_id, phone, city, categories, budget, leads_per_month, target_audience, goal, status').order('created_at', { ascending: false }),
-        supabase.from('users').select('id, email, full_name'),
+        supabase.from('users').select('id, email, full_name, role'),
         supabase.from('leads').select('id, full_name, email, phone, city, product_interest, is_locked, status, created_at, client_id, acquisition_cost').order('created_at', { ascending: false }).limit(1000),
         supabase.from('lead_unlocks').select('id, client_id, amount_paid'),
       ])
 
       if (clientsData) {
-        const mapped = clientsData.map(c => {
+        const adminIds = new Set((usersData || []).filter(u => u.role === 'admin').map(u => u.id))
+        if (adminUser?.id) adminIds.add(adminUser.id)
+        const mapped = clientsData
+          .filter(c => !adminIds.has(c.user_id))
+          .map(c => {
           const user = usersData?.find(u => u.id === c.user_id)
           const clientLeads = leadsData?.filter(l => l.client_id === c.id) || []
           const clientUnlocks = unlocksData?.filter(u => u.client_id === c.id) || []
@@ -683,6 +732,7 @@ export default function AdminDashboard() {
     { id: 'clients',     label: 'Clientes' },
     { id: 'campaigns',   label: 'Campañas' },
     { id: 'categories',  label: 'Categorías' },
+    { id: 'codes',       label: 'Descuentos' },
   ]
 
   if (loadingData) {
@@ -999,6 +1049,122 @@ export default function AdminDashboard() {
               <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700">
                 <strong>Cómo funciona:</strong> Cuando llega un lead por webhook, el sistema busca el nombre de campaña y lo asigna al cliente correcto automáticamente.
               </div>
+            </div>
+          )}
+
+          {activeTab === 'codes' && (
+            <div className="p-6 max-w-3xl">
+              <div className="mb-6">
+                <h3 className="font-semibold text-slate-900">Códigos de descuento</h3>
+                <p className="text-sm text-slate-500 mt-1">Crea códigos para dar descuento en la activación de $100.</p>
+              </div>
+
+              {/* Formulario nuevo código */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6">
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-4">Nuevo código</p>
+                <div className="grid sm:grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 mb-1 block">Código</label>
+                    <input
+                      value={codeForm.code}
+                      onChange={e => setCodeForm(f => ({ ...f, code: e.target.value.toUpperCase() }))}
+                      placeholder="PROMO2026"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 mb-1 block">Descuento (%)</label>
+                    <input
+                      type="number"
+                      min="1" max="100"
+                      value={codeForm.discount_pct}
+                      onChange={e => setCodeForm(f => ({ ...f, discount_pct: e.target.value }))}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 mb-1 block">Máximo de usos <span className="text-slate-400">(vacío = ilimitado)</span></label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={codeForm.max_uses}
+                      onChange={e => setCodeForm(f => ({ ...f, max_uses: e.target.value }))}
+                      placeholder="Ej. 10"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-slate-500 mb-1 block">Vence el <span className="text-slate-400">(opcional)</span></label>
+                    <input
+                      type="date"
+                      value={codeForm.expires_at}
+                      onChange={e => setCodeForm(f => ({ ...f, expires_at: e.target.value }))}
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                </div>
+                {codeError && (
+                  <div className="flex items-center gap-2 text-red-600 text-sm mb-3">
+                    <AlertCircle size={14} /> {codeError}
+                  </div>
+                )}
+                <button
+                  onClick={createCode}
+                  disabled={codeLoading}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50"
+                >
+                  <Plus size={14} /> {codeLoading ? 'Creando…' : 'Crear código'}
+                </button>
+              </div>
+
+              {/* Lista de códigos */}
+              {codes.length === 0 ? (
+                <div className="text-center text-slate-400 text-sm py-12 bg-white border border-slate-200 rounded-2xl">
+                  No hay códigos creados todavía.
+                </div>
+              ) : (
+                <div className="bg-white border border-slate-200 rounded-2xl divide-y divide-slate-100">
+                  {codes.map(c => {
+                    const expired = c.expires_at && new Date(c.expires_at) < new Date()
+                    const exhausted = c.max_uses !== null && c.used_count >= c.max_uses
+                    const effectivelyActive = c.active && !expired && !exhausted
+                    return (
+                      <div key={c.id} className="flex items-center gap-4 p-4">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${effectivelyActive ? 'bg-green-50' : 'bg-slate-100'}`}>
+                          <Tag size={16} className={effectivelyActive ? 'text-green-500' : 'text-slate-400'} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <code className="font-bold text-slate-900 text-sm tracking-wide">{c.code}</code>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${effectivelyActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                              {effectivelyActive ? 'Activo' : expired ? 'Vencido' : exhausted ? 'Agotado' : 'Inactivo'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-0.5">
+                            {c.discount_pct}% de descuento
+                            {c.max_uses !== null ? ` · ${c.used_count}/${c.max_uses} usos` : ` · ${c.used_count} usos`}
+                            {c.expires_at ? ` · vence ${new Date(c.expires_at).toLocaleDateString('es-MX', { dateStyle: 'medium' })}` : ''}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => toggleCode(c.id, c.active)}
+                            className={`text-xs px-3 py-1.5 rounded-lg font-medium border transition-colors ${c.active ? 'border-orange-200 text-orange-600 hover:bg-orange-50' : 'border-green-200 text-green-600 hover:bg-green-50'}`}
+                          >
+                            {c.active ? 'Desactivar' : 'Activar'}
+                          </button>
+                          <button
+                            onClick={() => deleteCode(c.id)}
+                            className="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )}
 
