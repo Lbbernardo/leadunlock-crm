@@ -616,7 +616,7 @@ const EMPTY = {
 function OnboardingContent() {
   const [step, setStep] = useState(1)
   const [data, setData] = useState(EMPTY)
-  const { user, isMock } = useAuth()
+  const { user, isMock, refreshProfile } = useAuth()
 
   async function handlePaymentSuccess() {
     if (!isMock && user) {
@@ -640,6 +640,7 @@ function OnboardingContent() {
           status: 'active',
         })
         .eq('user_id', user.id)
+      await refreshProfile()
     }
     setStep(4)
   }

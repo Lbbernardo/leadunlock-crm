@@ -47,10 +47,11 @@ function ClientRoute({ children }) {
     if (isMock || !clientData?.id) return
     supabase
       .from('campaigns')
-      .select('id', { count: 'exact', head: true })
+      .select('id')
       .eq('client_id', clientData.id)
       .not('meta_form_id', 'is', null)
-      .then(({ count }) => setCampaignReady(count > 0))
+      .limit(1)
+      .then(({ data }) => setCampaignReady(data != null && data.length > 0))
   }, [clientData?.id, isMock])
 
   if (loading || campaignReady === null) return <Spinner />
