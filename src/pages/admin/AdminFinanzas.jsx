@@ -59,7 +59,7 @@ export default function AdminFinanzas() {
   async function load() {
     setLoading(true)
     const [clientsRes, leadsRes, unlocksRes, adminRes] = await Promise.all([
-      supabase.from('clients').select('id, company_name, status, balance, lead_price, created_at, user_id'),
+      supabase.from('clients').select('id, company_name, status, balance, lead_price, created_at, user_id, activation_amount_paid'),
       supabase.from('leads').select('id, client_id, is_locked'),
       supabase.from('lead_unlocks').select('id, client_id, amount_paid'),
       supabase.from('users').select('id').eq('role', 'admin'),
@@ -89,6 +89,7 @@ export default function AdminFinanzas() {
         leads_total,
         leads_unlocked,
         revenue_leads: Math.round(revenue_leads),
+        activation_amount: c.activation_amount_paid || 0,
         credit_returned: leads_unlocked >= CREDIT_THRESHOLD,
       }
     })
@@ -116,7 +117,7 @@ export default function AdminFinanzas() {
   const totalLeads         = clients.reduce((s, c) => s + c.leads_total, 0)
   const creditsReturned    = clients.filter((c) => c.credit_returned).length
   const activatedClients   = clients.filter((c) => c.status !== 'pending').length
-  const activationRevenue  = activatedClients * 100
+  const activationRevenue  = clients.reduce((s, c) => s + c.activation_amount, 0)
   const totalRevenue       = leadRevenue + activationRevenue
 
   return (
@@ -300,8 +301,18 @@ export default function AdminFinanzas() {
                                 <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Finanzas de cuenta</h4>
                                 <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2 text-sm">
                                   <div className="flex justify-between">
+                                    <span className="text-slate-500">Activación cobrada</span>
+                                    <span className={`font-semibold ${client.activation_amount > 0 ? 'text-slate-900' : 'text-slate-400'}`}>
+                                      {client.activation_amount > 0 ? `$${client.activation_amount}` : 'Pendiente'}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
                                     <span className="text-slate-500">Ingresos por leads</span>
                                     <span className="font-semibold text-green-600">${client.revenue_leads}</span>
+                                  </div>
+                                  <div className="border-t border-slate-100 pt-2 flex justify-between font-semibold">
+                                    <span className="text-slate-700">Total cobrado</span>
+                                    <span className="text-slate-900">${client.activation_amount + client.revenue_leads}</span>
                                   </div>
                                   <div className="flex justify-between">
                                     <span className="text-slate-500">Precio por lead</span>

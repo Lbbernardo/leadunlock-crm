@@ -61,16 +61,19 @@ export default async function handler(req, res) {
       }
     }
 
+    const activationAmount = pi.amount / 100
+
     await supabase
       .from('clients')
       .update({
         stripe_customer_id: customerId,
         payment_method_last4: last4,
         payment_method_brand: brand,
+        activation_amount_paid: activationAmount,
       })
       .eq('user_id', userId)
 
-    return res.status(200).json({ success: true, last4, brand })
+    return res.status(200).json({ success: true, last4, brand, amount: activationAmount })
   } catch (err) {
     console.error('confirm-activation error:', err)
     return res.status(500).json({ error: err.message })
