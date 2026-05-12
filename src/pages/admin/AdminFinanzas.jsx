@@ -112,9 +112,12 @@ export default function AdminFinanzas() {
   const leadRevenue      = clients.reduce((s, c) => s + c.revenue_leads, 0)
   const totalBalance     = clients.reduce((s, c) => s + c.balance, 0)
   const activeClients    = clients.filter((c) => c.status === 'active').length
-  const totalUnlocked    = clients.reduce((s, c) => s + c.leads_unlocked, 0)
-  const totalLeads       = clients.reduce((s, c) => s + c.leads_total, 0)
-  const creditsReturned  = clients.filter((c) => c.credit_returned).length
+  const totalUnlocked      = clients.reduce((s, c) => s + c.leads_unlocked, 0)
+  const totalLeads         = clients.reduce((s, c) => s + c.leads_total, 0)
+  const creditsReturned    = clients.filter((c) => c.credit_returned).length
+  const activatedClients   = clients.filter((c) => c.status !== 'pending').length
+  const activationRevenue  = activatedClients * 100
+  const totalRevenue       = leadRevenue + activationRevenue
 
   return (
     <DashboardLayout>
@@ -141,14 +144,21 @@ export default function AdminFinanzas() {
         ) : (
           <>
             {/* KPIs — solo datos reales de Supabase */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
               <MetricCard
-                label="Ingresos por leads"
-                value={`$${leadRevenue.toLocaleString()}`}
-                sub={`${totalUnlocked} desbloqueos registrados`}
+                label="Ingreso total"
+                value={`$${totalRevenue.toLocaleString()}`}
+                sub="Activaciones + leads"
                 icon={DollarSign}
                 color="bg-green-50 text-green-600"
                 highlight
+              />
+              <MetricCard
+                label="Activaciones cobradas"
+                value={`$${activationRevenue.toLocaleString()}`}
+                sub={`${activatedClients} cuenta(s) × $100`}
+                icon={DollarSign}
+                color="bg-emerald-50 text-emerald-600"
               />
               <MetricCard
                 label="Crédito en cuentas"
