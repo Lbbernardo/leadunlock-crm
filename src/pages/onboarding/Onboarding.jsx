@@ -9,12 +9,6 @@ import { supabase } from '../../lib/supabase'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder')
 
-const DISCOUNT_CODES = {
-  'PRUEBA100': { pct: 100, label: '100% de descuento (modo prueba)' },
-  'TEST90':    { pct: 90,  label: '90% de descuento — Prueba interna' },
-  'WELCOME50': { pct: 50,  label: '50% de descuento — Bienvenida' },
-  'PARTNER25': { pct: 25,  label: '25% de descuento — Partner' },
-}
 
 const LEAD_CATEGORIES = [
   { id: 'final-expense',      label: 'Gastos finales',        icon: '🕊️', description: 'Seguros de gastos funerarios' },
@@ -352,23 +346,40 @@ function PaymentForm({ data, onSuccess, onBack }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [couponInput, setCouponInput] = useState('')
-  const [appliedCoupon, setAppliedCoupon] = useState(null)
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [appliedCodeData, setAppliedCodeData] = useState(null)
   const [couponError, setCouponError] = useState(null)
   const { isMock, user } = useAuth()
 
-  const discount = appliedCoupon ? DISCOUNT_CODES[appliedCoupon] : null
-  const finalAmount = discount ? Math.round(100 * (1 - discount.pct / 100)) : 100
+  const discountPct = appliedCodeData?.discount_pct || 0
+  const finalAmount = discountPct > 0 ? Math.round(100 * (1 - discountPct / 100)) : 100
   const isFree = finalAmount === 0
 
-  function applyCoupon() {
+  async function applyCoupon() {
     const code = couponInput.trim().toUpperCase()
-    if (DISCOUNT_CODES[code]) {
-      setAppliedCoupon(code)
-      setCouponError(null)
-    } else {
-      setCouponError('Código inválido.')
-      setAppliedCoupon(null)
+    if (!code) return setCouponError('Ingresa un código.')
+    setCouponError(null)
+    setCouponLoading(true)
+
+    if (isMock) {
+      setAppliedCodeData({ id: null, discount_pct: 100, used_count: 0, max_uses: null })
+      setCouponLoading(false)
+      return
     }
+
+    const { data: row } = await supabase
+      .from('discount_codes')
+      .select('id, discount_pct, max_uses, used_count, expires_at, active')
+      .eq('code', code)
+      .maybeSingle()
+
+    if (!row) { setCouponError('Código inválido.'); setCouponLoading(false); return }
+    if (!row.active) { setCouponError('Este código está desactivado.'); setCouponLoading(false); return }
+    if (row.expires_at && new Date(row.expires_at) < new Date()) { setCouponError('Este código ha vencido.'); setCouponLoading(false); return }
+    if (row.max_uses !== null && row.used_count >= row.max_uses) { setCouponError('Este código ya agotó sus usos.'); setCouponLoading(false); return }
+
+    setAppliedCodeData(row)
+    setCouponLoading(false)
   }
 
   async function handlePay(e) {
@@ -378,6 +389,11 @@ function PaymentForm({ data, onSuccess, onBack }) {
 
     if (isMock || isFree) {
       await new Promise(r => setTimeout(r, 900))
+      if (appliedCodeData?.id) {
+        await supabase.from('discount_codes')
+          .update({ used_count: appliedCodeData.used_count + 1 })
+          .eq('id', appliedCodeData.id)
+      }
       onSuccess()
       return
     }
@@ -401,6 +417,11 @@ function PaymentForm({ data, onSuccess, onBack }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ paymentIntentId: paymentIntent.id, userId: user?.id }),
         })
+        if (appliedCodeData?.id) {
+          await supabase.from('discount_codes')
+            .update({ used_count: appliedCodeData.used_count + 1 })
+            .eq('id', appliedCodeData.id)
+        }
         onSuccess()
       }
     } catch (err) {
@@ -458,16 +479,17 @@ function PaymentForm({ data, onSuccess, onBack }) {
           <button
             type="button"
             onClick={applyCoupon}
-            className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-xl transition-colors"
+            disabled={couponLoading}
+            className="px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
           >
-            Aplicar
+            {couponLoading ? '…' : 'Aplicar'}
           </button>
         </div>
         {couponError && <p className="text-xs text-red-400 mt-1.5">{couponError}</p>}
-        {discount && (
+        {appliedCodeData && (
           <div className="flex items-center gap-2 mt-2 bg-green-500/10 border border-green-500/20 rounded-xl px-3 py-2">
             <Check size={14} className="text-green-400 flex-shrink-0" />
-            <p className="text-xs text-green-400 font-medium">{discount.label}</p>
+            <p className="text-xs text-green-400 font-medium">{appliedCodeData.discount_pct}% de descuento aplicado</p>
           </div>
         )}
       </div>
@@ -479,7 +501,7 @@ function PaymentForm({ data, onSuccess, onBack }) {
           <p className="text-slate-500 text-xs">Pago único · No recurrente</p>
         </div>
         <div className="text-right">
-          {discount && <p className="text-slate-500 text-sm line-through">$100</p>}
+          {appliedCodeData && <p className="text-slate-500 text-sm line-through">$100</p>}
           <span className="text-3xl font-extrabold text-white">
             ${finalAmount}
           </span>

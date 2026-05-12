@@ -579,11 +579,12 @@ export default function AdminDashboard() {
   }, [location.search])
 
   async function fetchCodes() {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('discount_codes')
       .select('*')
       .order('created_at', { ascending: false })
-    if (data) setCodes(data)
+    if (error) setCodeError(`Error al cargar códigos: ${error.message}`)
+    else setCodes(data || [])
   }
 
   async function createCode() {
@@ -600,8 +601,9 @@ export default function AdminDashboard() {
       expires_at: codeForm.expires_at || null,
       active: true,
     })
-    if (error) setCodeError(error.code === '23505' ? 'Ese código ya existe.' : error.message)
-    else {
+    if (error) {
+      setCodeError(error.code === '23505' ? 'Ese código ya existe.' : `Error: ${error.message}`)
+    } else {
       setCodeForm({ code: '', discount_pct: 20, max_uses: '', expires_at: '' })
       fetchCodes()
     }
