@@ -79,10 +79,13 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (isMock || !clientId) { setLoading(false); return }
     setLoading(true)
+    console.log('[Dashboard] clientId:', clientId)
     Promise.all([
       supabase.rpc('get_client_leads', { p_client_id: clientId }),
       supabase.from('campaigns').select('id, name, source, is_active, interest_category').eq('client_id', clientId).eq('is_active', true),
     ]).then(([leadsRes, campRes]) => {
+      console.log('[Dashboard] leads:', leadsRes.data?.length, 'error:', leadsRes.error?.message, leadsRes.error?.code)
+      console.log('[Dashboard] campaigns:', campRes.data?.length, 'error:', campRes.error?.message)
       if (!leadsRes.error) setLeads(leadsRes.data || [])
       if (!campRes.error) setCampaigns(campRes.data || [])
       setLoading(false)
