@@ -23,8 +23,8 @@ export default function Billing() {
   const [loading, setLoading] = useState(!isMock)
 
   const balance = clientData?.balance || 0
-  const leadPrice = clientData?.lead_price || 20
-  const leadsAvailable = Math.floor(balance / leadPrice)
+  const leadPrice = clientData?.lead_price ?? null
+  const leadsAvailable = leadPrice ? Math.floor(balance / leadPrice) : null
   const totalSpent = unlockedLeads.reduce((sum, l) => sum + Number(l.amount), 0)
   const progressPct = Math.min(100, (totalSpent / THRESHOLD_AMOUNT) * 100)
   const leadsPct = Math.min(100, (unlockedLeads.length / THRESHOLD_LEADS) * 100)
@@ -103,7 +103,7 @@ export default function Billing() {
               <p className="text-xs font-medium text-slate-500">Leads disponibles</p>
               <Unlock size={16} className="text-blue-500" />
             </div>
-            <p className="text-2xl font-bold text-slate-900">{leadsAvailable}</p>
+            <p className="text-2xl font-bold text-slate-900">{leadsAvailable ?? '—'}</p>
             <p className="text-xs text-slate-400 mt-0.5">con tu crédito actual</p>
           </div>
 

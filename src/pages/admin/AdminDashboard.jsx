@@ -418,12 +418,12 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
                   <div>
                     <p className="text-xs text-slate-400 mb-0.5">Leads disponibles</p>
                     <p className="text-2xl font-bold text-slate-700">
-                      {Math.floor(currentBalance / (client.lead_price || 20))}
+                      {client.lead_price ? Math.floor(currentBalance / client.lead_price) : '—'}
                     </p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-400 mb-0.5">Precio por lead</p>
-                    <p className="text-lg font-semibold text-slate-600">${client.lead_price || 20}</p>
+                    <p className="text-lg font-semibold text-slate-600">{client.lead_price ? `$${client.lead_price}` : <span className="text-amber-500 text-sm font-medium">Sin precio</span>}</p>
                   </div>
                 </div>
                 {/* Progress toward $1,000 / 50 leads */}
@@ -767,7 +767,7 @@ export default function AdminDashboard() {
             revenue,
             total_cost,
             balance: c.balance || 0,
-            lead_price: c.lead_price || 20,
+            lead_price: c.lead_price ?? null,
             created_at: c.created_at,
           }
         })

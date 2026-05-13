@@ -85,7 +85,7 @@ export default function AdminFinanzas() {
         status: c.status || 'pending',
         activated_at: c.created_at,
         balance: c.balance || 0,
-        lead_price: c.lead_price || 20,
+        lead_price: c.lead_price ?? null,
         leads_total,
         leads_unlocked,
         revenue_leads: Math.round(revenue_leads),

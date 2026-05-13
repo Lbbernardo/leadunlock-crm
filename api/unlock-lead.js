@@ -24,7 +24,8 @@ export default async function handler(req, res) {
   if (lead.client_id !== clientId) return res.status(403).json({ error: 'Forbidden' })
   if (!lead.is_locked) return res.status(200).json({ success: true, already_unlocked: true })
 
-  const price = client.lead_price || 20
+  const price = client.lead_price
+  if (!price) return res.status(400).json({ error: 'no_price_configured' })
   const balance = client.balance || 0
 
   if (balance < price) {

@@ -24,7 +24,8 @@ export default async function handler(req, res) {
   if (!lead.is_locked) return res.status(200).json({ success: true, already_unlocked: true })
   if (!client.stripe_customer_id) return res.status(400).json({ error: 'no_payment_method' })
 
-  const price = client.lead_price || 20
+  const price = client.lead_price
+  if (!price) return res.status(400).json({ error: 'no_price_configured' })
 
   try {
     // Obtener el método de pago por defecto del customer
