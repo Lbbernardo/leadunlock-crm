@@ -646,6 +646,8 @@ export default function AdminDashboard() {
   const [campaigns, setCampaigns] = useState([])
   const [campaignForm, setCampaignForm] = useState(EMPTY_CAMPAIGN_FORM)
   const [campaignLoading, setCampaignLoading] = useState(false)
+  const [editingCampaignId, setEditingCampaignId] = useState(null)
+  const [editCampaignForm, setEditCampaignForm] = useState({})
   const [loadingData, setLoadingData] = useState(!isMock)
   const [codes, setCodes] = useState([])
   const [codeForm, setCodeForm] = useState({ code: '', discount_pct: 20, max_uses: '', expires_at: '' })
@@ -832,12 +834,25 @@ export default function AdminDashboard() {
   }
 
   async function handleDeleteCampaign(id) {
+    if (!confirm('¿Eliminar esta campaña?')) return
     await supabase.from('campaigns').delete().eq('id', id)
     await fetchCampaigns()
   }
 
   async function handleToggleCampaign(id, current) {
     await supabase.from('campaigns').update({ is_active: !current }).eq('id', id)
+    await fetchCampaigns()
+  }
+
+  async function handleSaveCampaign(id) {
+    await supabase.from('campaigns').update({
+      name: editCampaignForm.name?.trim(),
+      source: editCampaignForm.source,
+      meta_form_id: editCampaignForm.meta_form_id?.trim() || null,
+      interest_category: editCampaignForm.interest_category?.trim() || null,
+      client_id: editCampaignForm.client_id,
+    }).eq('id', id)
+    setEditingCampaignId(null)
     await fetchCampaigns()
   }
 
@@ -1300,25 +1315,66 @@ export default function AdminDashboard() {
               ) : (
                 <div className="space-y-2">
                   {campaigns.map(camp => (
-                    <div key={camp.id} className={`flex items-center gap-4 p-4 rounded-xl border ${camp.is_active ? 'border-green-200 bg-green-50' : 'border-slate-200 bg-slate-50'}`}>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-semibold text-slate-900 text-sm">{camp.name}</p>
-                          {camp.interest_category && (
-                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">{camp.interest_category}</span>
-                          )}
+                    <div key={camp.id} className={`rounded-xl border ${camp.is_active ? 'border-green-200 bg-green-50' : 'border-slate-200 bg-slate-50'}`}>
+                      {editingCampaignId === camp.id ? (
+                        <div className="p-4 space-y-3">
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Editar campaña</p>
+                          <div className="grid sm:grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-xs text-slate-400 block mb-1">Nombre</label>
+                              <input value={editCampaignForm.name || ''} onChange={e => setEditCampaignForm(p => ({ ...p, name: e.target.value }))} className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white" />
+                            </div>
+                            <div>
+                              <label className="text-xs text-slate-400 block mb-1">Cliente</label>
+                              <select value={editCampaignForm.client_id || ''} onChange={e => setEditCampaignForm(p => ({ ...p, client_id: e.target.value }))} className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white">
+                                {clients.map(c => <option key={c.id} value={c.id}>{c.company_name}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-xs text-slate-400 block mb-1">Fuente</label>
+                              <select value={editCampaignForm.source || 'Meta Ads'} onChange={e => setEditCampaignForm(p => ({ ...p, source: e.target.value }))} className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white">
+                                {['Meta Ads', 'Zapier', 'n8n', 'Make', 'GoHighLevel', 'Manual'].map(s => <option key={s}>{s}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-xs text-slate-400 block mb-1">Meta Form ID</label>
+                              <input value={editCampaignForm.meta_form_id || ''} onChange={e => setEditCampaignForm(p => ({ ...p, meta_form_id: e.target.value }))} placeholder="1234567890123456" className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white" />
+                            </div>
+                            <div className="sm:col-span-2">
+                              <label className="text-xs text-slate-400 block mb-1">Categoría de interés</label>
+                              <input value={editCampaignForm.interest_category || ''} onChange={e => setEditCampaignForm(p => ({ ...p, interest_category: e.target.value }))} placeholder="Ej. Fondo de retiro, Medicare..." className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white" />
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button onClick={() => setEditingCampaignId(null)} className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-100">Cancelar</button>
+                            <button onClick={() => handleSaveCampaign(camp.id)} className="px-3 py-1.5 text-xs bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold">Guardar</button>
+                          </div>
                         </div>
-                        <p className="text-xs text-slate-500 mt-0.5">{camp.clients?.company_name || '—'} · {camp.source}{camp.meta_form_id ? ` · Form: ${camp.meta_form_id}` : ''}</p>
-                      </div>
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${camp.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-500'}`}>
-                        {camp.is_active ? 'Activa' : 'Inactiva'}
-                      </span>
-                      <button onClick={() => handleToggleCampaign(camp.id, camp.is_active)} className="text-slate-400 hover:text-blue-500 transition-colors p-1">
-                        {camp.is_active ? <ToggleRight size={18} className="text-green-500" /> : <ToggleLeft size={18} />}
-                      </button>
-                      <button onClick={() => handleDeleteCampaign(camp.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1">
-                        <Trash2 size={15} />
-                      </button>
+                      ) : (
+                        <div className="flex items-center gap-4 p-4">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-semibold text-slate-900 text-sm">{camp.name}</p>
+                              {camp.interest_category && (
+                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">{camp.interest_category}</span>
+                              )}
+                            </div>
+                            <p className="text-xs text-slate-500 mt-0.5">{camp.clients?.company_name || '—'} · {camp.source}{camp.meta_form_id ? ` · Form: ${camp.meta_form_id}` : ''}</p>
+                          </div>
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${camp.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-500'}`}>
+                            {camp.is_active ? 'Activa' : 'Inactiva'}
+                          </span>
+                          <button onClick={() => handleToggleCampaign(camp.id, camp.is_active)} className="text-slate-400 hover:text-blue-500 transition-colors p-1 flex-shrink-0">
+                            {camp.is_active ? <ToggleRight size={18} className="text-green-500" /> : <ToggleLeft size={18} />}
+                          </button>
+                          <button onClick={() => { setEditingCampaignId(camp.id); setEditCampaignForm({ name: camp.name, source: camp.source, meta_form_id: camp.meta_form_id || '', interest_category: camp.interest_category || '', client_id: camp.client_id }) }} className="text-slate-400 hover:text-blue-500 transition-colors p-1 flex-shrink-0">
+                            <Edit2 size={14} />
+                          </button>
+                          <button onClick={() => handleDeleteCampaign(camp.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1 flex-shrink-0">
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

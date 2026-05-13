@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Users, Unlock, DollarSign, TrendingUp, AlertTriangle, CreditCard } from 'lucide-react'
+import { Users, Unlock, DollarSign, TrendingUp, AlertTriangle, CreditCard, Rocket, CheckCircle2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import LeadCard from '../../components/leads/LeadCard'
@@ -70,21 +70,23 @@ function PaymentMethodBanner({ clientData }) {
 export default function ClientDashboard() {
   const { clientId, isMock, clientData } = useAuth()
   const [leads, setLeads] = useState(isMock ? MOCK_LEADS : [])
+  const [campaigns, setCampaigns] = useState([])
   const [filters, setFilters] = useState({ search: '', status: '', locked: '' })
   const [selectedLead, setSelectedLead] = useState(null)
   const [payModalOpen, setPayModalOpen] = useState(false)
   const [loading, setLoading] = useState(!isMock)
 
   useEffect(() => {
-    console.log('[Dashboard] clientId:', clientId, 'isMock:', isMock)
     if (isMock || !clientId) { setLoading(false); return }
     setLoading(true)
-    supabase.rpc('get_client_leads', { p_client_id: clientId })
-      .then(({ data, error }) => {
-        console.log('[Dashboard] rpc result:', { data, error: error?.message, code: error?.code, details: error?.details })
-        if (!error) setLeads(data || [])
-        setLoading(false)
-      })
+    Promise.all([
+      supabase.rpc('get_client_leads', { p_client_id: clientId }),
+      supabase.from('campaigns').select('id, name, source, is_active, interest_category').eq('client_id', clientId).eq('is_active', true),
+    ]).then(([leadsRes, campRes]) => {
+      if (!leadsRes.error) setLeads(leadsRes.data || [])
+      if (!campRes.error) setCampaigns(campRes.data || [])
+      setLoading(false)
+    })
   }, [clientId, isMock])
 
   const filtered = leads.filter((lead) => {
@@ -134,6 +136,31 @@ export default function ClientDashboard() {
           <StatCard icon={TrendingUp} label="Bloqueados" value={lockedLeads} color="bg-orange-50 text-orange-600" />
           <StatCard icon={DollarSign} label="Total gastado" value={`$${totalSpent}`} color="bg-slate-100 text-slate-600" />
         </div>
+
+        {campaigns.length > 0 && (
+          <div className="mb-6">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Campañas activas</p>
+            <div className="flex flex-wrap gap-3">
+              {campaigns.map(camp => (
+                <div key={camp.id} className="flex items-center gap-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl px-4 py-3">
+                  <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Rocket size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-bold text-slate-900">{camp.name}</p>
+                      <CheckCircle2 size={13} className="text-green-500" />
+                    </div>
+                    {camp.interest_category && (
+                      <p className="text-xs text-green-700 font-medium">{camp.interest_category}</p>
+                    )}
+                    <p className="text-xs text-slate-400">{camp.source}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="mb-6">
           <LeadFilters filters={filters} onChange={setFilters} />
