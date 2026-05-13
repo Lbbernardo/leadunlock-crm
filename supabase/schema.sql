@@ -171,7 +171,7 @@ BEGIN
   ELSE
     -- Verify caller owns this client
     IF NOT EXISTS (
-      SELECT 1 FROM public.clients WHERE id = p_client_id AND user_id = auth.uid()
+      SELECT 1 FROM public.clients c WHERE c.id = p_client_id AND c.user_id = auth.uid()
     ) THEN
       RAISE EXCEPTION 'Unauthorized';
     END IF;

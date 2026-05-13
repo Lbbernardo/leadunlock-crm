@@ -191,6 +191,7 @@ export default function ClientDashboard() {
         onClose={() => setPayModalOpen(false)}
         lead={selectedLead}
         clientId={clientId}
+        leadPrice={clientData?.lead_price}
         onSuccess={handleUnlockSuccess}
       />
     </DashboardLayout>

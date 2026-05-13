@@ -188,10 +188,10 @@ function UnlockForm({ lead, clientId, amount, onSuccess, onClose }) {
   )
 }
 
-export default function PaymentModal({ open, onClose, lead, clientId, onSuccess }) {
+export default function PaymentModal({ open, onClose, lead, clientId, onSuccess, leadPrice }) {
   if (!lead) return null
 
-  const amount = lead.price ? Math.round(lead.price) : 20
+  const amount = leadPrice ? Math.round(leadPrice) : (lead.price ? Math.round(lead.price) : 20)
 
   function handleSuccess(leadId) {
     onSuccess(leadId)
