@@ -191,7 +191,7 @@ function UnlockForm({ lead, clientId, amount, onSuccess, onClose }) {
 export default function PaymentModal({ open, onClose, lead, clientId, onSuccess, leadPrice }) {
   if (!lead) return null
 
-  const amount = leadPrice ? Math.round(leadPrice) : (lead.price ? Math.round(lead.price) : 20)
+  const amount = leadPrice ?? lead.price ?? null
 
   function handleSuccess(leadId) {
     onSuccess(leadId)
@@ -200,13 +200,33 @@ export default function PaymentModal({ open, onClose, lead, clientId, onSuccess,
 
   return (
     <Modal open={open} onClose={onClose} title="Desbloquear lead">
-      <UnlockForm
-        lead={lead}
-        clientId={clientId}
-        amount={amount}
-        onSuccess={handleSuccess}
-        onClose={onClose}
-      />
+      {amount === null ? (
+        <div className="space-y-4">
+          <div className="bg-slate-50 rounded-xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Lock size={18} className="text-green-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-slate-900 truncate">{lead.full_name}</p>
+              <p className="text-xs text-slate-500">{lead.city || 'Sin ciudad'}</p>
+            </div>
+            <span className="text-lg font-bold text-slate-400 flex-shrink-0">—</span>
+          </div>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <p className="text-sm font-semibold text-amber-800">Precio no configurado</p>
+            <p className="text-xs text-amber-700 mt-1">El administrador aún no ha definido el precio de este lead. Contacta a soporte.</p>
+          </div>
+          <Button variant="outline" onClick={onClose} className="w-full">Cerrar</Button>
+        </div>
+      ) : (
+        <UnlockForm
+          lead={lead}
+          clientId={clientId}
+          amount={Math.round(amount)}
+          onSuccess={handleSuccess}
+          onClose={onClose}
+        />
+      )}
     </Modal>
   )
 }

@@ -244,7 +244,7 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
               <div className="flex items-center justify-between mb-3">
                 <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Cuenta</p>
                 {!editMode
-                  ? <button onClick={e => { e.stopPropagation(); setEditMode(true) }} className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 font-medium">
+                  ? <button onClick={e => { e.stopPropagation(); setEditMode(true) }} className="flex items-center gap-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold px-2.5 py-1 rounded-lg transition-colors">
                       <Edit2 size={10} /> Editar
                     </button>
                   : <div className="flex gap-3">
