@@ -62,7 +62,7 @@ export default function Login() {
           <p className="text-slate-400 mt-2">Ingresa a tu dashboard de leads</p>
         </div>
 
-        <div className="bg-slate-900 rounded-2xl border border-slate-800 p-8">
+        <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 sm:p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">Correo electrónico</label>

@@ -76,7 +76,7 @@ export default function LeadDetail() {
 
   return (
     <DashboardLayout>
-      <div className="p-8 max-w-3xl">
+      <div className="p-4 sm:p-8 max-w-3xl">
         <button
           onClick={() => navigate('/dashboard')}
           className="flex items-center gap-2 text-slate-500 hover:text-slate-700 text-sm mb-6 transition-colors"
@@ -84,9 +84,9 @@ export default function LeadDetail() {
           <ArrowLeft size={16} /> Volver a leads
         </button>
 
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex items-start justify-between gap-3 mb-6 flex-wrap">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{lead.full_name}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{lead.full_name}</h1>
             <p className="text-slate-500 mt-1">{lead.campaign_name}</p>
           </div>
           <StatusBadge status={lead.status} />

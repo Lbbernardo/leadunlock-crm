@@ -75,7 +75,7 @@ function StepIndicator({ current }) {
             </span>
           </div>
           {i < STEPS.length - 1 && (
-            <div className={`w-16 h-0.5 mx-2 mb-5 ${step.id < current ? 'bg-green-500' : 'bg-slate-800'}`} />
+            <div className={`w-8 sm:w-16 h-0.5 mx-1 sm:mx-2 mb-5 ${step.id < current ? 'bg-green-500' : 'bg-slate-800'}`} />
           )}
         </div>
       ))}
@@ -116,7 +116,7 @@ function Step1({ data, onChange, onNext }) {
           ¿Qué tipo de leads quieres recibir?
         </label>
         <p className="text-xs text-slate-500 mb-3">Selecciona uno. Toda tu campaña se enfoca en un solo nicho.</p>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {LEAD_CATEGORIES.map(cat => {
             const isSelected = data.categories.includes(cat.id)
             return (
@@ -159,7 +159,7 @@ function Step1({ data, onChange, onNext }) {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-2">Ciudad</label>
           <div className="relative">
@@ -280,7 +280,7 @@ function Step2({ data, onChange, onNext, onBack }) {
           <Tag size={14} className="inline mr-1" />
           Presupuesto mensual para leads
         </label>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {BUDGETS.map(b => (
             <button
               key={b.value}
@@ -657,7 +657,7 @@ function OnboardingContent() {
 
         <StepIndicator current={step} />
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-8">
           {step === 1 && <Step1 data={data} onChange={setData} onNext={() => setStep(2)} />}
           {step === 2 && <Step2 data={data} onChange={setData} onNext={() => setStep(3)} onBack={() => setStep(1)} />}
           {step === 3 && (

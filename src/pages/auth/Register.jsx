@@ -54,7 +54,7 @@ export default function Register() {
           <p className="text-slate-400 mt-2">Empieza a recibir leads en minutos</p>
         </div>
 
-        <div className="bg-slate-900 rounded-2xl border border-slate-800 p-8">
+        <div className="bg-slate-900 rounded-2xl border border-slate-800 p-5 sm:p-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-2">Nombre completo</label>

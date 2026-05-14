@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Zap, LayoutDashboard, CreditCard, HelpCircle, User, LogOut,
-  Lock, Unlock, MapPin, Tag, Phone, Mail, Calendar, ChevronRight,
-  Users, DollarSign, TrendingUp, Search, ArrowRight, X, Check,
-  Rocket, CheckCircle2, AlertTriangle
+  Zap, LayoutDashboard, CreditCard, HelpCircle, User,
+  Lock, Unlock, MapPin, Tag, Phone, Mail, Calendar,
+  Users, DollarSign, Search, ArrowRight, X, Check,
+  Rocket, CheckCircle2, AlertTriangle, Menu
 } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -141,6 +141,7 @@ export default function DemoPage() {
   const [search, setSearch] = useState('')
   const [selectedLead, setSelectedLead] = useState(null)
   const [justUnlocked, setJustUnlocked] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const filtered = leads.filter(l => {
     if (!search) return true
@@ -169,17 +170,32 @@ export default function DemoPage() {
   return (
     <div className="flex h-screen bg-[#070b10] overflow-hidden">
 
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-64 bg-[#050810] border-r border-white/[0.06] flex flex-col h-full flex-shrink-0">
-        <div className="p-6 border-b border-white/[0.06]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center shadow-lg shadow-green-500/25">
-              <Zap size={14} className="text-white" />
+      <aside className={`
+        fixed inset-y-0 left-0 z-40 lg:relative lg:z-auto
+        transform transition-transform duration-300 ease-in-out
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        w-64 bg-[#050810] border-r border-white/[0.06] flex flex-col h-full flex-shrink-0
+      `}>
+        <div className="p-5 border-b border-white/[0.06]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center shadow-lg shadow-green-500/25">
+                <Zap size={14} className="text-white" />
+              </div>
+              <div>
+                <span className="font-black text-white text-base tracking-tight block leading-tight">LeadUnlock</span>
+                <span className="text-[9px] text-white/25 font-medium tracking-wide uppercase">Para agentes de seguros</span>
+              </div>
             </div>
-            <div>
-              <span className="font-black text-white text-base tracking-tight block leading-tight">LeadUnlock</span>
-              <span className="text-[9px] text-white/25 font-medium tracking-wide uppercase">Para agentes de seguros</span>
-            </div>
+            <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-white/30 hover:text-white p-1 rounded-lg">
+              <X size={18} />
+            </button>
           </div>
         </div>
 
@@ -215,7 +231,21 @@ export default function DemoPage() {
       </aside>
 
       {/* Main */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Mobile top bar */}
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06] bg-[#050810] lg:hidden flex-shrink-0">
+          <button onClick={() => setSidebarOpen(true)} className="text-white/40 hover:text-white p-1.5 rounded-lg hover:bg-white/[0.05]">
+            <Menu size={20} />
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-green-500 rounded-md flex items-center justify-center">
+              <Zap size={11} className="text-white" />
+            </div>
+            <span className="font-black text-white text-sm">LeadUnlock</span>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
         {/* Demo banner */}
         <div className="bg-amber-500/[0.08] border-b border-amber-500/20 px-6 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
@@ -324,6 +354,7 @@ export default function DemoPage() {
             </Link>
             <p className="text-white/20 text-xs mt-3">Sin mensualidades · $100 reembolsable al llegar a $1,000 en leads</p>
           </div>
+        </div>
         </div>
       </div>
 

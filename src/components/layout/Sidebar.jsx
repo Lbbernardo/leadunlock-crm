@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, CreditCard, LogOut, Unlock, Shield, DollarSign, HelpCircle, User, BookOpen, Zap } from 'lucide-react'
+import { LayoutDashboard, CreditCard, LogOut, Shield, DollarSign, HelpCircle, User, BookOpen, Zap, X } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import clsx from 'clsx'
 
@@ -14,7 +14,7 @@ const adminNavItems = [
   { label: 'Perfil', icon: User, href: '/dashboard/profile' },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ onClose }) {
   const { pathname } = useLocation()
   const { profile, isAdmin, signOut } = useAuth()
   const navItems = isAdmin ? adminNavItems : clientNavItems
@@ -22,7 +22,8 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-[#050810] border-r border-white/[0.06] flex flex-col h-full flex-shrink-0">
       {/* Logo */}
-      <div className="p-6 border-b border-white/[0.06]">
+      <div className="p-5 border-b border-white/[0.06]">
+        <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center shadow-lg shadow-green-500/25">
             <Zap size={14} className="text-white" />
@@ -32,6 +33,12 @@ export default function Sidebar() {
             <span className="text-[9px] text-white/25 font-medium tracking-wide uppercase">Para agentes de seguros</span>
           </div>
         </div>
+          {onClose && (
+            <button onClick={onClose} className="lg:hidden text-white/30 hover:text-white p-1 rounded-lg">
+              <X size={18} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Nav */}
@@ -40,6 +47,7 @@ export default function Sidebar() {
           <Link
             key={item.href}
             to={item.href}
+            onClick={onClose}
             className={clsx(
               'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
               pathname === item.href
@@ -65,6 +73,7 @@ export default function Sidebar() {
               <Link
                 key={item.href}
                 to={item.href}
+                onClick={onClose}
                 className={clsx(
                   'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
                   pathname === item.href

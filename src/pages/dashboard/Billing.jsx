@@ -64,7 +64,7 @@ export default function Billing() {
 
   return (
     <DashboardLayout>
-      <div className="p-8 max-w-4xl">
+      <div className="p-4 sm:p-8 max-w-4xl">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-slate-900">Facturación & Crédito</h1>
           <p className="text-slate-500 mt-1">Tu saldo y historial de desbloqueos</p>
