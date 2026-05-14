@@ -1329,7 +1329,10 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-slate-500 mb-1">Categoría de interés</label>
-                      <input value={campaignForm.interest_category} onChange={e => setCampaignForm(p => ({ ...p, interest_category: e.target.value }))} placeholder="Medicare, Final Expense..." className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-green-400 bg-white" />
+                      <select value={campaignForm.interest_category} onChange={e => setCampaignForm(p => ({ ...p, interest_category: e.target.value }))} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-green-400 bg-white">
+                        <option value="">Sin categoría</option>
+                        {INITIAL_CATEGORIES.map(cat => <option key={cat.id} value={cat.name}>{cat.icon} {cat.name}</option>)}
+                      </select>
                     </div>
                   </div>
                   <button type="submit" disabled={campaignLoading} className="mt-3 px-5 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl disabled:opacity-50">
@@ -1361,7 +1364,7 @@ export default function AdminDashboard() {
                               {editCampaignForm.cost_per_lead > 0 && <p className="text-xs text-green-600 mt-1">→ Precio cliente: ${Math.max(Math.round(editCampaignForm.cost_per_lead * 3), 12)}</p>}
                             </div>
                             <div><label className="text-xs text-slate-400 block mb-1">Meta Form ID</label><input value={editCampaignForm.meta_form_id || ''} onChange={e => setEditCampaignForm(p => ({ ...p, meta_form_id: e.target.value }))} placeholder="1234567890123456" className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white" /></div>
-                            <div><label className="text-xs text-slate-400 block mb-1">Categoría</label><input value={editCampaignForm.interest_category || ''} onChange={e => setEditCampaignForm(p => ({ ...p, interest_category: e.target.value }))} placeholder="Medicare..." className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white" /></div>
+                            <div><label className="text-xs text-slate-400 block mb-1">Categoría</label><select value={editCampaignForm.interest_category || ''} onChange={e => setEditCampaignForm(p => ({ ...p, interest_category: e.target.value }))} className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white"><option value="">Sin categoría</option>{INITIAL_CATEGORIES.map(cat => <option key={cat.id} value={cat.name}>{cat.icon} {cat.name}</option>)}</select></div>
                           </div>
                           <div className="flex gap-2">
                             <button onClick={() => setEditingCampaignId(null)} className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-100">Cancelar</button>
