@@ -27,7 +27,10 @@ export default function Sidebar() {
           <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center shadow-lg shadow-green-500/25">
             <Unlock size={14} className="text-white" />
           </div>
-          <span className="font-black text-white text-base tracking-tight">LeadUnlock</span>
+          <div>
+            <span className="font-black text-white text-base tracking-tight block leading-tight">LeadUnlock</span>
+            <span className="text-[9px] text-white/25 font-medium tracking-wide uppercase">Para agentes de seguros</span>
+          </div>
         </div>
       </div>
 

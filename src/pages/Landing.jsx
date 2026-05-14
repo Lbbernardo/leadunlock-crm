@@ -185,7 +185,10 @@ function Navbar() {
           <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center shadow-lg shadow-green-500/30">
             <Unlock size={14} className="text-white" />
           </div>
-          <span className="font-black text-white text-base tracking-tight">LeadUnlock</span>
+          <div>
+            <span className="font-black text-white text-base tracking-tight block leading-tight">LeadUnlock</span>
+            <span className="text-[9px] text-white/30 font-medium tracking-wide uppercase">Seguros · Insurance Leads</span>
+          </div>
         </div>
 
         <div className="hidden lg:flex items-center gap-0.5">
@@ -254,7 +257,7 @@ function Navbar() {
 
 /* ─── Hero ─── */
 function Hero() {
-  const pills = ['Sin mensualidades', 'Meta Ads incluido', 'Desde $12/lead', '$100 reembolsable']
+  const pills = ['Final Expense · Medicare · Whole Life', 'Meta Ads incluido', 'Desde $12/lead', '$100 reembolsable']
   return (
     <section className="pt-28 pb-20 md:pt-36 md:pb-32 bg-[#070b10] relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_70%_at_65%_20%,rgba(34,197,94,0.09),transparent)]" />
@@ -271,23 +274,21 @@ function Hero() {
           <div className="max-w-xl">
             <FadeIn>
               <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 text-green-400 text-[11px] font-semibold px-4 py-2 rounded-full mb-8 tracking-wide">
-                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-                Tu campaña de Meta Ads lista en 24 horas
+                <Shield size={12} className="text-green-400" />
+                Exclusivo para agentes de seguros en EE.UU.
               </div>
             </FadeIn>
 
             <FadeIn delay={0.1}>
               <h1 className="text-[2.6rem] sm:text-5xl lg:text-[3.2rem] xl:text-[3.6rem] font-black tracking-tight leading-[1.04] text-white mb-6">
-                Sin gastar $2,000 en sistemas de{' '}
-                <span className="text-green-400">marketing</span>{' '}
-                complicados
+                Leads de seguros listos para{' '}
+                <span className="text-green-400">cerrar ventas</span>
               </h1>
             </FadeIn>
 
             <FadeIn delay={0.18}>
               <p className="text-white/45 text-lg leading-relaxed mb-8">
-                Creamos tu campaña de Meta Ads y los leads llegan directo a tu dashboard.
-                Tú decides cuáles abrir. Solo pagas por los que te interesan.
+                La plataforma de leads diseñada para agentes de seguros. Corremos tu campaña en Meta Ads y los prospectos de <strong className="text-white/70">Final Expense, Medicare, Whole Life</strong> y más llegan directo a tu dashboard. Solo pagas por los que abres.
               </p>
             </FadeIn>
 
