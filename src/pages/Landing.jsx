@@ -281,14 +281,14 @@ function Hero() {
 
             <FadeIn delay={0.1}>
               <h1 className="text-[2.6rem] sm:text-5xl lg:text-[3.2rem] xl:text-[3.6rem] font-black tracking-tight leading-[1.04] text-white mb-6">
-                Leads de seguros listos para{' '}
-                <span className="text-green-400">cerrar ventas</span>
+                Leads a tu ritmo,{' '}
+                <span className="text-green-400">sin compromisos</span>
               </h1>
             </FadeIn>
 
             <FadeIn delay={0.18}>
               <p className="text-white/45 text-lg leading-relaxed mb-8">
-                La plataforma de leads diseñada para agentes de seguros. Corremos tu campaña en Meta Ads y los prospectos de <strong className="text-white/70">Final Expense, Medicare, Whole Life</strong> y más llegan directo a tu dashboard. Solo pagas por los que abres.
+                Diseñada para agentes independientes de seguros que quieren clientes sin pagar mensualidades ni contratos. Empieza por $100, abre solo los leads que necesitas y crece a tu propio ritmo.
               </p>
             </FadeIn>
 
