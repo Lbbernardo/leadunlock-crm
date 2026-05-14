@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, CreditCard, LogOut, Unlock, Shield, DollarSign, HelpCircle, User, BookOpen } from 'lucide-react'
+import { LayoutDashboard, CreditCard, LogOut, Unlock, Shield, DollarSign, HelpCircle, User, BookOpen, Zap } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import clsx from 'clsx'
 
@@ -25,7 +25,7 @@ export default function Sidebar() {
       <div className="p-6 border-b border-white/[0.06]">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center shadow-lg shadow-green-500/25">
-            <Unlock size={14} className="text-white" />
+            <Zap size={14} className="text-white" />
           </div>
           <div>
             <span className="font-black text-white text-base tracking-tight block leading-tight">LeadUnlock</span>

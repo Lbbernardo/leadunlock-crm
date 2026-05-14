@@ -53,7 +53,7 @@ function DashboardMockup() {
             </div>
             <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-3 py-1">
               <div className="w-5 h-5 bg-green-500 rounded-md flex items-center justify-center">
-                <Unlock size={9} className="text-white" />
+                <Zap size={9} className="text-white" />
               </div>
               <span className="text-white/50 text-[11px]">app.unlocklead.click</span>
             </div>
@@ -183,7 +183,7 @@ function Navbar() {
       <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center shadow-lg shadow-green-500/30">
-            <Unlock size={14} className="text-white" />
+            <Zap size={14} className="text-white" />
           </div>
           <div>
             <span className="font-black text-white text-base tracking-tight block leading-tight">LeadUnlock</span>
