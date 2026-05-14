@@ -206,7 +206,11 @@ export default function ClientDashboard() {
         onClose={() => setPayModalOpen(false)}
         lead={selectedLead}
         clientId={clientId}
-        leadPrice={clientData?.lead_price}
+        leadPrice={
+          selectedLead?.acquisition_cost > 0
+            ? Math.max(Math.round(selectedLead.acquisition_cost * 3), 12)
+            : clientData?.lead_price
+        }
         onSuccess={handleUnlockSuccess}
       />
     </DashboardLayout>

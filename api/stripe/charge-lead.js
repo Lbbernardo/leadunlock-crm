@@ -45,6 +45,7 @@ export default async function handler(req, res) {
       payment_method: paymentMethodId,
       confirm: true,
       off_session: true,
+      metadata: { lead_id: leadId, client_id: clientId, type: 'lead_unlock' },
     })
 
     if (pi.status !== 'succeeded') {
