@@ -582,8 +582,8 @@ function Benefits() {
 function Pricing() {
   const items = [
     'Campaña de Meta Ads personalizada para tu nicho',
-    'Los leads llegan solos a tu dashboard',
-    'Ve nombre, ciudad e interés antes de abrir',
+    'Leads frescos y exclusivos llegan directo a tu cuenta',
+    'Tú decides cuáles desbloquear — a tu ritmo',
     'Teléfono y email completos al desbloquear',
     'Notas y seguimiento por lead',
     'Sin mensualidades — solo pagas lo que abres',
@@ -711,7 +711,7 @@ function FAQ() {
     },
     {
       q: '¿Qué información tiene cada lead?',
-      a: 'Antes de abrir ves: nombre, ciudad y producto de interés. Al desbloquear obtienes: número de teléfono, email y cualquier información extra que hayan completado en el formulario.',
+      a: 'El lead llega a tu dashboard y tú decides si lo desbloqueas. Al abrirlo obtienes nombre completo, teléfono, email y cualquier información extra que hayan completado en el formulario.',
     },
     {
       q: '¿Puedo pausar o cancelar cuando quiera?',
