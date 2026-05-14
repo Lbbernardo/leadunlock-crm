@@ -359,32 +359,32 @@ function HowItWorks() {
   const steps = [
     {
       step: '01', icon: Rocket,
-      title: 'Activamos tu campaña',
-      desc: 'Diseñamos y lanzamos una campaña de Meta Ads para tu nicho específico. Segmentación, copy y presupuesto — nosotros nos encargamos de todo.',
+      title: 'Creamos tu campaña personalizada',
+      desc: 'Diseñamos una campaña de Meta Ads hecha a la medida de tu nicho, zona y producto. Tus leads vienen segmentados exactamente para ti — no son compartidos con nadie más.',
       circle: 'bg-green-500', iconBg: 'bg-green-50', iconColor: 'text-green-600',
       shadow: 'shadow-green-100',
     },
     {
       step: '02', icon: Lock,
-      title: 'Los leads llegan a tu dashboard',
-      desc: 'Cada persona que llena el formulario aparece automáticamente. Ves nombre, ciudad e interés antes de decidir si lo abres.',
+      title: 'Leads frescos llegan a tu cuenta',
+      desc: 'Cada prospecto que llena tu formulario aparece al instante en tu dashboard con las características de tu campaña: producto de interés, ubicación y más. Son leads exclusivos, solo tuyos.',
       circle: 'bg-blue-500', iconBg: 'bg-blue-50', iconColor: 'text-blue-600',
       shadow: 'shadow-blue-100',
     },
     {
       step: '03', icon: Unlock,
-      title: 'Abre solo los que te interesan',
-      desc: 'Pagas solo por los leads que decides ver. Al desbloquear obtienes teléfono y email completos para contactar de inmediato.',
+      title: 'Abre solo los que necesitas',
+      desc: 'Tú decides cuáles desbloquear. Al abrir un lead obtienes teléfono y email completos para contactarlo de inmediato. Los precios varían según campaña pero empiezan desde $12.',
       circle: 'bg-purple-500', iconBg: 'bg-purple-50', iconColor: 'text-purple-600',
       shadow: 'shadow-purple-100',
     },
   ]
 
   const strip = [
-    { icon: BadgeCheck, label: 'Sin contratos' },
-    { icon: DollarSign, label: 'Sin mensualidades' },
-    { icon: TrendingUp, label: 'Resultados medibles' },
-    { icon: MessageSquare, label: 'Soporte humano' },
+    { icon: BadgeCheck, label: 'Leads exclusivos' },
+    { icon: Zap, label: 'Leads frescos al instante' },
+    { icon: DollarSign, label: 'Desde $12 por lead' },
+    { icon: MessageSquare, label: 'Sin mensualidades' },
   ]
 
   return (
