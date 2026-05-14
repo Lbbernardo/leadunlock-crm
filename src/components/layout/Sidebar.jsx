@@ -20,37 +20,39 @@ export default function Sidebar() {
   const navItems = isAdmin ? adminNavItems : clientNavItems
 
   return (
-    <aside className="w-64 bg-slate-950 flex flex-col h-full">
-      <div className="p-6 border-b border-slate-800">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-            <Unlock size={16} className="text-white" />
+    <aside className="w-64 bg-[#050810] border-r border-white/[0.06] flex flex-col h-full flex-shrink-0">
+      {/* Logo */}
+      <div className="p-6 border-b border-white/[0.06]">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center shadow-lg shadow-green-500/25">
+            <Unlock size={14} className="text-white" />
           </div>
-          <span className="font-bold text-white text-lg">LeadUnlock</span>
+          <span className="font-black text-white text-base tracking-tight">LeadUnlock</span>
         </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1">
+      {/* Nav */}
+      <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => (
           <Link
             key={item.href}
             to={item.href}
             className={clsx(
-              'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
+              'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
               pathname === item.href
-                ? 'bg-green-500/10 text-green-400'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800',
+                ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                : 'text-white/40 hover:text-white/80 hover:bg-white/[0.05] border border-transparent',
             )}
           >
-            <item.icon size={18} />
+            <item.icon size={17} />
             {item.label}
           </Link>
         ))}
 
         {isAdmin && (
           <>
-            <div className="px-3 pt-3 pb-1">
-              <p className="text-xs font-semibold text-slate-600 uppercase tracking-widest">Admin</p>
+            <div className="px-3 pt-5 pb-2">
+              <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest">Admin</p>
             </div>
             {[
               { label: 'Cuentas', href: '/admin', icon: Shield },
@@ -61,13 +63,13 @@ export default function Sidebar() {
                 key={item.href}
                 to={item.href}
                 className={clsx(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
                   pathname === item.href
-                    ? 'bg-blue-500/10 text-blue-400'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800',
+                    ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                    : 'text-white/40 hover:text-white/80 hover:bg-white/[0.05] border border-transparent',
                 )}
               >
-                <item.icon size={18} />
+                <item.icon size={17} />
                 {item.label}
               </Link>
             ))}
@@ -75,23 +77,24 @@ export default function Sidebar() {
         )}
       </nav>
 
-      <div className="p-4 border-t border-slate-800">
-        <div className="flex items-center gap-3 px-3 py-2 mb-2">
-          <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center">
-            <span className="text-slate-300 text-xs font-semibold">
+      {/* User */}
+      <div className="p-3 border-t border-white/[0.06]">
+        <div className="flex items-center gap-3 px-3 py-2.5 mb-1 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+          <div className="w-8 h-8 bg-green-500/20 border border-green-500/30 rounded-full flex items-center justify-center flex-shrink-0">
+            <span className="text-green-400 text-xs font-black">
               {profile?.full_name?.[0]?.toUpperCase() || 'U'}
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-medium truncate">
+            <p className="text-white/80 text-sm font-semibold truncate leading-tight">
               {profile?.full_name || profile?.email}
             </p>
-            <p className="text-slate-500 text-xs truncate">{profile?.email}</p>
+            <p className="text-white/25 text-xs truncate leading-tight">{profile?.email}</p>
           </div>
         </div>
         <button
           onClick={signOut}
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-white/30 hover:text-red-400 hover:bg-red-500/5 transition-all"
         >
           <LogOut size={16} />
           Cerrar sesión

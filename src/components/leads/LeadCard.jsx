@@ -21,77 +21,85 @@ export default function LeadCard({ lead, onUnlock }) {
 
   return (
     <div className={clsx(
-      'bg-white rounded-2xl border transition-all duration-200',
+      'rounded-2xl border transition-all duration-200',
       isUnlocked
-        ? 'border-slate-200 hover:border-slate-300 hover:shadow-md'
-        : 'border-slate-200 hover:border-orange-200',
+        ? 'bg-[#0c1018] border-white/[0.07] hover:border-green-500/25 hover:bg-white/[0.05]'
+        : 'bg-[#0c1018] border-white/[0.05] hover:border-orange-500/20',
     )}>
       <div className="p-5">
+        {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
             <div className={clsx(
               'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0',
-              isUnlocked ? 'bg-green-50' : 'bg-slate-100',
+              isUnlocked ? 'bg-green-500/10 border border-green-500/20' : 'bg-white/[0.04] border border-white/[0.07]',
             )}>
               {isUnlocked
-                ? <Unlock size={18} className="text-green-500" />
-                : <Lock size={18} className="text-slate-400" />}
+                ? <Unlock size={17} className="text-green-400" />
+                : <Lock size={17} className="text-white/25" />}
             </div>
             <div>
-              <p className="font-semibold text-slate-900">
+              <p className={clsx('font-semibold text-sm', isUnlocked ? 'text-white' : 'text-white/25')}>
                 {isUnlocked ? lead.full_name : maskName(lead.full_name)}
               </p>
-              <p className="text-xs text-slate-500 mt-0.5">{lead.source || lead.campaign_name || 'Meta Ads'}</p>
+              <p className="text-xs text-white/25 mt-0.5">{lead.source || lead.campaign_name || 'Meta Ads'}</p>
             </div>
           </div>
           <StatusBadge status={lead.status} />
         </div>
 
+        {/* Info grid */}
         <div className="grid grid-cols-2 gap-2 mb-4">
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <MapPin size={14} className="text-slate-400" />
-            <span>{lead.city}{lead.state ? `, ${lead.state}` : ''}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <Tag size={14} className="text-slate-400" />
-            <span className="truncate">{lead.product_interest || 'General'}</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <Phone size={14} className="text-slate-400" />
-            {isUnlocked && lead.phone
-              ? <span>{lead.phone}</span>
-              : <span className="blur-sensitive select-none">+52 55 ••••••••</span>}
-          </div>
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <Mail size={14} className="text-slate-400" />
-            {isUnlocked && lead.email
-              ? <span className="truncate">{lead.email}</span>
-              : <span className="blur-sensitive select-none">correo@••••.com</span>}
-          </div>
+          {[
+            { icon: MapPin, text: `${lead.city}${lead.state ? `, ${lead.state}` : ''}` },
+            { icon: Tag, text: lead.product_interest || 'General' },
+            {
+              icon: Phone,
+              text: isUnlocked && lead.phone ? lead.phone : '+1 ••• •••••••',
+              blur: !isUnlocked,
+            },
+            {
+              icon: Mail,
+              text: isUnlocked && lead.email ? lead.email : 'correo@••••.com',
+              blur: !isUnlocked,
+              truncate: true,
+            },
+          ].map(({ icon: Icon, text, blur, truncate }, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <Icon size={13} className="text-white/20 flex-shrink-0" />
+              <span className={clsx(
+                'text-xs',
+                blur ? 'text-white/15 select-none blur-sm' : 'text-white/50',
+                truncate && 'truncate',
+              )}>
+                {text}
+              </span>
+            </div>
+          ))}
         </div>
 
-        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-          <div className="flex items-center gap-1 text-xs text-slate-400">
-            <Calendar size={12} />
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-3 border-t border-white/[0.05]">
+          <div className="flex items-center gap-1.5 text-xs text-white/20">
+            <Calendar size={11} />
             {formatDate(lead.created_at)}
           </div>
 
           {isUnlocked ? (
             <Link
               to={`/dashboard/leads/${lead.id}`}
-              className="flex items-center gap-1 text-sm text-green-600 font-medium hover:text-green-500 transition-colors"
+              className="flex items-center gap-1 text-xs text-green-400 font-semibold hover:text-green-300 transition-colors"
             >
-              Ver detalle <ChevronRight size={14} />
+              Ver detalle <ChevronRight size={13} />
             </Link>
           ) : (
-            <Button
-              size="sm"
+            <button
               onClick={() => onUnlock(lead)}
-              className="bg-slate-900 hover:bg-slate-700 text-white text-xs px-3 py-1.5"
+              className="flex items-center gap-1.5 bg-green-500 hover:bg-green-400 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-lg shadow-green-500/20"
             >
-              <Lock size={12} />
+              <Lock size={11} />
               Desbloquear ${lead.price ? Math.round(lead.price) : 12}
-            </Button>
+            </button>
           )}
         </div>
       </div>
