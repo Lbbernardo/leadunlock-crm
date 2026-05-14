@@ -10,8 +10,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY,
 )
 
-async function sendEmail(subject, html) {
-  if (!process.env.RESEND_API_KEY || !process.env.ADMIN_EMAIL) return
+async function sendEmailTo(to, subject, html) {
+  if (!process.env.RESEND_API_KEY || !to) return
   await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -20,14 +20,19 @@ async function sendEmail(subject, html) {
     },
     body: JSON.stringify({
       from: 'LeadUnlock <onboarding@resend.dev>',
-      to: process.env.ADMIN_EMAIL,
+      to,
       subject,
       html,
     }),
   }).then(r => r.json()).then(d => {
-    if (d.id) console.log('Email enviado:', d.id)
+    if (d.id) console.log('Email enviado a', to, ':', d.id)
     else console.error('Email error:', JSON.stringify(d))
   }).catch(e => console.error('Email fetch error:', e.message))
+}
+
+async function sendEmail(subject, html) {
+  if (!process.env.ADMIN_EMAIL) return
+  await sendEmailTo(process.env.ADMIN_EMAIL, subject, html)
 }
 
 async function sendSMS(to, message) {
@@ -119,12 +124,22 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to create lead' })
   }
 
-  // Fetch client phone for WhatsApp notification
+  // Fetch client data + email for notifications
   const { data: client } = await supabase
     .from('clients')
-    .select('phone, company_name')
+    .select('phone, company_name, user_id')
     .eq('id', campaign.client_id)
     .single()
+
+  let clientEmail = null
+  if (client?.user_id) {
+    const { data: userRow } = await supabase
+      .from('users')
+      .select('email')
+      .eq('id', client.user_id)
+      .single()
+    clientEmail = userRow?.email || null
+  }
 
   const nameParts = full_name.trim().split(' ')
   const maskedName = nameParts[0][0] + '. ' + (nameParts[1] || '')
@@ -134,6 +149,35 @@ export default async function handler(req, res) {
   if (client?.phone) {
     const msg = `LeadUnlock: Tienes un nuevo lead!\nNombre: ${maskedName.trim()}\n\nEntra a unlocklead.click para ver los datos completos y desbloquearlo.`
     await sendSMS(client.phone, msg)
+  }
+
+  // Notificación al cliente — Email
+  if (clientEmail) {
+    await sendEmailTo(
+      clientEmail,
+      `¡Tienes un nuevo lead esperándote!`,
+      `<div style="font-family:sans-serif;max-width:560px;margin:0 auto;color:#1e293b">
+        <div style="background:#0f172a;padding:32px 24px;border-radius:12px 12px 0 0;text-align:center">
+          <h1 style="color:#ffffff;font-size:24px;margin:0">LeadUnlock</h1>
+        </div>
+        <div style="background:#f8fafc;padding:32px 24px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;border-top:none">
+          <h2 style="font-size:20px;margin:0 0 12px">🔔 Nuevo lead disponible</h2>
+          <p style="color:#475569;line-height:1.6;margin:0 0 20px">
+            Acaba de llegar un nuevo lead a tu cuenta. Entra al dashboard para ver los detalles y desbloquearlo.
+          </p>
+          <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:0 0 24px">
+            <p style="margin:0;color:#64748b;font-size:14px">Nombre (bloqueado)</p>
+            <p style="margin:4px 0 0;font-weight:600;font-size:18px;color:#0f172a">${maskedName.trim()}</p>
+          </div>
+          <a href="https://unlocklead.click/dashboard" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600;font-size:15px">
+            Ver y desbloquear lead
+          </a>
+          <p style="color:#94a3b8;font-size:13px;margin:24px 0 0">
+            Entra pronto — los leads frescos tienen mayor tasa de contacto.
+          </p>
+        </div>
+      </div>`
+    )
   }
 
   // Notificación al admin — SMS
