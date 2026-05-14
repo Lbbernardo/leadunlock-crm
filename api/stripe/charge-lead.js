@@ -54,7 +54,7 @@ export default async function handler(req, res) {
     // Desbloquear lead y registrar unlock
     await Promise.all([
       supabase.from('leads').update({ is_locked: false }).eq('id', leadId),
-      supabase.from('lead_unlocks').insert({ client_id: clientId, lead_id: leadId, amount_paid: price }),
+      supabase.from('lead_unlocks').insert({ client_id: clientId, lead_id: leadId, amount_paid: price, payment_method: 'card' }),
     ])
 
     return res.status(200).json({ success: true, amount: price })
