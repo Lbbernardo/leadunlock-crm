@@ -16,7 +16,7 @@ export default async function handler(req, res) {
 
   const [{ data: client, error: clientErr }, { data: lead, error: leadErr }] = await Promise.all([
     supabase.from('clients').select('id, balance, lead_price').eq('id', clientId).single(),
-    supabase.from('leads').select('id, is_locked, client_id').eq('id', leadId).single(),
+    supabase.from('leads').select('id, is_locked, client_id, acquisition_cost').eq('id', leadId).single(),
   ])
 
   if (clientErr || !client) return res.status(404).json({ error: 'Client not found' })
@@ -24,7 +24,10 @@ export default async function handler(req, res) {
   if (lead.client_id !== clientId) return res.status(403).json({ error: 'Forbidden' })
   if (!lead.is_locked) return res.status(200).json({ success: true, already_unlocked: true })
 
-  const price = client.lead_price
+  const acqCost = lead.acquisition_cost || 0
+  const price = acqCost > 0
+    ? Math.max(Math.round(acqCost * 3), 12)
+    : (client.lead_price || null)
   if (!price) return res.status(400).json({ error: 'no_price_configured' })
   const balance = client.balance || 0
 

@@ -15,7 +15,7 @@ export default async function handler(req, res) {
 
   const [{ data: client }, { data: lead }] = await Promise.all([
     supabase.from('clients').select('id, balance, lead_price, stripe_customer_id, user_id').eq('id', clientId).single(),
-    supabase.from('leads').select('id, is_locked, client_id').eq('id', leadId).single(),
+    supabase.from('leads').select('id, is_locked, client_id, acquisition_cost').eq('id', leadId).single(),
   ])
 
   if (!client) return res.status(404).json({ error: 'Client not found' })
@@ -24,7 +24,10 @@ export default async function handler(req, res) {
   if (!lead.is_locked) return res.status(200).json({ success: true, already_unlocked: true })
   if (!client.stripe_customer_id) return res.status(400).json({ error: 'no_payment_method' })
 
-  const price = client.lead_price
+  const acqCost = lead.acquisition_cost || 0
+  const price = acqCost > 0
+    ? Math.max(Math.round(acqCost * 3), 12)
+    : (client.lead_price || null)
   if (!price) return res.status(400).json({ error: 'no_price_configured' })
 
   try {

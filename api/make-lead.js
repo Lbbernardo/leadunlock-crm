@@ -90,7 +90,7 @@ export default async function handler(req, res) {
   // Lookup campaign by meta_form_id
   const { data: campaign } = await supabase
     .from('campaigns')
-    .select('id, client_id')
+    .select('id, client_id, cost_per_lead')
     .eq('meta_form_id', String(form_id))
     .eq('is_active', true)
     .single()
@@ -111,7 +111,7 @@ export default async function handler(req, res) {
     source: 'Meta Ads',
     is_locked: true,
     status: 'new',
-    acquisition_cost: 0,
+    acquisition_cost: campaign.cost_per_lead || 0,
   })
 
   if (error) {

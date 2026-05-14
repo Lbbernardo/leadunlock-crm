@@ -637,7 +637,7 @@ function StatCard({ icon: Icon, label, value, sub, color }) {
   )
 }
 
-const EMPTY_CAMPAIGN_FORM = { name: '', client_id: '', source: 'Meta Ads', meta_form_id: '', interest_category: '' }
+const EMPTY_CAMPAIGN_FORM = { name: '', client_id: '', source: 'Meta Ads', meta_form_id: '', interest_category: '', cost_per_lead: '' }
 
 export default function AdminDashboard() {
   const { isMock, user: adminUser } = useAuth()
@@ -652,6 +652,7 @@ export default function AdminDashboard() {
   const [campaignLoading, setCampaignLoading] = useState(false)
   const [editingCampaignId, setEditingCampaignId] = useState(null)
   const [editCampaignForm, setEditCampaignForm] = useState({})
+  const [showCampaignForm, setShowCampaignForm] = useState(false)
   const [loadingData, setLoadingData] = useState(!isMock)
   const [codes, setCodes] = useState([])
   const [codeForm, setCodeForm] = useState({ code: '', discount_pct: 20, max_uses: '', expires_at: '' })
@@ -722,7 +723,7 @@ export default function AdminDashboard() {
   async function fetchCampaigns() {
     const { data } = await supabase
       .from('campaigns')
-      .select('id, name, source, is_active, created_at, client_id, meta_form_id, interest_category, clients(company_name)')
+      .select('id, name, source, is_active, created_at, client_id, meta_form_id, interest_category, cost_per_lead, clients(company_name)')
       .order('created_at', { ascending: false })
     if (data) setCampaigns(data)
   }
@@ -733,7 +734,7 @@ export default function AdminDashboard() {
       const [{ data: clientsData }, { data: usersData }, { data: leadsData }, { data: unlocksData }] = await Promise.all([
         supabase.from('clients').select('id, company_name, lead_price, balance, created_at, user_id, phone, city, categories, budget, leads_per_month, target_audience, goal, product_description, target_state, status').order('created_at', { ascending: false }),
         supabase.from('users').select('id, email, full_name, role'),
-        supabase.from('leads').select('id, full_name, email, phone, city, product_interest, is_locked, status, created_at, client_id, acquisition_cost, campaign_name').order('created_at', { ascending: false }).limit(1000),
+        supabase.from('leads').select('id, full_name, email, phone, city, product_interest, is_locked, status, created_at, client_id, acquisition_cost, campaign_name, campaign_id').order('created_at', { ascending: false }).limit(1000),
         supabase.from('lead_unlocks').select('id, client_id, lead_id, amount_paid'),
       ])
 
@@ -799,6 +800,26 @@ export default function AdminDashboard() {
   const totalUnlocked = leads.filter(l => !l.is_locked).length
   const unlockRate = totalLeads > 0 ? Math.round((totalUnlocked / totalLeads) * 100) : 0
 
+  const campaignStats = useMemo(() => campaigns.map(camp => {
+    const campLeads = leads.filter(l => l.campaign_id === camp.id)
+    const unlocked = campLeads.filter(l => !l.is_locked)
+    const totalCost = campLeads.reduce((s, l) => s + Number(l.cost || 0), 0)
+    const totalRevenue = campLeads.reduce((s, l) => s + Number(l.amount_paid || 0), 0)
+    const clientName = clients.find(c => c.id === camp.client_id)?.company_name || camp.clients?.company_name || '—'
+    const autoPrice = camp.cost_per_lead > 0 ? Math.max(Math.round(camp.cost_per_lead * 3), 12) : null
+    return {
+      ...camp,
+      client_name: clientName,
+      total_leads: campLeads.length,
+      unlocked_leads: unlocked.length,
+      conversion_rate: campLeads.length > 0 ? Math.round((unlocked.length / campLeads.length) * 100) : 0,
+      total_cost: totalCost,
+      total_revenue: totalRevenue,
+      profit: totalRevenue - totalCost,
+      auto_price: autoPrice,
+    }
+  }), [campaigns, leads, clients])
+
   const campaignCategoryMap = useMemo(() => {
     const map = {}
     campaigns.forEach(c => { if (c.name && c.interest_category) map[c.name] = c.interest_category })
@@ -832,8 +853,9 @@ export default function AdminDashboard() {
       source: campaignForm.source,
       meta_form_id: campaignForm.meta_form_id.trim() || null,
       interest_category: campaignForm.interest_category.trim() || null,
+      cost_per_lead: campaignForm.cost_per_lead ? parseFloat(campaignForm.cost_per_lead) : 0,
     })
-    if (!error) { setCampaignForm(EMPTY_CAMPAIGN_FORM); await fetchCampaigns() }
+    if (!error) { setCampaignForm(EMPTY_CAMPAIGN_FORM); setShowCampaignForm(false); await fetchCampaigns() }
     setCampaignLoading(false)
   }
 
@@ -854,6 +876,7 @@ export default function AdminDashboard() {
       source: editCampaignForm.source,
       meta_form_id: editCampaignForm.meta_form_id?.trim() || null,
       interest_category: editCampaignForm.interest_category?.trim() || null,
+      cost_per_lead: editCampaignForm.cost_per_lead ? parseFloat(editCampaignForm.cost_per_lead) : 0,
       client_id: editCampaignForm.client_id,
     }).eq('id', id)
     setEditingCampaignId(null)
@@ -1245,109 +1268,100 @@ export default function AdminDashboard() {
 
           {activeTab === 'campaigns' && (
             <div className="p-6">
-              <div className="mb-6">
-                <h3 className="font-semibold text-slate-900">Campañas registradas</h3>
-                <p className="text-sm text-slate-500 mt-1">Registra el nombre exacto de cada campaña de Meta Ads. Los leads se enrutan automáticamente al cliente correcto.</p>
+              {/* Stats */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                {[
+                  { label: 'Campañas activas', value: campaignStats.filter(c => c.is_active).length },
+                  { label: 'Leads generados', value: campaignStats.reduce((s, c) => s + c.total_leads, 0) },
+                  { label: 'Ingresos totales', value: `$${campaignStats.reduce((s, c) => s + c.total_revenue, 0).toFixed(0)}` },
+                  { label: 'Ganancia neta', value: `$${campaignStats.reduce((s, c) => s + c.profit, 0).toFixed(0)}` },
+                ].map(({ label, value }) => (
+                  <div key={label} className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+                    <p className="text-xs text-slate-400 mb-1">{label}</p>
+                    <p className="text-xl font-bold text-slate-900">{value}</p>
+                  </div>
+                ))}
               </div>
 
-              <form onSubmit={handleAddCampaign} className="bg-slate-50 border border-slate-200 rounded-2xl p-5 mb-6">
-                <p className="text-sm font-semibold text-slate-700 mb-4">Registrar nueva campaña</p>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Nombre de campaña (exacto)</label>
-                    <input
-                      required
-                      value={campaignForm.name}
-                      onChange={e => setCampaignForm(p => ({ ...p, name: e.target.value }))}
-                      placeholder="Camp_GastosFinal_Q1"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Cliente</label>
-                    <select
-                      required
-                      value={campaignForm.client_id}
-                      onChange={e => setCampaignForm(p => ({ ...p, client_id: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400"
-                    >
-                      <option value="">Seleccionar cliente</option>
-                      {clients.map(c => (
-                        <option key={c.id} value={c.id}>{c.company_name && c.company_name !== '(sin nombre)' ? `${c.company_name}` : c.email}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Fuente</label>
-                    <select
-                      value={campaignForm.source}
-                      onChange={e => setCampaignForm(p => ({ ...p, source: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400"
-                    >
-                      {['Meta Ads', 'Zapier', 'n8n', 'Make', 'GoHighLevel', 'Manual'].map(s => <option key={s}>{s}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Meta Form ID <span className="text-slate-400">(solo Meta Ads)</span></label>
-                    <input
-                      value={campaignForm.meta_form_id}
-                      onChange={e => setCampaignForm(p => ({ ...p, meta_form_id: e.target.value }))}
-                      placeholder="1234567890123456"
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400"
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-medium text-slate-500 mb-1">Categoría de interés <span className="text-slate-400">(aparece en el detalle del lead)</span></label>
-                    <input
-                      value={campaignForm.interest_category}
-                      onChange={e => setCampaignForm(p => ({ ...p, interest_category: e.target.value }))}
-                      placeholder="Ej. Fondo de retiro, Seguro de vida, Medicare..."
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-400"
-                    />
-                  </div>
-                </div>
-                <button type="submit" disabled={campaignLoading} className="mt-3 px-5 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50">
-                  {campaignLoading ? 'Guardando...' : '+ Registrar campaña'}
+              {/* Header + botón nueva campaña */}
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm font-semibold text-slate-700">Campañas ({campaigns.length})</p>
+                <button
+                  onClick={() => { setShowCampaignForm(s => !s); setCampaignForm(EMPTY_CAMPAIGN_FORM) }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-xl transition-colors"
+                >
+                  <Plus size={13} /> {showCampaignForm ? 'Cancelar' : 'Nueva campaña'}
                 </button>
-              </form>
+              </div>
 
-              {campaigns.length === 0 ? (
+              {/* Formulario nueva campaña */}
+              {showCampaignForm && (
+                <form onSubmit={handleAddCampaign} className="bg-slate-50 border border-green-200 rounded-2xl p-5 mb-5">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Nueva campaña</p>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Nombre (exacto)</label>
+                      <input required value={campaignForm.name} onChange={e => setCampaignForm(p => ({ ...p, name: e.target.value }))} placeholder="Camp_Medicare_Q2" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-green-400 bg-white" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Cliente</label>
+                      <select required value={campaignForm.client_id} onChange={e => setCampaignForm(p => ({ ...p, client_id: e.target.value }))} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-green-400 bg-white">
+                        <option value="">Seleccionar cliente</option>
+                        {clients.map(c => <option key={c.id} value={c.id}>{c.company_name !== '(sin nombre)' ? c.company_name : c.email}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Fuente</label>
+                      <select value={campaignForm.source} onChange={e => setCampaignForm(p => ({ ...p, source: e.target.value }))} className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-green-400 bg-white">
+                        {['Meta Ads', 'Zapier', 'n8n', 'Make', 'GoHighLevel', 'Manual'].map(s => <option key={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Costo por lead <span className="text-slate-400">($)</span></label>
+                      <input type="number" step="0.01" min="0" value={campaignForm.cost_per_lead} onChange={e => setCampaignForm(p => ({ ...p, cost_per_lead: e.target.value }))} placeholder="Ej. 5.00" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-green-400 bg-white" />
+                      {campaignForm.cost_per_lead > 0 && (
+                        <p className="text-xs text-green-600 mt-1">→ Precio al cliente: ${Math.max(Math.round(campaignForm.cost_per_lead * 3), 12)}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Meta Form ID</label>
+                      <input value={campaignForm.meta_form_id} onChange={e => setCampaignForm(p => ({ ...p, meta_form_id: e.target.value }))} placeholder="1234567890123456" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-green-400 bg-white" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-500 mb-1">Categoría de interés</label>
+                      <input value={campaignForm.interest_category} onChange={e => setCampaignForm(p => ({ ...p, interest_category: e.target.value }))} placeholder="Medicare, Final Expense..." className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-green-400 bg-white" />
+                    </div>
+                  </div>
+                  <button type="submit" disabled={campaignLoading} className="mt-3 px-5 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl disabled:opacity-50">
+                    {campaignLoading ? 'Guardando...' : '+ Crear campaña'}
+                  </button>
+                </form>
+              )}
+
+              {/* Lista de campañas */}
+              {campaignStats.length === 0 ? (
                 <div className="text-center py-12 text-slate-400">
                   <Link size={28} className="mx-auto mb-3 opacity-30" />
                   <p className="text-sm">No hay campañas registradas aún.</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {campaigns.map(camp => (
-                    <div key={camp.id} className={`rounded-xl border ${camp.is_active ? 'border-green-200 bg-green-50' : 'border-slate-200 bg-slate-50'}`}>
+                <div className="space-y-3">
+                  {campaignStats.map(camp => (
+                    <div key={camp.id} className={`rounded-2xl border overflow-hidden ${camp.is_active ? 'border-green-200' : 'border-slate-200'}`}>
                       {editingCampaignId === camp.id ? (
-                        <div className="p-4 space-y-3">
+                        <div className="p-4 bg-white space-y-3">
                           <p className="text-xs font-bold text-slate-400 uppercase tracking-wide">Editar campaña</p>
                           <div className="grid sm:grid-cols-2 gap-2">
+                            <div><label className="text-xs text-slate-400 block mb-1">Nombre</label><input value={editCampaignForm.name || ''} onChange={e => setEditCampaignForm(p => ({ ...p, name: e.target.value }))} className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white" /></div>
+                            <div><label className="text-xs text-slate-400 block mb-1">Cliente</label><select value={editCampaignForm.client_id || ''} onChange={e => setEditCampaignForm(p => ({ ...p, client_id: e.target.value }))} className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white">{clients.map(c => <option key={c.id} value={c.id}>{c.company_name}</option>)}</select></div>
+                            <div><label className="text-xs text-slate-400 block mb-1">Fuente</label><select value={editCampaignForm.source || 'Meta Ads'} onChange={e => setEditCampaignForm(p => ({ ...p, source: e.target.value }))} className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white">{['Meta Ads', 'Zapier', 'n8n', 'Make', 'GoHighLevel', 'Manual'].map(s => <option key={s}>{s}</option>)}</select></div>
                             <div>
-                              <label className="text-xs text-slate-400 block mb-1">Nombre</label>
-                              <input value={editCampaignForm.name || ''} onChange={e => setEditCampaignForm(p => ({ ...p, name: e.target.value }))} className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white" />
+                              <label className="text-xs text-slate-400 block mb-1">Costo por lead ($)</label>
+                              <input type="number" step="0.01" min="0" value={editCampaignForm.cost_per_lead || ''} onChange={e => setEditCampaignForm(p => ({ ...p, cost_per_lead: e.target.value }))} placeholder="Ej. 5.00" className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white" />
+                              {editCampaignForm.cost_per_lead > 0 && <p className="text-xs text-green-600 mt-1">→ Precio cliente: ${Math.max(Math.round(editCampaignForm.cost_per_lead * 3), 12)}</p>}
                             </div>
-                            <div>
-                              <label className="text-xs text-slate-400 block mb-1">Cliente</label>
-                              <select value={editCampaignForm.client_id || ''} onChange={e => setEditCampaignForm(p => ({ ...p, client_id: e.target.value }))} className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white">
-                                {clients.map(c => <option key={c.id} value={c.id}>{c.company_name}</option>)}
-                              </select>
-                            </div>
-                            <div>
-                              <label className="text-xs text-slate-400 block mb-1">Fuente</label>
-                              <select value={editCampaignForm.source || 'Meta Ads'} onChange={e => setEditCampaignForm(p => ({ ...p, source: e.target.value }))} className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white">
-                                {['Meta Ads', 'Zapier', 'n8n', 'Make', 'GoHighLevel', 'Manual'].map(s => <option key={s}>{s}</option>)}
-                              </select>
-                            </div>
-                            <div>
-                              <label className="text-xs text-slate-400 block mb-1">Meta Form ID</label>
-                              <input value={editCampaignForm.meta_form_id || ''} onChange={e => setEditCampaignForm(p => ({ ...p, meta_form_id: e.target.value }))} placeholder="1234567890123456" className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white" />
-                            </div>
-                            <div className="sm:col-span-2">
-                              <label className="text-xs text-slate-400 block mb-1">Categoría de interés</label>
-                              <input value={editCampaignForm.interest_category || ''} onChange={e => setEditCampaignForm(p => ({ ...p, interest_category: e.target.value }))} placeholder="Ej. Fondo de retiro, Medicare..." className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white" />
-                            </div>
+                            <div><label className="text-xs text-slate-400 block mb-1">Meta Form ID</label><input value={editCampaignForm.meta_form_id || ''} onChange={e => setEditCampaignForm(p => ({ ...p, meta_form_id: e.target.value }))} placeholder="1234567890123456" className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white" /></div>
+                            <div><label className="text-xs text-slate-400 block mb-1">Categoría</label><input value={editCampaignForm.interest_category || ''} onChange={e => setEditCampaignForm(p => ({ ...p, interest_category: e.target.value }))} placeholder="Medicare..." className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-green-400 bg-white" /></div>
                           </div>
                           <div className="flex gap-2">
                             <button onClick={() => setEditingCampaignId(null)} className="px-3 py-1.5 text-xs border border-slate-200 rounded-lg text-slate-500 hover:bg-slate-100">Cancelar</button>
@@ -1355,38 +1369,56 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-4 p-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="font-semibold text-slate-900 text-sm">{camp.name}</p>
-                              {camp.interest_category && (
-                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">{camp.interest_category}</span>
-                              )}
+                        <>
+                          {/* Header de la campaña */}
+                          <div className={`flex items-center gap-3 px-4 py-3 ${camp.is_active ? 'bg-green-50' : 'bg-slate-50'}`}>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-bold text-slate-900 text-sm">{camp.name}</p>
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${camp.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-500'}`}>{camp.is_active ? 'Activa' : 'Inactiva'}</span>
+                                {camp.interest_category && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">{camp.interest_category}</span>}
+                              </div>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                {camp.client_name} · {camp.source}
+                                {camp.meta_form_id ? ` · Form: ${camp.meta_form_id}` : ''}
+                              </p>
                             </div>
-                            <p className="text-xs text-slate-500 mt-0.5">{camp.clients?.company_name || '—'} · {camp.source}{camp.meta_form_id ? ` · Form: ${camp.meta_form_id}` : ''}</p>
+                            <div className="flex items-center gap-1 flex-shrink-0">
+                              <button onClick={() => handleToggleCampaign(camp.id, camp.is_active)} className="text-slate-400 hover:text-green-500 transition-colors p-1">
+                                {camp.is_active ? <ToggleRight size={18} className="text-green-500" /> : <ToggleLeft size={18} />}
+                              </button>
+                              <button onClick={() => { setEditingCampaignId(camp.id); setEditCampaignForm({ name: camp.name, source: camp.source, meta_form_id: camp.meta_form_id || '', interest_category: camp.interest_category || '', cost_per_lead: camp.cost_per_lead || '', client_id: camp.client_id }) }} className="text-slate-400 hover:text-blue-500 transition-colors p-1">
+                                <Edit2 size={14} />
+                              </button>
+                              <button onClick={() => handleDeleteCampaign(camp.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1">
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </div>
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${camp.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-500'}`}>
-                            {camp.is_active ? 'Activa' : 'Inactiva'}
-                          </span>
-                          <button onClick={() => handleToggleCampaign(camp.id, camp.is_active)} className="text-slate-400 hover:text-blue-500 transition-colors p-1 flex-shrink-0">
-                            {camp.is_active ? <ToggleRight size={18} className="text-green-500" /> : <ToggleLeft size={18} />}
-                          </button>
-                          <button onClick={() => { setEditingCampaignId(camp.id); setEditCampaignForm({ name: camp.name, source: camp.source, meta_form_id: camp.meta_form_id || '', interest_category: camp.interest_category || '', client_id: camp.client_id }) }} className="text-slate-400 hover:text-blue-500 transition-colors p-1 flex-shrink-0">
-                            <Edit2 size={14} />
-                          </button>
-                          <button onClick={() => handleDeleteCampaign(camp.id)} className="text-slate-400 hover:text-red-500 transition-colors p-1 flex-shrink-0">
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
+
+                          {/* Métricas de la campaña */}
+                          <div className="bg-white px-4 py-3 grid grid-cols-3 sm:grid-cols-6 gap-3 border-t border-slate-100">
+                            {[
+                              { label: 'Costo/lead', value: camp.cost_per_lead > 0 ? `$${camp.cost_per_lead}` : '—', sub: camp.auto_price ? `→ cobra $${camp.auto_price}` : null, color: 'text-slate-700' },
+                              { label: 'Leads', value: camp.total_leads, color: 'text-slate-900' },
+                              { label: 'Desbloqueados', value: camp.unlocked_leads, color: 'text-green-600' },
+                              { label: 'Conversión', value: `${camp.conversion_rate}%`, color: camp.conversion_rate >= 50 ? 'text-green-600' : 'text-slate-700' },
+                              { label: 'Ingresos', value: `$${camp.total_revenue.toFixed(0)}`, color: 'text-blue-600' },
+                              { label: 'Ganancia', value: `$${camp.profit.toFixed(0)}`, color: camp.profit >= 0 ? 'text-green-600' : 'text-red-500' },
+                            ].map(({ label, value, sub, color }) => (
+                              <div key={label} className="text-center">
+                                <p className="text-xs text-slate-400">{label}</p>
+                                <p className={`text-sm font-bold ${color}`}>{value}</p>
+                                {sub && <p className="text-xs text-green-500">{sub}</p>}
+                              </div>
+                            ))}
+                          </div>
+                        </>
                       )}
                     </div>
                   ))}
                 </div>
               )}
-
-              <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-700">
-                <strong>Cómo funciona:</strong> Cuando llega un lead por webhook, el sistema busca el nombre de campaña y lo asigna al cliente correcto automáticamente.
-              </div>
             </div>
           )}
 
