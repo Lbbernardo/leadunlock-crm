@@ -18,6 +18,7 @@ import Onboarding from './pages/onboarding/Onboarding'
 import Building from './pages/dashboard/Building'
 import Privacy from './pages/Privacy'
 import ResetPassword from './pages/auth/ResetPassword'
+import DemoPage from './pages/demo/DemoPage'
 
 const Spinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-950">
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="/admin/manual" element={<ProtectedRoute adminOnly><Manual /></ProtectedRoute>} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/building" element={<ProtectedRoute><Building /></ProtectedRoute>} />
+          <Route path="/demo" element={<DemoPage />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="*" element={<Navigate to="/" replace />} />

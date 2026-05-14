@@ -204,6 +204,9 @@ function Navbar() {
           <Link to="/login" className="text-white/45 hover:text-white text-sm transition-colors px-4 py-2">
             Iniciar sesión
           </Link>
+          <Link to="/demo" className="text-white/45 hover:text-white text-sm transition-colors px-4 py-2 border border-white/10 rounded-xl hover:border-white/20">
+            Ver demo
+          </Link>
           <Link to="/register"
             className="bg-green-500 hover:bg-green-400 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-green-500/20 hover:shadow-green-500/40 flex items-center gap-1.5">
             Empezar ahora
@@ -310,8 +313,8 @@ function Hero() {
                   Empezar ahora — $100
                   <ArrowRight size={17} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <Link to="/login" className="text-white/30 hover:text-white/65 text-sm transition-colors">
-                  Ya tengo cuenta →
+                <Link to="/demo" className="text-white/30 hover:text-white/65 text-sm transition-colors flex items-center gap-1">
+                  Ver demo →
                 </Link>
               </div>
               <p className="text-white/18 text-xs">
