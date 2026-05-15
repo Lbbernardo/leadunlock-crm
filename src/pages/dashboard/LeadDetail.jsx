@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Phone, Mail, MapPin, Tag, Calendar, MessageSquare, Save } from 'lucide-react'
+import { ArrowLeft, Phone, Mail, MapPin, Tag, Calendar, MessageSquare, Save, User } from 'lucide-react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { StatusBadge, statusOptions } from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
@@ -111,12 +111,13 @@ export default function LeadDetail() {
             <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">
               Información de contacto
             </h2>
+            <InfoRow icon={User} label="Nombre" value={lead.full_name} />
             <InfoRow icon={Phone} label="Teléfono" value={lead.phone} />
             <InfoRow icon={Mail} label="Email" value={lead.email} />
             <InfoRow icon={MapPin} label="Ubicación" value={
               [lead.city, lead.state].filter(Boolean).join(', ') || clientData?.target_state || null
             } />
-            <InfoRow icon={Tag} label="Interés" value={lead.product_interest} />
+            <InfoRow icon={Tag} label="Interés" value={interestCategory || lead.product_interest} />
             <InfoRow icon={Calendar} label="Fecha de entrada" value={new Date(lead.created_at).toLocaleDateString('es-MX', { dateStyle: 'long' })} />
             <InfoRow icon={Tag} label="Fuente" value={lead.source} />
           </div>
