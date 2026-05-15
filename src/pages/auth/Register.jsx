@@ -50,7 +50,7 @@ export default function Register() {
             </div>
             <span className="font-bold text-white text-xl">LeadUnlock</span>
           </Link>
-          <h1 className="text-2xl font-bold text-white">Crea tu cuenta gratis</h1>
+          <h1 className="text-2xl font-bold text-white">Crea tu cuenta</h1>
           <p className="text-slate-400 mt-2">Empieza a recibir leads en minutos</p>
         </div>
 
@@ -128,7 +128,7 @@ export default function Register() {
             )}
 
             <Button type="submit" loading={loading} className="w-full py-3 text-base mt-2">
-              Crear cuenta gratis
+              Crear cuenta
             </Button>
           </form>
         </div>
