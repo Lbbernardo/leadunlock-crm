@@ -1327,10 +1327,7 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-white/35 mb-1">Categoría de interés</label>
-                      <select value={campaignForm.interest_category} onChange={e => setCampaignForm(p => ({ ...p, interest_category: e.target.value }))} className="w-full px-3 py-2 border border-white/[0.1] rounded-xl text-sm text-white focus:outline-none focus:border-green-500/40 bg-white/[0.05]">
-                        <option value="">Sin categoría</option>
-                        {INITIAL_CATEGORIES.map(cat => <option key={cat.id} value={cat.name}>{cat.icon} {cat.name}</option>)}
-                      </select>
+                      <input value={campaignForm.interest_category} onChange={e => setCampaignForm(p => ({ ...p, interest_category: e.target.value }))} placeholder="Ej: Fondo de retiro, Seguro de vida..." className="w-full px-3 py-2 border border-white/[0.1] rounded-xl text-sm text-white focus:outline-none focus:border-green-500/40 bg-white/[0.05] placeholder-white/20" />
                     </div>
                   </div>
                   <button type="submit" disabled={campaignLoading} className="mt-3 px-5 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl disabled:opacity-50">
@@ -1362,7 +1359,7 @@ export default function AdminDashboard() {
                               {editCampaignForm.cost_per_lead > 0 && <p className="text-xs text-green-600 mt-1">→ Precio cliente: ${Math.max(Math.round(editCampaignForm.cost_per_lead * 3), 12)}</p>}
                             </div>
                             <div><label className="text-xs text-white/30 block mb-1">Meta Form ID</label><input value={editCampaignForm.meta_form_id || ''} onChange={e => setEditCampaignForm(p => ({ ...p, meta_form_id: e.target.value }))} placeholder="1234567890123456" className="w-full px-2 py-1.5 text-xs border border-white/[0.1] rounded-lg focus:outline-none focus:border-green-500/40 bg-white/[0.05] text-white" /></div>
-                            <div><label className="text-xs text-white/30 block mb-1">Categoría</label><select value={editCampaignForm.interest_category || ''} onChange={e => setEditCampaignForm(p => ({ ...p, interest_category: e.target.value }))} className="w-full px-2 py-1.5 text-xs border border-white/[0.1] rounded-lg focus:outline-none focus:border-green-500/40 bg-white/[0.05] text-white"><option value="">Sin categoría</option>{INITIAL_CATEGORIES.map(cat => <option key={cat.id} value={cat.name}>{cat.icon} {cat.name}</option>)}</select></div>
+                            <div><label className="text-xs text-white/30 block mb-1">Categoría</label><input value={editCampaignForm.interest_category || ''} onChange={e => setEditCampaignForm(p => ({ ...p, interest_category: e.target.value }))} placeholder="Ej: Fondo de retiro..." className="w-full px-2 py-1.5 text-xs border border-white/[0.1] rounded-lg focus:outline-none focus:border-green-500/40 bg-white/[0.05] text-white placeholder-white/20" /></div>
                           </div>
                           <div className="flex gap-2">
                             <button onClick={() => setEditingCampaignId(null)} className="px-3 py-1.5 text-xs border border-white/[0.08] rounded-lg text-white/40 hover:bg-white/[0.05]">Cancelar</button>
