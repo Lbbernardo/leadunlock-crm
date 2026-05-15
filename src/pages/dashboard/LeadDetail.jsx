@@ -31,6 +31,7 @@ export default function LeadDetail() {
   const navigate = useNavigate()
   const [lead, setLead] = useState(null)
   const [interestCategory, setInterestCategory] = useState(null)
+  const [targetState, setTargetState] = useState(null)
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState('')
   const [saving, setSaving] = useState(false)
@@ -50,6 +51,14 @@ export default function LeadDetail() {
               .eq('name', data.campaign_name)
               .maybeSingle()
             if (camp?.interest_category) setInterestCategory(camp.interest_category)
+          }
+          if (data.client_id) {
+            const { data: client } = await supabase
+              .from('clients')
+              .select('target_state')
+              .eq('id', data.client_id)
+              .maybeSingle()
+            if (client?.target_state) setTargetState(client.target_state)
           }
         }
       })
@@ -111,7 +120,9 @@ export default function LeadDetail() {
             </h2>
             <InfoRow icon={Phone} label="Teléfono" value={lead.phone} />
             <InfoRow icon={Mail} label="Email" value={lead.email} />
-            <InfoRow icon={MapPin} label="Ubicación" value={`${lead.city}, ${lead.state}`} />
+            <InfoRow icon={MapPin} label="Ubicación" value={
+              [lead.city, lead.state].filter(Boolean).join(', ') || targetState || null
+            } />
             <InfoRow icon={Tag} label="Interés" value={lead.product_interest} />
             <InfoRow icon={Calendar} label="Fecha de entrada" value={new Date(lead.created_at).toLocaleDateString('es-MX', { dateStyle: 'long' })} />
             <InfoRow icon={Tag} label="Fuente" value={lead.source} />
