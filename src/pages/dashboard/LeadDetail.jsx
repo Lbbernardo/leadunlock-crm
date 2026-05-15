@@ -5,6 +5,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout'
 import { StatusBadge, statusOptions } from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
 import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext'
 
 const MOCK_LEADS = {
   '1': { id: '1', full_name: 'Carlos Mendoza', phone: '+52 55 1234 5678', email: 'carlos@ejemplo.com', city: 'CDMX', state: 'Ciudad de México', product_interest: 'Crédito hipotecario', source: 'Meta Ads', campaign_name: 'Camp_Hipoteca_Q1', is_locked: false, is_unlocked: true, status: 'interested', notes: 'Muy interesado, llamar en la tarde. Tiene presupuesto aprobado de $2MXN.', created_at: new Date(Date.now() - 1 * 86400000).toISOString() },
@@ -29,9 +30,9 @@ function InfoRow({ icon: Icon, label, value }) {
 export default function LeadDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { clientData } = useAuth()
   const [lead, setLead] = useState(null)
   const [interestCategory, setInterestCategory] = useState(null)
-  const [targetState, setTargetState] = useState(null)
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState('')
   const [saving, setSaving] = useState(false)
@@ -51,14 +52,6 @@ export default function LeadDetail() {
               .eq('name', data.campaign_name)
               .maybeSingle()
             if (camp?.interest_category) setInterestCategory(camp.interest_category)
-          }
-          if (data.client_id) {
-            const { data: client } = await supabase
-              .from('clients')
-              .select('target_state')
-              .eq('id', data.client_id)
-              .maybeSingle()
-            if (client?.target_state) setTargetState(client.target_state)
           }
         }
       })
@@ -121,7 +114,7 @@ export default function LeadDetail() {
             <InfoRow icon={Phone} label="Teléfono" value={lead.phone} />
             <InfoRow icon={Mail} label="Email" value={lead.email} />
             <InfoRow icon={MapPin} label="Ubicación" value={
-              [lead.city, lead.state].filter(Boolean).join(', ') || targetState || null
+              [lead.city, lead.state].filter(Boolean).join(', ') || clientData?.target_state || null
             } />
             <InfoRow icon={Tag} label="Interés" value={lead.product_interest} />
             <InfoRow icon={Calendar} label="Fecha de entrada" value={new Date(lead.created_at).toLocaleDateString('es-MX', { dateStyle: 'long' })} />
