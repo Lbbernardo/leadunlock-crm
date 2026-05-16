@@ -688,13 +688,12 @@ export default function AdminDashboard() {
 
   async function fetchScriptLinks() {
     const { data } = await supabase.from('script_links').select('*').order('position')
-    if (data && data.length > 0) {
-      setScriptLinks([
-        data.find(d => d.position === 1) || { id: null, title: '', url: '', position: 1 },
-        data.find(d => d.position === 2) || { id: null, title: '', url: '', position: 2 },
-        data.find(d => d.position === 3) || { id: null, title: '', url: '', position: 3 },
-      ])
-    }
+    const rows = data || []
+    setScriptLinks([
+      rows.find(d => d.position === 1) || { id: null, title: '', url: '', position: 1 },
+      rows.find(d => d.position === 2) || { id: null, title: '', url: '', position: 2 },
+      rows.find(d => d.position === 3) || { id: null, title: '', url: '', position: 3 },
+    ])
   }
 
   async function saveScriptLinks() {
@@ -702,8 +701,8 @@ export default function AdminDashboard() {
     for (const link of scriptLinks) {
       if (link.id) {
         await supabase.from('script_links').update({ title: link.title, url: link.url }).eq('id', link.id)
-      } else if (link.title || link.url) {
-        await supabase.from('script_links').insert({ title: link.title, url: link.url, position: link.position })
+      } else {
+        await supabase.from('script_links').upsert({ title: link.title, url: link.url, position: link.position }, { onConflict: 'position' })
       }
     }
     await fetchScriptLinks()
