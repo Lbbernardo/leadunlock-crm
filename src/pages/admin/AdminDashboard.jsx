@@ -661,12 +661,20 @@ export default function AdminDashboard() {
   const [leadsSearch, setLeadsSearch] = useState('')
   const [leadsClientFilter, setLeadsClientFilter] = useState('')
   const [leadsStatusFilter, setLeadsStatusFilter] = useState('all')
+  const [scriptLinks, setScriptLinks] = useState([
+    { id: null, title: '', url: '', position: 1 },
+    { id: null, title: '', url: '', position: 2 },
+    { id: null, title: '', url: '', position: 3 },
+  ])
+  const [scriptLinksSaving, setScriptLinksSaving] = useState(false)
+  const [scriptLinksSaved, setScriptLinksSaved] = useState(false)
 
   useEffect(() => {
     if (isMock) return
     fetchData()
     fetchCampaigns()
     fetchCodes()
+    fetchScriptLinks()
   }, [isMock])
 
   useEffect(() => {
@@ -677,6 +685,32 @@ export default function AdminDashboard() {
       setHighlightClientId(clientParam)
     }
   }, [location.search])
+
+  async function fetchScriptLinks() {
+    const { data } = await supabase.from('script_links').select('*').order('position')
+    if (data && data.length > 0) {
+      setScriptLinks([
+        data.find(d => d.position === 1) || { id: null, title: '', url: '', position: 1 },
+        data.find(d => d.position === 2) || { id: null, title: '', url: '', position: 2 },
+        data.find(d => d.position === 3) || { id: null, title: '', url: '', position: 3 },
+      ])
+    }
+  }
+
+  async function saveScriptLinks() {
+    setScriptLinksSaving(true)
+    for (const link of scriptLinks) {
+      if (link.id) {
+        await supabase.from('script_links').update({ title: link.title, url: link.url }).eq('id', link.id)
+      } else if (link.title || link.url) {
+        await supabase.from('script_links').insert({ title: link.title, url: link.url, position: link.position })
+      }
+    }
+    await fetchScriptLinks()
+    setScriptLinksSaving(false)
+    setScriptLinksSaved(true)
+    setTimeout(() => setScriptLinksSaved(false), 2500)
+  }
 
   async function fetchCodes() {
     const { data, error } = await supabase
@@ -933,6 +967,7 @@ export default function AdminDashboard() {
     { id: 'campaigns',   label: 'Campañas' },
     { id: 'categories',  label: 'Categorías' },
     { id: 'codes',       label: 'Descuentos' },
+    { id: 'scripts',     label: 'Guiones' },
   ]
 
   if (loadingData) {
@@ -1548,6 +1583,49 @@ export default function AdminDashboard() {
                   })}
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'scripts' && (
+            <div className="p-6 max-w-2xl">
+              <div className="mb-6">
+                <h3 className="font-semibold text-white">Guiones recomendados</h3>
+                <p className="text-sm text-white/35 mt-1">Estos links aparecen en el detalle de cada lead para todos los clientes. Puedes poner hasta 3 links (Google Docs, PDF, Notion, etc.).</p>
+              </div>
+              <div className="space-y-4">
+                {scriptLinks.map((link, i) => (
+                  <div key={i} className="bg-white/[0.02] border border-white/[0.07] rounded-2xl p-5">
+                    <p className="text-xs font-bold text-white/25 uppercase tracking-widest mb-3">Link {i + 1}</p>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs text-white/35 block mb-1">Título</label>
+                        <input
+                          value={link.title}
+                          onChange={e => setScriptLinks(prev => prev.map((l, idx) => idx === i ? { ...l, title: e.target.value } : l))}
+                          placeholder="Ej: Guion para Fondo de Retiro"
+                          className="w-full px-3 py-2 border border-white/[0.1] rounded-xl text-sm text-white focus:outline-none focus:border-green-500/40 bg-white/[0.05] placeholder-white/20"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-white/35 block mb-1">URL del link</label>
+                        <input
+                          value={link.url}
+                          onChange={e => setScriptLinks(prev => prev.map((l, idx) => idx === i ? { ...l, url: e.target.value } : l))}
+                          placeholder="https://docs.google.com/..."
+                          className="w-full px-3 py-2 border border-white/[0.1] rounded-xl text-sm text-white focus:outline-none focus:border-green-500/40 bg-white/[0.05] placeholder-white/20"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={saveScriptLinks}
+                disabled={scriptLinksSaving}
+                className="mt-5 px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl disabled:opacity-50 transition-colors"
+              >
+                {scriptLinksSaving ? 'Guardando...' : scriptLinksSaved ? '¡Guardado!' : 'Guardar guiones'}
+              </button>
             </div>
           )}
 

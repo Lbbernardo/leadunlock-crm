@@ -32,6 +32,7 @@ export default function LeadDetail() {
   const navigate = useNavigate()
   const { clientData } = useAuth()
   const [lead, setLead] = useState(null)
+  const [scriptLinks, setScriptLinks] = useState([])
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState('')
   const [saving, setSaving] = useState(false)
@@ -39,13 +40,15 @@ export default function LeadDetail() {
 
   useEffect(() => {
     supabase.from('leads').select('*').eq('id', id).single()
-      .then(async ({ data }) => {
+      .then(({ data }) => {
         if (data) {
           setLead(data)
           setNotes(data.notes || '')
           setStatus(data.status)
         }
       })
+    supabase.from('script_links').select('*').order('position')
+      .then(({ data }) => { if (data) setScriptLinks(data.filter(l => l.title && l.url)) })
   }, [id])
 
   async function handleSave() {
@@ -157,6 +160,31 @@ export default function LeadDetail() {
             </Button>
           </div>
         </div>
+
+        {scriptLinks.length > 0 && (
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
+            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-4">
+              Guion recomendado
+            </h2>
+            <div className="space-y-3">
+              {scriptLinks.map((link) => (
+                <a
+                  key={link.id}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 hover:border-green-300 hover:bg-green-50 transition-all group"
+                >
+                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <MessageSquare size={15} className="text-green-600" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-700 group-hover:text-green-700">{link.title}</span>
+                  <span className="ml-auto text-xs text-slate-400 group-hover:text-green-500">Ver →</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   )
