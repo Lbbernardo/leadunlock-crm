@@ -95,7 +95,7 @@ export default async function handler(req, res) {
   // Lookup campaign by meta_form_id
   const { data: campaign } = await supabase
     .from('campaigns')
-    .select('id, client_id, cost_per_lead, name, interest_category')
+    .select('id, client_id, cost_per_lead, name, lead_interest')
     .eq('meta_form_id', String(form_id))
     .eq('is_active', true)
     .single()
@@ -114,7 +114,7 @@ export default async function handler(req, res) {
     email: fields.email || null,
     city: fields.city || null,
     state: fields.state || null,
-    product_interest: campaign.interest_category || null,
+    product_interest: campaign.lead_interest || null,
     source: 'Meta Ads',
     is_locked: true,
     status: 'new',
