@@ -32,7 +32,6 @@ export default function LeadDetail() {
   const navigate = useNavigate()
   const { clientData } = useAuth()
   const [lead, setLead] = useState(null)
-  const [interestCategory, setInterestCategory] = useState(null)
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState('')
   const [saving, setSaving] = useState(false)
@@ -45,14 +44,6 @@ export default function LeadDetail() {
           setLead(data)
           setNotes(data.notes || '')
           setStatus(data.status)
-          if (data.campaign_name) {
-            const { data: camp } = await supabase
-              .from('campaigns')
-              .select('interest_category')
-              .eq('name', data.campaign_name)
-              .maybeSingle()
-            if (camp?.interest_category) setInterestCategory(camp.interest_category)
-          }
         }
       })
   }, [id])
@@ -94,14 +85,14 @@ export default function LeadDetail() {
           <StatusBadge status={lead.status} />
         </div>
 
-        {interestCategory && (
+        {lead.product_interest && (
           <div className="flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-2xl px-5 py-4 mb-6">
             <div className="w-8 h-8 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
               <Tag size={15} className="text-blue-600" />
             </div>
             <div>
               <p className="text-xs font-semibold text-blue-500 uppercase tracking-wide">Este lead está interesado en</p>
-              <p className="text-blue-900 font-semibold mt-0.5">{interestCategory}</p>
+              <p className="text-blue-900 font-semibold mt-0.5">{lead.product_interest}</p>
             </div>
           </div>
         )}
@@ -117,7 +108,7 @@ export default function LeadDetail() {
             <InfoRow icon={MapPin} label="Ubicación" value={
               [lead.city, lead.state].filter(Boolean).join(', ') || clientData?.target_state || null
             } />
-            <InfoRow icon={Tag} label="Interés" value={interestCategory || lead.product_interest} />
+            <InfoRow icon={Tag} label="Interés" value={lead.product_interest} />
             <InfoRow icon={Calendar} label="Fecha de entrada" value={new Date(lead.created_at).toLocaleDateString('es-MX', { dateStyle: 'long' })} />
             <InfoRow icon={Tag} label="Fuente" value={lead.source} />
           </div>

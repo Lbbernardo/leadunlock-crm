@@ -95,7 +95,7 @@ export default async function handler(req, res) {
   // Lookup campaign by meta_form_id
   const { data: campaign } = await supabase
     .from('campaigns')
-    .select('id, client_id, cost_per_lead')
+    .select('id, client_id, cost_per_lead, name, interest_category')
     .eq('meta_form_id', String(form_id))
     .eq('is_active', true)
     .single()
@@ -108,11 +108,13 @@ export default async function handler(req, res) {
   const { error } = await supabase.from('leads').insert({
     client_id: campaign.client_id,
     campaign_id: campaign.id,
+    campaign_name: campaign.name,
     full_name,
     phone: fields.phone_number || fields.phone || null,
     email: fields.email || null,
     city: fields.city || null,
     state: fields.state || null,
+    product_interest: campaign.interest_category || null,
     source: 'Meta Ads',
     is_locked: true,
     status: 'new',
