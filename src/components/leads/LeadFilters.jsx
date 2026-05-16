@@ -2,7 +2,7 @@ import { Search } from 'lucide-react'
 import { statusOptions } from '../ui/Badge'
 
 export default function LeadFilters({ filters, onChange }) {
-  const selectCls = 'px-3 py-2.5 text-sm bg-white/[0.05] border border-white/[0.08] text-white/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500/40 transition-colors'
+  const selectCls = 'px-3 py-2.5 text-sm bg-[#0c1018] border border-white/[0.08] text-white/70 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500/40 transition-colors [&>option]:bg-[#0c1018] [&>option]:text-white'
   return (
     <div className="flex flex-wrap gap-3 items-center">
       <div className="relative flex-1 min-w-52">
