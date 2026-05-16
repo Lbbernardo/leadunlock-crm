@@ -1305,7 +1305,12 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-white/35 mb-1">Cliente</label>
-                      <select required value={campaignForm.client_id} onChange={e => setCampaignForm(p => ({ ...p, client_id: e.target.value }))} className="w-full px-3 py-2 border border-white/[0.1] rounded-xl text-sm text-white focus:outline-none focus:border-green-500/40 bg-white/[0.05]">
+                      <select required value={campaignForm.client_id} onChange={e => {
+                          const clientId = e.target.value
+                          const selectedClient = clients.find(c => c.id === clientId)
+                          const firstCategory = selectedClient?.categories?.[0] || ''
+                          setCampaignForm(p => ({ ...p, client_id: clientId, interest_category: firstCategory }))
+                        }} className="w-full px-3 py-2 border border-white/[0.1] rounded-xl text-sm text-white focus:outline-none focus:border-green-500/40 bg-white/[0.05]">
                         <option value="">Seleccionar cliente</option>
                         {clients.map(c => <option key={c.id} value={c.id}>{c.company_name !== '(sin nombre)' ? c.company_name : c.email}</option>)}
                       </select>
