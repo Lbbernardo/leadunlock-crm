@@ -1006,7 +1006,7 @@ export default function AdminDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-4 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
+                className={`px-3 py-4 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
                   activeTab === tab.id ? 'border-green-500 text-green-400' : 'border-transparent text-white/35 hover:text-white/65'
                 }`}
               >
