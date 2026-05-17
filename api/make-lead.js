@@ -19,7 +19,7 @@ async function sendEmailTo(to, subject, html) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'LeadUnlock <onboarding@resend.dev>',
+      from: 'LeadUnlock <notificaciones@unlocklead.click>',
       to,
       subject,
       html,

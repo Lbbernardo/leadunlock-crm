@@ -17,7 +17,7 @@ async function sendEmail(subject, html) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'LeadUnlock <onboarding@resend.dev>',
+      from: 'LeadUnlock <notificaciones@unlocklead.click>',
       to: process.env.ADMIN_EMAIL,
       subject,
       html,

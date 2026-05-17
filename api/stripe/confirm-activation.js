@@ -7,6 +7,40 @@ import { createClient } from '@supabase/supabase-js'
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
 
+async function sendAdminNewClientEmail(clientEmail, clientName, amount) {
+  if (!process.env.RESEND_API_KEY || !process.env.ADMIN_EMAIL) return
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'LeadUnlock <notificaciones@unlocklead.click>',
+      to: process.env.ADMIN_EMAIL,
+      subject: '🎉 Nuevo cliente activado — LeadUnlock',
+      html: `
+        <div style="font-family:sans-serif;max-width:520px;margin:0 auto;color:#1e293b">
+          <div style="background:#0f172a;padding:24px;border-radius:12px 12px 0 0">
+            <h2 style="color:#22c55e;margin:0;font-size:20px">Nuevo cliente activado</h2>
+          </div>
+          <div style="background:#f8fafc;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e2e8f0;border-top:none">
+            <table style="width:100%;border-collapse:collapse">
+              <tr><td style="color:#64748b;padding:6px 0;width:120px">Nombre</td><td style="color:#0f172a;font-weight:600">${clientName || '—'}</td></tr>
+              <tr><td style="color:#64748b;padding:6px 0">Email</td><td style="color:#0f172a;font-weight:600">${clientEmail || '—'}</td></tr>
+              <tr><td style="color:#64748b;padding:6px 0">Pago</td><td style="color:#22c55e;font-weight:700">$${amount} USD</td></tr>
+              <tr><td style="color:#64748b;padding:6px 0">Fecha</td><td style="color:#0f172a">${new Date().toLocaleString('es-US', { timeZone: 'America/New_York' })}</td></tr>
+            </table>
+            <a href="https://unlocklead.click/admin" style="display:inline-block;margin-top:20px;background:#0f172a;color:#ffffff;text-decoration:none;padding:10px 22px;border-radius:8px;font-weight:600;font-size:14px">
+              Ver en el admin
+            </a>
+          </div>
+        </div>
+      `,
+    }),
+  }).catch(e => console.error('Admin notification email error:', e.message))
+}
+
 async function sendWelcomeEmail(toEmail, firstName) {
   if (!process.env.RESEND_API_KEY) return
   const name = firstName || 'there'
@@ -17,7 +51,7 @@ async function sendWelcomeEmail(toEmail, firstName) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'LeadUnlock <onboarding@resend.dev>',
+      from: 'LeadUnlock <hola@unlocklead.click>',
       to: toEmail,
       subject: '¡Tu cuenta LeadUnlock está activa! 🎉',
       html: `
@@ -125,6 +159,7 @@ export default async function handler(req, res) {
       .eq('user_id', userId)
 
     if (userEmail) sendWelcomeEmail(userEmail, userFirstName)
+    sendAdminNewClientEmail(userEmail, userRow?.full_name, activationAmount)
 
     return res.status(200).json({ success: true, last4, brand, amount: activationAmount })
   } catch (err) {
