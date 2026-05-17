@@ -18,6 +18,7 @@ import Onboarding from './pages/onboarding/Onboarding'
 import Building from './pages/dashboard/Building'
 import Privacy from './pages/Privacy'
 import ResetPassword from './pages/auth/ResetPassword'
+import Callback from './pages/auth/Callback'
 import DemoPage from './pages/demo/DemoPage'
 
 const Spinner = () => (
@@ -95,6 +96,7 @@ export default function App() {
           <Route path="/demo" element={<DemoPage />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/auth/callback" element={<Callback />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>

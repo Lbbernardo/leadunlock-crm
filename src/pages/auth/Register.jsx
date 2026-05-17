@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Unlock, Mail, Lock, User, Building2, AlertCircle } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Unlock, Mail, Lock, User, Building2, AlertCircle, CheckCircle } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/ui/Button'
 
@@ -8,8 +8,8 @@ export default function Register() {
   const [form, setForm] = useState({ fullName: '', companyName: '', email: '', password: '' })
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [confirmed, setConfirmed] = useState(false)
   const { signUp } = useAuth()
-  const navigate = useNavigate()
 
   function handleChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -36,8 +36,27 @@ export default function Register() {
         : err.message)
       setLoading(false)
     } else {
-      navigate('/onboarding')
+      setConfirmed(true)
+      setLoading(false)
     }
+  }
+
+  if (confirmed) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md text-center">
+          <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle size={32} className="text-green-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-3">Revisa tu correo</h1>
+          <p className="text-slate-400">
+            Te enviamos un link de confirmación a <span className="text-white font-medium">{form.email}</span>.<br />
+            Haz clic en el link para activar tu cuenta y continuar el registro.
+          </p>
+          <p className="text-slate-600 text-sm mt-6">¿No llegó? Revisa tu carpeta de spam.</p>
+        </div>
+      </div>
+    )
   }
 
   return (

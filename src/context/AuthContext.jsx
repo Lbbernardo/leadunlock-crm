@@ -73,7 +73,7 @@ export function AuthProvider({ children }) {
 
   const signUp = IS_MOCK
     ? async () => ({ error: null })
-    : (email, password, metadata) => supabase.auth.signUp({ email, password, options: { data: metadata } })
+    : (email, password, metadata) => supabase.auth.signUp({ email, password, options: { data: metadata, emailRedirectTo: 'https://unlocklead.click/auth/callback' } })
 
   const signOut = IS_MOCK
     ? async () => {}
