@@ -59,6 +59,8 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
   const [addLeadForm, setAddLeadForm] = useState({ full_name: '', phone: '', email: '', city: '', state: '', product_interest: '', campaign_name: '', is_locked: true })
   const [addLeadLoading, setAddLeadLoading] = useState(false)
   const [addLeadError, setAddLeadError] = useState(null)
+  const [clientStatus, setClientStatus] = useState(client.status)
+  const [statusLoading, setStatusLoading] = useState(false)
 
   useEffect(() => {
     if (initialExpanded) {
@@ -80,8 +82,8 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
     }
   }, [initialExpanded])
 
-  const statusColor = { active: 'green', pending: 'yellow', paused: 'slate' }[client.status] || 'slate'
-  const statusLabel = { active: 'Activo', pending: 'Pendiente', paused: 'Pausado' }[client.status] || client.status
+  const statusColor = { active: 'green', pending: 'yellow', paused: 'slate', banned: 'red' }[clientStatus] || 'slate'
+  const statusLabel = { active: 'Activo', pending: 'Pendiente', paused: 'Pausado', banned: 'Baneado' }[clientStatus] || clientStatus
   const unlockRate = client.leads_total > 0 ? Math.round((client.leads_unlocked / client.leads_total) * 100) : 0
 
   async function fetchLeads() {
@@ -170,6 +172,21 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
     setAddLeadLoading(false)
   }
 
+  async function handleQuickStatus(newStatus) {
+    setStatusLoading(true)
+    await supabase.from('clients').update({ status: newStatus }).eq('id', client.id)
+    setClientStatus(newStatus)
+    setStatusLoading(false)
+    onRefresh()
+  }
+
+  async function handleDeleteClient() {
+    if (!confirm(`¿Eliminar permanentemente la cuenta de ${client.company_name}? Esta acción no se puede deshacer.`)) return
+    await supabase.from('leads').delete().eq('client_id', client.id)
+    await supabase.from('clients').delete().eq('id', client.id)
+    onRefresh()
+  }
+
   async function handleToggleLock(leadId, currentLocked) {
     await supabase.from('leads').update({ is_locked: !currentLocked }).eq('id', leadId)
     setClientLeads(prev => prev.map(l => l.id === leadId ? { ...l, is_locked: !currentLocked } : l))
@@ -237,6 +254,40 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
 
       {expanded && (
         <div className="bg-white/[0.015] border-t border-white/[0.05]">
+
+          {/* Acciones rápidas */}
+          <div className="px-5 py-3 flex items-center gap-2 border-b border-white/[0.05] flex-wrap">
+            <span className="text-xs text-white/25 uppercase tracking-widest font-bold mr-2">Acciones</span>
+            {clientStatus === 'active' && (
+              <button onClick={e => { e.stopPropagation(); handleQuickStatus('paused') }} disabled={statusLoading}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10 transition-colors disabled:opacity-40">
+                ⏸ Pausar cuenta
+              </button>
+            )}
+            {clientStatus === 'paused' && (
+              <button onClick={e => { e.stopPropagation(); handleQuickStatus('active') }} disabled={statusLoading}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-green-500/30 text-green-400 hover:bg-green-500/10 transition-colors disabled:opacity-40">
+                ▶ Reactivar cuenta
+              </button>
+            )}
+            {clientStatus !== 'banned' && (
+              <button onClick={e => { e.stopPropagation(); handleQuickStatus('banned') }} disabled={statusLoading}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40">
+                🚫 Banear cuenta
+              </button>
+            )}
+            {clientStatus === 'banned' && (
+              <button onClick={e => { e.stopPropagation(); handleQuickStatus('active') }} disabled={statusLoading}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-green-500/30 text-green-400 hover:bg-green-500/10 transition-colors disabled:opacity-40">
+                ✓ Desbanear
+              </button>
+            )}
+            <button onClick={e => { e.stopPropagation(); handleDeleteClient() }}
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-800/40 text-red-500/70 hover:bg-red-500/10 hover:text-red-400 transition-colors ml-auto">
+              🗑 Eliminar cliente
+            </button>
+          </div>
+
           {/* Info + Métricas + Webhook */}
           <div className="px-5 py-5 grid md:grid-cols-3 gap-6 border-b border-white/[0.05]">
             {/* Col 1: Info editable */}
@@ -287,6 +338,7 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
                       <option value="active">Activo</option>
                       <option value="pending">Pendiente</option>
                       <option value="paused">Pausado</option>
+                      <option value="banned">Baneado</option>
                     </select>
                   </div>
                 </div>

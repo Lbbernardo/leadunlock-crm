@@ -19,6 +19,7 @@ import Building from './pages/dashboard/Building'
 import Privacy from './pages/Privacy'
 import ResetPassword from './pages/auth/ResetPassword'
 import Callback from './pages/auth/Callback'
+import AccountBlocked from './pages/dashboard/AccountBlocked'
 import DemoPage from './pages/demo/DemoPage'
 
 const Spinner = () => (
@@ -62,6 +63,7 @@ function ClientRoute({ children }) {
 
   const status = clientData?.status
   if (status === 'pending' || !status) return <Navigate to="/onboarding" replace />
+  if (status === 'paused' || status === 'banned') return <Navigate to="/account-blocked" replace />
   if (!campaignReady) return <Navigate to="/building" replace />
 
   return children
@@ -97,6 +99,7 @@ export default function App() {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<Callback />} />
+          <Route path="/account-blocked" element={<ProtectedRoute><AccountBlocked /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
