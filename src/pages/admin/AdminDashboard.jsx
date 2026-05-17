@@ -661,13 +661,12 @@ export default function AdminDashboard() {
   const [leadsSearch, setLeadsSearch] = useState('')
   const [leadsClientFilter, setLeadsClientFilter] = useState('')
   const [leadsStatusFilter, setLeadsStatusFilter] = useState('all')
-  const [scriptLinks, setScriptLinks] = useState([
-    { id: null, title: '', url: '', position: 1 },
-    { id: null, title: '', url: '', position: 2 },
-    { id: null, title: '', url: '', position: 3 },
-  ])
-  const [scriptLinksSaving, setScriptLinksSaving] = useState(false)
-  const [scriptLinksSaved, setScriptLinksSaved] = useState(false)
+  const [scriptLinks, setScriptLinks] = useState([])
+  const [scriptEditing, setScriptEditing] = useState(null)
+  const [scriptEditData, setScriptEditData] = useState({ title: '', url: '' })
+  const [scriptAdding, setScriptAdding] = useState(false)
+  const [scriptNewData, setScriptNewData] = useState({ title: '', url: '' })
+  const [scriptSaving, setScriptSaving] = useState(false)
 
   useEffect(() => {
     if (isMock) return
@@ -687,28 +686,32 @@ export default function AdminDashboard() {
   }, [location.search])
 
   async function fetchScriptLinks() {
-    const { data } = await supabase.from('script_links').select('*').order('position')
-    const rows = data || []
-    setScriptLinks([
-      rows.find(d => d.position === 1) || { id: null, title: '', url: '', position: 1 },
-      rows.find(d => d.position === 2) || { id: null, title: '', url: '', position: 2 },
-      rows.find(d => d.position === 3) || { id: null, title: '', url: '', position: 3 },
-    ])
+    const { data } = await supabase.from('script_links').select('*').order('created_at')
+    setScriptLinks(data || [])
   }
 
-  async function saveScriptLinks() {
-    setScriptLinksSaving(true)
-    for (const link of scriptLinks) {
-      if (link.id) {
-        await supabase.from('script_links').update({ title: link.title, url: link.url }).eq('id', link.id)
-      } else {
-        await supabase.from('script_links').upsert({ title: link.title, url: link.url, position: link.position }, { onConflict: 'position' })
-      }
-    }
+  async function saveEditScript() {
+    if (!scriptEditData.title || !scriptEditData.url) return
+    setScriptSaving(true)
+    await supabase.from('script_links').update({ title: scriptEditData.title, url: scriptEditData.url }).eq('id', scriptEditing)
     await fetchScriptLinks()
-    setScriptLinksSaving(false)
-    setScriptLinksSaved(true)
-    setTimeout(() => setScriptLinksSaved(false), 2500)
+    setScriptEditing(null)
+    setScriptSaving(false)
+  }
+
+  async function addScript() {
+    if (!scriptNewData.title || !scriptNewData.url) return
+    setScriptSaving(true)
+    await supabase.from('script_links').insert({ title: scriptNewData.title, url: scriptNewData.url, position: scriptLinks.length + 1 })
+    await fetchScriptLinks()
+    setScriptAdding(false)
+    setScriptNewData({ title: '', url: '' })
+    setScriptSaving(false)
+  }
+
+  async function deleteScript(id) {
+    await supabase.from('script_links').delete().eq('id', id)
+    await fetchScriptLinks()
   }
 
   async function fetchCodes() {
@@ -1587,44 +1590,96 @@ export default function AdminDashboard() {
 
           {activeTab === 'scripts' && (
             <div className="p-6 max-w-2xl">
-              <div className="mb-6">
-                <h3 className="font-semibold text-white">Guiones recomendados</h3>
-                <p className="text-sm text-white/35 mt-1">Estos links aparecen en el detalle de cada lead para todos los clientes. Puedes poner hasta 3 links (Google Docs, PDF, Notion, etc.).</p>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="font-semibold text-white">Guiones recomendados</h3>
+                  <p className="text-sm text-white/35 mt-1">Aparecen en el detalle de cada lead. El cliente los ve como sugerencia para vender.</p>
+                </div>
+                <button
+                  onClick={() => { setScriptAdding(true); setScriptEditing(null) }}
+                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl transition-colors"
+                >+ Agregar guión</button>
               </div>
-              <div className="space-y-4">
-                {scriptLinks.map((link, i) => (
-                  <div key={i} className="bg-white/[0.02] border border-white/[0.07] rounded-2xl p-5">
-                    <p className="text-xs font-bold text-white/25 uppercase tracking-widest mb-3">Link {i + 1}</p>
-                    <div className="space-y-3">
-                      <div>
-                        <label className="text-xs text-white/35 block mb-1">Título</label>
-                        <input
-                          value={link.title}
-                          onChange={e => setScriptLinks(prev => prev.map((l, idx) => idx === i ? { ...l, title: e.target.value } : l))}
-                          placeholder="Ej: Guion para Fondo de Retiro"
-                          className="w-full px-3 py-2 border border-white/[0.1] rounded-xl text-sm text-white focus:outline-none focus:border-green-500/40 bg-white/[0.05] placeholder-white/20"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-xs text-white/35 block mb-1">URL del link</label>
-                        <input
-                          value={link.url}
-                          onChange={e => setScriptLinks(prev => prev.map((l, idx) => idx === i ? { ...l, url: e.target.value } : l))}
-                          placeholder="https://docs.google.com/..."
-                          className="w-full px-3 py-2 border border-white/[0.1] rounded-xl text-sm text-white focus:outline-none focus:border-green-500/40 bg-white/[0.05] placeholder-white/20"
-                        />
-                      </div>
+
+              {scriptAdding && (
+                <div className="bg-white/[0.04] border border-green-500/30 rounded-2xl p-5 mb-4">
+                  <p className="text-xs font-bold text-green-400 uppercase tracking-widest mb-3">Nuevo guión</p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs text-white/35 block mb-1">Título</label>
+                      <input
+                        value={scriptNewData.title}
+                        onChange={e => setScriptNewData(p => ({ ...p, title: e.target.value }))}
+                        placeholder="Ej: Guion para Final Expense"
+                        className="w-full px-3 py-2 border border-white/[0.1] rounded-xl text-sm text-white focus:outline-none focus:border-green-500/40 bg-white/[0.05] placeholder-white/20"
+                      />
                     </div>
+                    <div>
+                      <label className="text-xs text-white/35 block mb-1">URL</label>
+                      <input
+                        value={scriptNewData.url}
+                        onChange={e => setScriptNewData(p => ({ ...p, url: e.target.value }))}
+                        placeholder="https://docs.google.com/..."
+                        className="w-full px-3 py-2 border border-white/[0.1] rounded-xl text-sm text-white focus:outline-none focus:border-green-500/40 bg-white/[0.05] placeholder-white/20"
+                      />
+                    </div>
+                    <div className="flex gap-2 pt-1">
+                      <button onClick={addScript} disabled={scriptSaving || !scriptNewData.title || !scriptNewData.url} className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl disabled:opacity-40 transition-colors">
+                        {scriptSaving ? 'Guardando...' : 'Guardar'}
+                      </button>
+                      <button onClick={() => { setScriptAdding(false); setScriptNewData({ title: '', url: '' }) }} className="px-4 py-2 text-white/50 hover:text-white text-sm transition-colors">Cancelar</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {scriptLinks.length === 0 && !scriptAdding && (
+                <div className="text-center py-12 text-white/25 text-sm">No hay guiones. Agrega uno con el botón de arriba.</div>
+              )}
+
+              <div className="space-y-3">
+                {scriptLinks.map((link) => (
+                  <div key={link.id} className="bg-white/[0.02] border border-white/[0.07] rounded-2xl p-5">
+                    {scriptEditing === link.id ? (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs text-white/35 block mb-1">Título</label>
+                          <input
+                            value={scriptEditData.title}
+                            onChange={e => setScriptEditData(p => ({ ...p, title: e.target.value }))}
+                            className="w-full px-3 py-2 border border-white/[0.1] rounded-xl text-sm text-white focus:outline-none focus:border-green-500/40 bg-white/[0.05]"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-white/35 block mb-1">URL</label>
+                          <input
+                            value={scriptEditData.url}
+                            onChange={e => setScriptEditData(p => ({ ...p, url: e.target.value }))}
+                            className="w-full px-3 py-2 border border-white/[0.1] rounded-xl text-sm text-white focus:outline-none focus:border-green-500/40 bg-white/[0.05]"
+                          />
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                          <button onClick={saveEditScript} disabled={scriptSaving} className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl disabled:opacity-40 transition-colors">
+                            {scriptSaving ? 'Guardando...' : 'Guardar'}
+                          </button>
+                          <button onClick={() => setScriptEditing(null)} className="px-4 py-2 text-white/50 hover:text-white text-sm transition-colors">Cancelar</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-white truncate">{link.title}</p>
+                          <p className="text-xs text-white/35 truncate mt-0.5">{link.url}</p>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <button onClick={() => { setScriptEditing(link.id); setScriptEditData({ title: link.title, url: link.url }); setScriptAdding(false) }} className="px-3 py-1.5 text-xs text-white/50 hover:text-white border border-white/[0.1] hover:border-white/30 rounded-lg transition-colors">Editar</button>
+                          <button onClick={() => deleteScript(link.id)} className="px-3 py-1.5 text-xs text-red-400/60 hover:text-red-400 border border-white/[0.1] hover:border-red-400/30 rounded-lg transition-colors">Eliminar</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-              <button
-                onClick={saveScriptLinks}
-                disabled={scriptLinksSaving}
-                className="mt-5 px-6 py-2.5 bg-green-500 hover:bg-green-600 text-white text-sm font-semibold rounded-xl disabled:opacity-50 transition-colors"
-              >
-                {scriptLinksSaving ? 'Guardando...' : scriptLinksSaved ? '¡Guardado!' : 'Guardar guiones'}
-              </button>
             </div>
           )}
 
