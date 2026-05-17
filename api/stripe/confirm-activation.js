@@ -159,7 +159,6 @@ export default async function handler(req, res) {
       .eq('user_id', userId)
 
     if (userEmail) sendWelcomeEmail(userEmail, userFirstName)
-    sendAdminNewClientEmail(userEmail, userRow?.full_name, activationAmount)
 
     return res.status(200).json({ success: true, last4, brand, amount: activationAmount })
   } catch (err) {
