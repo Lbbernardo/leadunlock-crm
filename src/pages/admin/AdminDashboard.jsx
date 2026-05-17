@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
-import { Users, TrendingUp, DollarSign, Edit2, Zap, ToggleLeft, ToggleRight, Copy, Check, Trash2, Link, ChevronDown, Lock, Unlock, RefreshCw, Activity, ArrowUpRight, Tag, Plus, AlertCircle } from 'lucide-react'
+import { Users, TrendingUp, DollarSign, Edit2, Zap, ToggleLeft, ToggleRight, Copy, Check, Trash2, Link, ChevronDown, Lock, Unlock, RefreshCw, Activity, ArrowUpRight, Tag, Plus, AlertCircle, History, Filter } from 'lucide-react'
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
@@ -20,6 +20,38 @@ const INITIAL_CATEGORIES = [
 ]
 
 const PROD_BASE_URL = 'https://unlocklead.click'
+
+const LOG_META = {
+  user_deleted:     { label: 'Usuario eliminado',       color: 'red'    },
+  credit_added:     { label: 'Crédito agregado',        color: 'green'  },
+  status_changed:   { label: 'Estado cambiado',         color: 'yellow' },
+  lead_deleted:     { label: 'Lead eliminado',          color: 'red'    },
+  lead_added:       { label: 'Lead agregado',           color: 'blue'   },
+  lead_lock_toggled:{ label: 'Lead bloqueado/libre',    color: 'yellow' },
+  campaign_created: { label: 'Campaña creada',          color: 'green'  },
+  campaign_edited:  { label: 'Campaña editada',         color: 'yellow' },
+  campaign_deleted: { label: 'Campaña eliminada',       color: 'red'    },
+  campaign_toggled: { label: 'Campaña activada/pausada',color: 'yellow' },
+  code_created:     { label: 'Código de descuento creado', color: 'green' },
+  code_toggled:     { label: 'Código activado/desactivado', color: 'yellow' },
+  code_deleted:     { label: 'Código eliminado',        color: 'red'    },
+  script_added:     { label: 'Guión agregado',          color: 'green'  },
+  script_edited:    { label: 'Guión editado',           color: 'yellow' },
+  script_deleted:   { label: 'Guión eliminado',         color: 'red'    },
+}
+
+const LOG_COLOR = {
+  green:  'bg-green-500/15 text-green-400 border-green-500/20',
+  red:    'bg-red-500/15 text-red-400 border-red-500/20',
+  yellow: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/20',
+  blue:   'bg-blue-500/15 text-blue-400 border-blue-500/20',
+}
+
+async function logAdminAction(action, targetName, details = {}) {
+  try {
+    await supabase.from('admin_logs').insert({ action, target_name: targetName || '', details })
+  } catch (_) {}
+}
 
 function CopyWebhook({ clientId }) {
   const [copied, setCopied] = useState(false)
@@ -139,8 +171,10 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
 
   async function handleDeleteLead(leadId) {
     if (!confirm('¿Eliminar este lead permanentemente?')) return
+    const lead = clientLeads.find(l => l.id === leadId)
     await supabase.from('leads').delete().eq('id', leadId)
     setClientLeads(prev => prev.filter(l => l.id !== leadId))
+    logAdminAction('lead_deleted', lead?.full_name || leadId, { client: client.company_name })
   }
 
   async function handleAddLead(e) {
@@ -166,6 +200,7 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
       setAddLeadError(error.message)
     } else {
       setClientLeads(prev => [data, ...prev])
+      logAdminAction('lead_added', addLeadForm.full_name.trim(), { client: client.company_name, locked: addLeadForm.is_locked })
       setAddLeadForm({ full_name: '', phone: '', email: '', city: '', state: '', product_interest: '', campaign_name: '', is_locked: true })
       setAddLeadOpen(false)
     }
@@ -175,6 +210,7 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
   async function handleQuickStatus(newStatus) {
     setStatusLoading(true)
     await supabase.from('clients').update({ status: newStatus }).eq('id', client.id)
+    logAdminAction('status_changed', client.company_name, { status: newStatus })
     setClientStatus(newStatus)
     setStatusLoading(false)
     onRefresh()
@@ -192,12 +228,15 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
       alert('Error al eliminar: ' + (result.error || 'desconocido'))
       return
     }
+    logAdminAction('user_deleted', client.company_name, { email: client.email })
     onRefresh()
   }
 
   async function handleToggleLock(leadId, currentLocked) {
+    const lead = clientLeads.find(l => l.id === leadId)
     await supabase.from('leads').update({ is_locked: !currentLocked }).eq('id', leadId)
     setClientLeads(prev => prev.map(l => l.id === leadId ? { ...l, is_locked: !currentLocked } : l))
+    logAdminAction('lead_lock_toggled', lead?.full_name || leadId, { locked: !currentLocked, client: client.company_name })
   }
 
   async function handleAddCredit(e) {
@@ -214,6 +253,7 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
       })
       const data = await res.json()
       if (data.success) {
+        logAdminAction('credit_added', client.company_name, { amount, new_balance: data.new_balance })
         setCurrentBalance(data.new_balance)
         setCreditAmount('')
         setCreditMsg({ type: 'ok', text: `+$${amount} agregado. Nuevo saldo: $${data.new_balance}` })
@@ -727,6 +767,9 @@ export default function AdminDashboard() {
   const [scriptAdding, setScriptAdding] = useState(false)
   const [scriptNewData, setScriptNewData] = useState({ title: '', url: '' })
   const [scriptSaving, setScriptSaving] = useState(false)
+  const [adminLogs, setAdminLogs] = useState([])
+  const [logsLoading, setLogsLoading] = useState(false)
+  const [logsFilter, setLogsFilter] = useState('all')
 
   useEffect(() => {
     if (isMock) return
@@ -734,7 +777,19 @@ export default function AdminDashboard() {
     fetchCampaigns()
     fetchCodes()
     fetchScriptLinks()
+    fetchLogs()
   }, [isMock])
+
+  async function fetchLogs() {
+    setLogsLoading(true)
+    const { data } = await supabase
+      .from('admin_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200)
+    setAdminLogs(data || [])
+    setLogsLoading(false)
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -754,6 +809,7 @@ export default function AdminDashboard() {
     if (!scriptEditData.title || !scriptEditData.url) return
     setScriptSaving(true)
     await supabase.from('script_links').update({ title: scriptEditData.title, url: scriptEditData.url }).eq('id', scriptEditing)
+    logAdminAction('script_edited', scriptEditData.title, { url: scriptEditData.url })
     await fetchScriptLinks()
     setScriptEditing(null)
     setScriptSaving(false)
@@ -763,6 +819,7 @@ export default function AdminDashboard() {
     if (!scriptNewData.title || !scriptNewData.url) return
     setScriptSaving(true)
     await supabase.from('script_links').insert({ title: scriptNewData.title, url: scriptNewData.url, position: scriptLinks.length + 1 })
+    logAdminAction('script_added', scriptNewData.title, { url: scriptNewData.url })
     await fetchScriptLinks()
     setScriptAdding(false)
     setScriptNewData({ title: '', url: '' })
@@ -770,7 +827,9 @@ export default function AdminDashboard() {
   }
 
   async function deleteScript(id) {
+    const script = scriptLinks.find(s => s.id === id)
     await supabase.from('script_links').delete().eq('id', id)
+    logAdminAction('script_deleted', script?.title || id, {})
     await fetchScriptLinks()
   }
 
@@ -800,6 +859,7 @@ export default function AdminDashboard() {
     if (error) {
       setCodeError(error.code === '23505' ? 'Ese código ya existe.' : `Error: ${error.message}`)
     } else {
+      logAdminAction('code_created', trimmed, { discount_pct: parseInt(codeForm.discount_pct), max_uses: codeForm.max_uses || null })
       setCodeForm({ code: '', discount_pct: 20, max_uses: '', expires_at: '' })
       fetchCodes()
     }
@@ -807,12 +867,16 @@ export default function AdminDashboard() {
   }
 
   async function toggleCode(id, active) {
+    const code = codes.find(c => c.id === id)
     await supabase.from('discount_codes').update({ active: !active }).eq('id', id)
+    logAdminAction('code_toggled', code?.code || id, { active: !active })
     setCodes(prev => prev.map(c => c.id === id ? { ...c, active: !active } : c))
   }
 
   async function deleteCode(id) {
+    const code = codes.find(c => c.id === id)
     await supabase.from('discount_codes').delete().eq('id', id)
+    logAdminAction('code_deleted', code?.code || id, {})
     setCodes(prev => prev.filter(c => c.id !== id))
   }
 
@@ -952,18 +1016,26 @@ export default function AdminDashboard() {
       lead_interest: campaignForm.lead_interest.trim() || null,
       cost_per_lead: campaignForm.cost_per_lead ? parseFloat(campaignForm.cost_per_lead) : 0,
     })
-    if (!error) { setCampaignForm(EMPTY_CAMPAIGN_FORM); setShowCampaignForm(false); await fetchCampaigns() }
+    if (!error) {
+      const clientName = clients.find(c => c.id === campaignForm.client_id)?.company_name || campaignForm.client_id
+      logAdminAction('campaign_created', campaignForm.name.trim(), { client: clientName })
+      setCampaignForm(EMPTY_CAMPAIGN_FORM); setShowCampaignForm(false); await fetchCampaigns()
+    }
     setCampaignLoading(false)
   }
 
   async function handleDeleteCampaign(id) {
     if (!confirm('¿Eliminar esta campaña?')) return
+    const camp = campaigns.find(c => c.id === id)
     await supabase.from('campaigns').delete().eq('id', id)
+    logAdminAction('campaign_deleted', camp?.name || id, { client: camp?.clients?.company_name })
     await fetchCampaigns()
   }
 
   async function handleToggleCampaign(id, current) {
+    const camp = campaigns.find(c => c.id === id)
     await supabase.from('campaigns').update({ is_active: !current }).eq('id', id)
+    logAdminAction('campaign_toggled', camp?.name || id, { active: !current })
     await fetchCampaigns()
   }
 
@@ -977,6 +1049,7 @@ export default function AdminDashboard() {
       cost_per_lead: editCampaignForm.cost_per_lead ? parseFloat(editCampaignForm.cost_per_lead) : 0,
       client_id: editCampaignForm.client_id,
     }).eq('id', id)
+    logAdminAction('campaign_edited', editCampaignForm.name?.trim() || id, {})
     setEditingCampaignId(null)
     await fetchCampaigns()
   }
@@ -1030,6 +1103,7 @@ export default function AdminDashboard() {
     { id: 'categories',  label: 'Categorías' },
     { id: 'codes',       label: 'Descuentos' },
     { id: 'scripts',     label: 'Guiones' },
+    { id: 'logs',        label: 'Historial' },
   ]
 
   if (loadingData) {
@@ -1740,6 +1814,81 @@ export default function AdminDashboard() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {activeTab === 'logs' && (
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2">
+                  <History size={18} className="text-green-400" />
+                  <h3 className="font-semibold text-white">Historial de actividad</h3>
+                  <span className="text-xs text-white/30 bg-white/[0.05] px-2 py-0.5 rounded-full">{adminLogs.length} registros</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Filter size={13} className="text-white/30" />
+                    <select
+                      value={logsFilter}
+                      onChange={e => setLogsFilter(e.target.value)}
+                      className="bg-[#0c1018] border border-white/[0.08] text-white/60 text-xs rounded-lg px-2 py-1.5 focus:outline-none"
+                    >
+                      <option value="all">Todas las acciones</option>
+                      {Object.entries(LOG_META).map(([key, meta]) => (
+                        <option key={key} value={key}>{meta.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <button onClick={fetchLogs} className="p-1.5 text-white/30 hover:text-white transition-colors">
+                    <RefreshCw size={13} />
+                  </button>
+                </div>
+              </div>
+
+              {logsLoading ? (
+                <div className="flex justify-center py-16">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-500" />
+                </div>
+              ) : adminLogs.length === 0 ? (
+                <div className="text-center py-16 text-white/25">
+                  <History size={32} className="mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No hay actividad registrada aún.</p>
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {adminLogs
+                    .filter(log => logsFilter === 'all' || log.action === logsFilter)
+                    .map(log => {
+                      const meta = LOG_META[log.action] || { label: log.action, color: 'blue' }
+                      const colorClass = LOG_COLOR[meta.color] || LOG_COLOR.blue
+                      const d = new Date(log.created_at)
+                      const dateStr = d.toLocaleDateString('es-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                      const timeStr = d.toLocaleTimeString('es-US', { hour: '2-digit', minute: '2-digit' })
+                      const details = log.details || {}
+
+                      return (
+                        <div key={log.id} className="flex items-start gap-3 px-4 py-3 rounded-xl bg-white/[0.02] border border-white/[0.05] hover:bg-white/[0.04] transition-colors">
+                          <span className={`mt-0.5 text-xs font-semibold px-2 py-0.5 rounded-full border flex-shrink-0 ${colorClass}`}>
+                            {meta.label}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-white font-medium truncate">{log.target_name || '—'}</p>
+                            {Object.keys(details).length > 0 && (
+                              <p className="text-xs text-white/30 mt-0.5 truncate">
+                                {Object.entries(details).map(([k, v]) => `${k}: ${v}`).join(' · ')}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-xs text-white/40">{timeStr}</p>
+                            <p className="text-xs text-white/20">{dateStr}</p>
+                          </div>
+                        </div>
+                      )
+                    })
+                  }
+                </div>
+              )}
             </div>
           )}
 
