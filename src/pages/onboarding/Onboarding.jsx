@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { LogOut } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import { Unlock, Building2, MapPin, Tag, Users, ChevronRight, Check, CreditCard, AlertCircle, Briefcase } from 'lucide-react'
@@ -668,7 +669,13 @@ const EMPTY = {
 function OnboardingContent() {
   const [step, setStep] = useState(1)
   const [data, setData] = useState(EMPTY)
-  const { user, isMock, refreshProfile } = useAuth()
+  const { user, isMock, refreshProfile, signOut } = useAuth()
+  const navigate = useNavigate()
+
+  async function handleSignOut() {
+    await signOut()
+    navigate('/login', { replace: true })
+  }
 
   async function handlePaymentSuccess() {
     if (!isMock && user) {
@@ -704,11 +711,18 @@ function OnboardingContent() {
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-lg">
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center">
-            <Unlock size={18} className="text-white" />
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 bg-green-500 rounded-xl flex items-center justify-center">
+              <Unlock size={18} className="text-white" />
+            </div>
+            <span className="font-bold text-white text-xl">LeadUnlock CRM</span>
           </div>
-          <span className="font-bold text-white text-xl">LeadUnlock CRM</span>
+          {step < 4 && (
+            <button onClick={handleSignOut} className="flex items-center gap-1.5 text-slate-600 hover:text-slate-400 text-xs transition-colors">
+              <LogOut size={13} /> Salir
+            </button>
+          )}
         </div>
 
         <StepIndicator current={step} />
