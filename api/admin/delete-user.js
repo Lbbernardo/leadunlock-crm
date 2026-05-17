@@ -13,8 +13,8 @@ export default async function handler(req, res) {
 
   const { clientId, userId } = req.body
 
-  if (!clientId || !userId) {
-    return res.status(400).json({ error: 'clientId y userId son requeridos' })
+  if (!clientId) {
+    return res.status(400).json({ error: 'clientId es requerido' })
   }
 
   // 1. Borrar lead_unlocks del cliente
@@ -30,12 +30,14 @@ export default async function handler(req, res) {
   const { error: clientErr } = await supabase.from('clients').delete().eq('id', clientId)
   if (clientErr) return res.status(500).json({ error: 'Error borrando cliente', detail: clientErr.message })
 
-  // 5. Borrar fila en users (tabla pública)
-  await supabase.from('users').delete().eq('id', userId)
+  if (userId) {
+    // 5. Borrar fila en users (tabla pública)
+    await supabase.from('users').delete().eq('id', userId)
 
-  // 6. Borrar usuario de Supabase Auth — libera el email para re-registro
-  const { error: authErr } = await supabase.auth.admin.deleteUser(userId)
-  if (authErr) return res.status(500).json({ error: 'Error borrando auth user', detail: authErr.message })
+    // 6. Borrar usuario de Supabase Auth — libera el email para re-registro
+    const { error: authErr } = await supabase.auth.admin.deleteUser(userId)
+    if (authErr) return res.status(500).json({ error: 'Error borrando auth user', detail: authErr.message })
+  }
 
   return res.status(200).json({ success: true })
 }
