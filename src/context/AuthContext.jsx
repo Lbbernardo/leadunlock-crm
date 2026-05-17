@@ -46,7 +46,7 @@ export function AuthProvider({ children }) {
       .from('users')
       .select('*, clients(*)')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
     if (data && data.clients && !Array.isArray(data.clients)) {
       data.clients = [data.clients]
     }
@@ -60,7 +60,7 @@ export function AuthProvider({ children }) {
       .from('users')
       .select('*, clients(*)')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
     if (data) {
       if (data.clients && !Array.isArray(data.clients)) data.clients = [data.clients]
       setProfile(data)
