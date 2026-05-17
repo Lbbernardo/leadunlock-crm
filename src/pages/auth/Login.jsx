@@ -28,17 +28,19 @@ export default function Login() {
           .from('users')
           .select('role')
           .eq('id', userId)
-          .single()
+          .maybeSingle()
 
         if (userData?.role === 'admin') {
-          navigate('/admin')
+          await supabase.auth.signOut()
+          setError('Esta área es solo para clientes. Usa el acceso de administrador.')
+          setLoading(false)
           return
         }
         const { data: clientData } = await supabase
           .from('clients')
           .select('status')
           .eq('user_id', userId)
-          .single()
+          .maybeSingle()
         if (clientData?.status === 'pending') {
           navigate('/onboarding')
           return
