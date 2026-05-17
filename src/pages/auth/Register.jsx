@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
-import { Unlock, Mail, Lock, User, Building2, AlertCircle, CheckCircle } from 'lucide-react'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Unlock, Mail, Lock, User, Building2, AlertCircle } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/ui/Button'
 
@@ -8,39 +8,8 @@ export default function Register() {
   const [form, setForm] = useState({ fullName: '', companyName: '', email: '', password: '' })
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [confirmed, setConfirmed] = useState(false)
-  const [countdown, setCountdown] = useState(60)
-  const [resending, setResending] = useState(false)
-  const [resent, setResent] = useState(false)
   const { signUp } = useAuth()
-  const timerRef = useRef(null)
-
-  useEffect(() => {
-    if (!confirmed) return
-    setCountdown(60)
-    timerRef.current = setInterval(() => {
-      setCountdown(c => {
-        if (c <= 1) { clearInterval(timerRef.current); return 0 }
-        return c - 1
-      })
-    }, 1000)
-    return () => clearInterval(timerRef.current)
-  }, [confirmed])
-
-  async function handleResend() {
-    setResending(true)
-    await signUp(form.email, form.password, { full_name: form.fullName, company_name: form.companyName, role: 'client' })
-    setResending(false)
-    setResent(true)
-    setCountdown(60)
-    timerRef.current = setInterval(() => {
-      setCountdown(c => {
-        if (c <= 1) { clearInterval(timerRef.current); return 0 }
-        return c - 1
-      })
-    }, 1000)
-    setTimeout(() => setResent(false), 3000)
-  }
+  const navigate = useNavigate()
 
   function handleChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
@@ -67,39 +36,8 @@ export default function Register() {
         : err.message)
       setLoading(false)
     } else {
-      setConfirmed(true)
-      setLoading(false)
+      navigate('/onboarding')
     }
-  }
-
-  if (confirmed) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md text-center">
-          <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle size={32} className="text-green-400" />
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-3">Revisa tu correo</h1>
-          <p className="text-slate-400">
-            Te enviamos un link de confirmación a <span className="text-white font-medium">{form.email}</span>.<br />
-            Haz clic en el link para activar tu cuenta y continuar el registro.
-          </p>
-          <div className="mt-6">
-            {countdown > 0 ? (
-              <p className="text-slate-600 text-sm">¿No llegó? Puedes reenviar en <span className="text-slate-400 font-medium">{countdown}s</span></p>
-            ) : resent ? (
-              <p className="text-green-400 text-sm font-medium">¡Correo reenviado!</p>
-            ) : (
-              <button onClick={handleResend} disabled={resending}
-                className="text-sm text-green-400 hover:text-green-300 font-medium transition-colors disabled:opacity-50">
-                {resending ? 'Enviando...' : 'Reenviar correo de confirmación'}
-              </button>
-            )}
-            <p className="text-slate-700 text-xs mt-2">Revisa también tu carpeta de spam.</p>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   return (
