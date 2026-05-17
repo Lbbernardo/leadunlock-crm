@@ -686,7 +686,7 @@ export default function AdminDashboard() {
   }, [location.search])
 
   async function fetchScriptLinks() {
-    const { data } = await supabase.from('script_links').select('*').order('created_at')
+    const { data } = await supabase.from('script_links').select('*').order('position')
     setScriptLinks(data || [])
   }
 
