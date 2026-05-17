@@ -44,10 +44,10 @@ const US_CITIES = [
 ]
 
 const BUDGETS = [
-  { label: '$500 - $1,000 / mes', value: '500-1000' },
-  { label: '$1,000 - $3,000 / mes', value: '1000-3000' },
-  { label: '$3,000 - $5,000 / mes', value: '3000-5000' },
-  { label: '$5,000+ / mes', value: '5000+' },
+  { label: '$200 - $400 / mes', value: '200-400' },
+  { label: '$500 - $700 / mes', value: '500-700' },
+  { label: '$800 - $1,000 / mes', value: '800-1000' },
+  { label: 'Más de $1,000 / mes', value: '1000+' },
 ]
 
 const STEPS = [
@@ -86,6 +86,7 @@ function StepIndicator({ current }) {
 function Step1({ data, onChange, onNext }) {
   const valid = data.companyName && data.city && data.categories.length > 0
 
+
   function toggleCategory(id) {
     onChange({ ...data, categories: [id] })
   }
@@ -106,6 +107,23 @@ function Step1({ data, onChange, onNext }) {
             value={data.companyName}
             onChange={e => onChange({ ...data, companyName: e.target.value })}
             placeholder="Ej: García Insurance Agency"
+            className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-slate-300 mb-2">
+          ¿Para qué compañía de seguros trabajas?
+          <span className="text-slate-500 font-normal ml-1 text-xs">(opcional)</span>
+        </label>
+        <div className="relative">
+          <Briefcase size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+          <input
+            type="text"
+            value={data.insuranceCompany}
+            onChange={e => onChange({ ...data, insuranceCompany: e.target.value })}
+            placeholder="Ej: Mutual of Omaha, Transamerica, Aetna..."
             className="w-full pl-10 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
           />
         </div>
@@ -206,8 +224,32 @@ function Step1({ data, onChange, onNext }) {
   )
 }
 
+const GOALS = [
+  'Conseguir citas / demos',
+  'Vender directamente por WhatsApp',
+  'Llenar mi pipeline de ventas',
+  'Crecer mi lista de prospectos',
+  'Otro',
+]
+
 function Step2({ data, onChange, onNext, onBack }) {
-  const valid = data.targetAudience && data.budget && data.goal
+  const isOtherGoal = data.goal === 'Otro' || (data.goal && !GOALS.slice(0, -1).includes(data.goal))
+  const selectedGoalOption = GOALS.includes(data.goal) ? data.goal : (isOtherGoal ? 'Otro' : '')
+  const otherGoalText = isOtherGoal && data.goal !== 'Otro' ? data.goal : (data.otherGoalText || '')
+
+  function selectGoal(g) {
+    if (g === 'Otro') {
+      onChange({ ...data, goal: 'Otro', otherGoalText: '' })
+    } else {
+      onChange({ ...data, goal: g, otherGoalText: '' })
+    }
+  }
+
+  function setOtherGoalText(text) {
+    onChange({ ...data, goal: text || 'Otro', otherGoalText: text })
+  }
+
+  const valid = data.targetAudience && data.budget && data.goal && data.goal !== 'Otro'
   const hasFinancial = data.categories.includes('financial-products')
 
   return (
@@ -300,25 +342,35 @@ function Step2({ data, onChange, onNext, onBack }) {
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">¿Cuál es tu objetivo principal?</label>
         <div className="space-y-2">
-          {['Conseguir citas / demos', 'Vender directamente por WhatsApp', 'Llenar mi pipeline de ventas', 'Crecer mi lista de prospectos'].map(g => (
+          {GOALS.map(g => (
             <button
               key={g}
-              onClick={() => onChange({ ...data, goal: g })}
+              onClick={() => selectGoal(g)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border transition-all text-left ${
-                data.goal === g
+                selectedGoalOption === g
                   ? 'bg-green-500/20 border-green-500 text-green-400'
                   : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'
               }`}
             >
-              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
-                data.goal === g ? 'border-green-500 bg-green-500' : 'border-slate-600'
+              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                selectedGoalOption === g ? 'border-green-500 bg-green-500' : 'border-slate-600'
               }`}>
-                {data.goal === g && <div className="w-2 h-2 bg-white rounded-full" />}
+                {selectedGoalOption === g && <div className="w-2 h-2 bg-white rounded-full" />}
               </div>
               {g}
             </button>
           ))}
         </div>
+        {selectedGoalOption === 'Otro' && (
+          <textarea
+            value={otherGoalText}
+            onChange={e => setOtherGoalText(e.target.value)}
+            placeholder="Describe tu objetivo..."
+            rows={2}
+            autoFocus
+            className="mt-3 w-full px-4 py-3 bg-slate-800 border border-green-500/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 resize-none text-sm"
+          />
+        )}
       </div>
 
       <div className="flex gap-3">
@@ -608,9 +660,9 @@ function Step4({ data }) {
 }
 
 const EMPTY = {
-  companyName: '', categories: [], city: '', phone: '',
+  companyName: '', insuranceCompany: '', categories: [], city: '', phone: '',
   productDescription: '', targetAudience: '', leadsPerMonth: '',
-  budget: '', goal: '', targetState: '',
+  budget: '', goal: '', otherGoalText: '', targetState: '',
 }
 
 function OnboardingContent() {
@@ -624,13 +676,17 @@ function OnboardingContent() {
         const cat = LEAD_CATEGORIES.find(c => c.id === id)
         return cat ? cat.label : id
       })
+      const productDescParts = []
+      if (data.insuranceCompany) productDescParts.push(`Compañía: ${data.insuranceCompany}`)
+      if (data.productDescription) productDescParts.push(data.productDescription)
+
       await supabase
         .from('clients')
         .update({
           company_name: data.companyName,
           phone: data.phone,
           city: data.city,
-          product_description: data.productDescription,
+          product_description: productDescParts.join('\n') || null,
           target_audience: data.targetAudience,
           leads_per_month: data.leadsPerMonth ? parseInt(data.leadsPerMonth) : null,
           budget: data.budget,
