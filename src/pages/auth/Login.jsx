@@ -115,7 +115,7 @@ export default function Login() {
         <p className="text-center text-slate-500 text-sm mt-6">
           ¿No tienes cuenta?{' '}
           <Link to="/register" className="text-green-400 hover:text-green-300 font-medium transition-colors">
-            Crear cuenta gratis
+            Crear cuenta
           </Link>
         </p>
       </div>
