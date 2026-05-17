@@ -57,13 +57,15 @@ function ClientRoute({ children }) {
       .then(({ data }) => setCampaignReady(data != null && data.length > 0))
   }, [clientData?.id, isMock])
 
-  if (loading || campaignReady === null) return <Spinner />
+  if (loading) return <Spinner />
   if (!user) return <Navigate to="/login" replace />
   if (profile?.role === 'admin') return <Navigate to="/admin" replace />
+  if (!profile || !clientData) return <Navigate to="/onboarding" replace />
 
   const status = clientData?.status
   if (status === 'pending' || !status) return <Navigate to="/onboarding" replace />
   if (status === 'paused' || status === 'banned') return <Navigate to="/account-blocked" replace />
+  if (campaignReady === null) return <Spinner />
   if (!campaignReady) return <Navigate to="/building" replace />
 
   return children
