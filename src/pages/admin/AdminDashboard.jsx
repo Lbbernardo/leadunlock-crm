@@ -218,10 +218,10 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
 
   async function handleDeleteClient() {
     if (!confirm(`¿Eliminar permanentemente la cuenta de ${client.company_name}? Esta acción no se puede deshacer.`)) return
-    const res = await fetch('/api/admin/delete-user', {
+    const res = await fetch('/api/admin', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clientId: client.id, userId: client.user_id }),
+      body: JSON.stringify({ action: 'delete-user', clientId: client.id, userId: client.user_id }),
     })
     const result = await res.json()
     if (!res.ok) {
@@ -246,10 +246,10 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
     setCreditLoading(true)
     setCreditMsg(null)
     try {
-      const res = await fetch('/api/admin/add-credit', {
+      const res = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ clientId: client.id, amount }),
+        body: JSON.stringify({ action: 'add-credit', clientId: client.id, amount }),
       })
       const data = await res.json()
       if (data.success) {
