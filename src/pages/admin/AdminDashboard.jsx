@@ -182,8 +182,16 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
 
   async function handleDeleteClient() {
     if (!confirm(`¿Eliminar permanentemente la cuenta de ${client.company_name}? Esta acción no se puede deshacer.`)) return
-    await supabase.from('leads').delete().eq('client_id', client.id)
-    await supabase.from('clients').delete().eq('id', client.id)
+    const res = await fetch('/api/admin/delete-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId: client.id, userId: client.user_id }),
+    })
+    const result = await res.json()
+    if (!res.ok) {
+      alert('Error al eliminar: ' + (result.error || 'desconocido'))
+      return
+    }
     onRefresh()
   }
 
