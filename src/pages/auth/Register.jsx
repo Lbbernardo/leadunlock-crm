@@ -24,16 +24,23 @@ export default function Register() {
     setLoading(true)
     setError(null)
 
-    const { error: err } = await signUp(form.email, form.password, {
+    const { data, error: err } = await signUp(form.email, form.password, {
       full_name: form.fullName,
       company_name: form.companyName,
       role: 'client',
     })
 
-    if (err) {
-      setError(err.message === 'User already registered'
-        ? 'Este correo ya está registrado.'
-        : err.message)
+    const alreadyExists =
+      err?.message?.toLowerCase().includes('already registered') ||
+      err?.message?.toLowerCase().includes('already been registered') ||
+      err?.status === 422 ||
+      (data?.user && !data?.session)
+
+    if (alreadyExists) {
+      setError('Este correo ya tiene una cuenta. Inicia sesión o usa otro correo.')
+      setLoading(false)
+    } else if (err) {
+      setError(err.message)
       setLoading(false)
     } else {
       fetch('/api/admin', {
