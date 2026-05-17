@@ -19,6 +19,7 @@ import Building from './pages/dashboard/Building'
 import Privacy from './pages/Privacy'
 import ResetPassword from './pages/auth/ResetPassword'
 import Callback from './pages/auth/Callback'
+import AdminLogin from './pages/auth/AdminLogin'
 import AccountBlocked from './pages/dashboard/AccountBlocked'
 import DemoPage from './pages/demo/DemoPage'
 
@@ -35,8 +36,8 @@ function ProtectedRoute({ children, adminOnly = false }) {
   const { user, profile, loading } = useAuth()
 
   if (loading) return <Spinner />
-  if (!user) return <Navigate to="/login" replace />
-  if (adminOnly && profile?.role !== 'admin') return <Navigate to="/dashboard" replace />
+  if (!user) return <Navigate to={adminOnly ? '/admin-login' : '/login'} replace />
+  if (adminOnly && profile?.role !== 'admin') return <Navigate to="/admin-login" replace />
 
   return children
 }
@@ -99,6 +100,7 @@ export default function App() {
           <Route path="/building" element={<ProtectedRoute><Building /></ProtectedRoute>} />
           <Route path="/demo" element={<DemoPage />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<Callback />} />
           <Route path="/account-blocked" element={<ProtectedRoute><AccountBlocked /></ProtectedRoute>} />

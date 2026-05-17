@@ -689,7 +689,8 @@ function OnboardingContent() {
 
       await supabase
         .from('clients')
-        .update({
+        .upsert({
+          user_id: user.id,
           company_name: data.companyName,
           phone: data.phone,
           city: data.city,
@@ -701,8 +702,7 @@ function OnboardingContent() {
           target_state: data.targetState || null,
           categories: categoryLabels,
           status: 'active',
-        })
-        .eq('user_id', user.id)
+        }, { onConflict: 'user_id' })
       await refreshProfile()
     }
     setStep(4)
