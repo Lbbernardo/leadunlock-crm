@@ -405,7 +405,7 @@ function PaymentForm({ data, onSuccess, onBack }) {
   const { isMock, user } = useAuth()
 
   const discountPct = appliedCodeData?.discount_pct || 0
-  const finalAmount = discountPct > 0 ? Math.round(1 * (1 - discountPct / 100)) : 1
+  const finalAmount = discountPct > 0 ? Math.round(100 * (1 - discountPct / 100)) : 100
   const isFree = finalAmount === 0
 
   async function applyCoupon() {
