@@ -19,13 +19,16 @@ export default function Login() {
     setError(null)
     const { data, error: err } = await signIn(email, password)
     if (err) {
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', email)
-        .maybeSingle()
-      if (!existingUser) {
-        setError('notRegistered')
+      const isNotFound = err.message?.toLowerCase().includes('invalid login credentials') ||
+        err.message?.toLowerCase().includes('user not found') ||
+        err.status === 400
+      if (isNotFound) {
+        const { data: existingUser } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', email)
+          .maybeSingle()
+        setError(existingUser ? 'Correo o contraseña incorrectos.' : 'notRegistered')
       } else {
         setError('Correo o contraseña incorrectos.')
       }
