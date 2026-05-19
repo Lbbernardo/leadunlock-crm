@@ -112,7 +112,7 @@ export default async function handler(req, res) {
       .from('clients')
       .select('stripe_customer_id, id')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle()
 
     const { data: userRow } = await supabase
       .from('users')
@@ -148,15 +148,31 @@ export default async function handler(req, res) {
 
     const activationAmount = pi.amount / 100
 
-    await supabase
-      .from('clients')
-      .update({
-        stripe_customer_id: customerId,
-        payment_method_last4: last4,
-        payment_method_brand: brand,
-        activation_amount_paid: activationAmount,
-      })
-      .eq('user_id', userId)
+    if (client) {
+      await supabase
+        .from('clients')
+        .update({
+          stripe_customer_id: customerId,
+          payment_method_last4: last4,
+          payment_method_brand: brand,
+          activation_amount_paid: activationAmount,
+          status: 'active',
+        })
+        .eq('user_id', userId)
+    } else {
+      await supabase
+        .from('clients')
+        .insert({
+          user_id: userId,
+          stripe_customer_id: customerId,
+          payment_method_last4: last4,
+          payment_method_brand: brand,
+          activation_amount_paid: activationAmount,
+          status: 'active',
+          balance: 0,
+          lead_price: 12,
+        })
+    }
 
     if (userEmail) sendWelcomeEmail(userEmail, userFirstName)
     sendAdminNewClientEmail(userEmail, userRow?.full_name, activationAmount)
