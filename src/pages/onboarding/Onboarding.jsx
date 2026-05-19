@@ -405,7 +405,7 @@ function PaymentForm({ data, onSuccess, onBack }) {
   const { isMock, user } = useAuth()
 
   const discountPct = appliedCodeData?.discount_pct || 0
-  const finalAmount = discountPct > 0 ? Math.round(100 * (1 - discountPct / 100)) : 100
+  const finalAmount = discountPct > 0 ? Math.round(1 * (1 - discountPct / 100)) : 1
   const isFree = finalAmount === 0
 
   async function applyCoupon() {
@@ -554,7 +554,7 @@ function PaymentForm({ data, onSuccess, onBack }) {
           <p className="text-slate-500 text-xs">Pago único · No recurrente</p>
         </div>
         <div className="text-right">
-          {appliedCodeData && <p className="text-slate-500 text-sm line-through">$100</p>}
+          {appliedCodeData && <p className="text-slate-500 text-sm line-through">$1</p>}
           <span className="text-3xl font-extrabold text-white">
             ${finalAmount}
           </span>
