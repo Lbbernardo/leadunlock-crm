@@ -149,29 +149,38 @@ export default async function handler(req, res) {
     const activationAmount = pi.amount / 100
 
     if (client) {
-      await supabase
+      // Critical: set status active first (minimal update)
+      const { error: statusErr } = await supabase
         .from('clients')
-        .update({
-          stripe_customer_id: customerId,
-          payment_method_last4: last4,
-          payment_method_brand: brand,
-          activation_amount_paid: activationAmount,
-          status: 'active',
-        })
+        .update({ status: 'active' })
         .eq('user_id', userId)
+      if (statusErr) {
+        console.error('CRITICAL: failed to set status active:', JSON.stringify(statusErr))
+        return res.status(500).json({ error: 'Failed to activate account', detail: statusErr.message })
+      }
+      // Non-critical: save stripe fields separately
+      await supabase.from('clients').update({
+        stripe_customer_id: customerId,
+        payment_method_last4: last4,
+        payment_method_brand: brand,
+        activation_amount_paid: activationAmount,
+      }).eq('user_id', userId)
     } else {
-      await supabase
+      // Row doesn't exist — insert with minimal required fields
+      const { error: insertErr } = await supabase
         .from('clients')
-        .insert({
-          user_id: userId,
-          stripe_customer_id: customerId,
-          payment_method_last4: last4,
-          payment_method_brand: brand,
-          activation_amount_paid: activationAmount,
-          status: 'active',
-          balance: 0,
-          lead_price: 12,
-        })
+        .insert({ user_id: userId, status: 'active', balance: 0, lead_price: 12 })
+      if (insertErr) {
+        console.error('CRITICAL: failed to insert client:', JSON.stringify(insertErr))
+        return res.status(500).json({ error: 'Failed to create client record', detail: insertErr.message })
+      }
+      // Non-critical: save stripe fields
+      await supabase.from('clients').update({
+        stripe_customer_id: customerId,
+        payment_method_last4: last4,
+        payment_method_brand: brand,
+        activation_amount_paid: activationAmount,
+      }).eq('user_id', userId)
     }
 
     if (userEmail) sendWelcomeEmail(userEmail, userFirstName)
