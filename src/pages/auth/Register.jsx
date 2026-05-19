@@ -43,6 +43,11 @@ export default function Register() {
       setError(err.message)
       setLoading(false)
     } else {
+      fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'notify-registration', name: form.fullName, email: form.email }),
+      }).catch(() => {})
       navigate('/onboarding')
     }
   }
