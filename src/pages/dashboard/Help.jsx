@@ -168,7 +168,7 @@ export default function Help() {
               </div>
             </a>
             <a
-              href="https://wa.me/13059999999"
+              href="https://wa.me/16304154252"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl p-4 transition-colors group"
