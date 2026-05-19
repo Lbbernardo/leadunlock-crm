@@ -653,7 +653,7 @@ function Step4({ data }) {
         🎁 Recuerda: desbloquea $1,000 en leads y te devolvemos los $100 de activación como crédito.
       </div>
 
-      <Button onClick={() => navigate('/dashboard')} className="w-full py-3 text-base">
+      <Button onClick={() => window.location.href = '/dashboard'} className="w-full py-3 text-base">
         Ir a mi dashboard <ChevronRight size={18} />
       </Button>
     </div>
@@ -687,10 +687,9 @@ function OnboardingContent() {
       if (data.insuranceCompany) productDescParts.push(`Compañía: ${data.insuranceCompany}`)
       if (data.productDescription) productDescParts.push(data.productDescription)
 
-      await supabase
+      const { error: upsertErr } = await supabase
         .from('clients')
-        .upsert({
-          user_id: user.id,
+        .update({
           company_name: data.companyName,
           phone: data.phone,
           city: data.city,
@@ -702,7 +701,10 @@ function OnboardingContent() {
           target_state: data.targetState || null,
           categories: categoryLabels,
           status: 'active',
-        }, { onConflict: 'user_id' })
+        })
+        .eq('user_id', user.id)
+
+      if (upsertErr) console.error('Error actualizando cliente:', upsertErr)
       await refreshProfile()
     }
     setStep(4)
