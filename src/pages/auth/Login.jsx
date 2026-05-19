@@ -19,7 +19,16 @@ export default function Login() {
     setError(null)
     const { data, error: err } = await signIn(email, password)
     if (err) {
-      setError('Correo o contraseña incorrectos.')
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .maybeSingle()
+      if (!existingUser) {
+        setError('notRegistered')
+      } else {
+        setError('Correo o contraseña incorrectos.')
+      }
       setLoading(false)
     } else {
       const userId = data?.user?.id
@@ -104,7 +113,14 @@ export default function Login() {
             {error && (
               <div className="flex items-center gap-2 p-3 bg-red-900/30 border border-red-800 text-red-400 rounded-xl text-sm">
                 <AlertCircle size={16} />
-                {error}
+                {error === 'notRegistered' ? (
+                  <span>
+                    Tu correo no está registrado.{' '}
+                    <Link to="/register" className="underline font-medium hover:text-red-300">
+                      Regístrate aquí
+                    </Link>
+                  </span>
+                ) : error}
               </div>
             )}
 
