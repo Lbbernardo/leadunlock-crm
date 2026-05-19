@@ -687,24 +687,39 @@ function OnboardingContent() {
       if (data.insuranceCompany) productDescParts.push(`Compañía: ${data.insuranceCompany}`)
       if (data.productDescription) productDescParts.push(data.productDescription)
 
-      const { error: upsertErr } = await supabase
-        .from('clients')
-        .update({
-          company_name: data.companyName,
-          phone: data.phone,
-          city: data.city,
-          product_description: productDescParts.join('\n') || null,
-          target_audience: data.targetAudience,
-          leads_per_month: data.leadsPerMonth ? parseInt(data.leadsPerMonth) : null,
-          budget: data.budget,
-          goal: data.goal,
-          target_state: data.targetState || null,
-          categories: categoryLabels,
-          status: 'active',
-        })
-        .eq('user_id', user.id)
+      const fields = {
+        company_name: data.companyName,
+        phone: data.phone,
+        city: data.city,
+        product_description: productDescParts.join('\n') || null,
+        target_audience: data.targetAudience,
+        leads_per_month: data.leadsPerMonth ? parseInt(data.leadsPerMonth) : null,
+        budget: data.budget,
+        goal: data.goal,
+        target_state: data.targetState || null,
+        categories: categoryLabels,
+        status: 'active',
+      }
 
-      if (upsertErr) console.error('Error actualizando cliente:', upsertErr)
+      const { data: existing } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (existing) {
+        const { error: updateErr } = await supabase
+          .from('clients')
+          .update(fields)
+          .eq('user_id', user.id)
+        if (updateErr) console.error('Error actualizando cliente:', updateErr)
+      } else {
+        const { error: insertErr } = await supabase
+          .from('clients')
+          .insert({ user_id: user.id, ...fields, balance: 0, lead_price: 12 })
+        if (insertErr) console.error('Error creando cliente:', insertErr)
+      }
+
       await refreshProfile()
     }
     setStep(4)
