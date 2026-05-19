@@ -47,28 +47,26 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function fetchProfile(userId) {
-    const { data } = await supabase
-      .from('users')
-      .select('*, clients(*)')
-      .eq('id', userId)
-      .maybeSingle()
-    if (data && data.clients && !Array.isArray(data.clients)) {
-      data.clients = [data.clients]
+    const [{ data: userData }, { data: clientData }] = await Promise.all([
+      supabase.from('users').select('*').eq('id', userId).maybeSingle(),
+      supabase.from('clients').select('*').eq('user_id', userId).maybeSingle(),
+    ])
+    if (userData) {
+      setProfile({ ...userData, clients: clientData ? [clientData] : [] })
+    } else {
+      setProfile(null)
     }
-    setProfile(data)
     setLoading(false)
   }
 
   async function refreshProfile() {
     if (!user?.id) return
-    const { data } = await supabase
-      .from('users')
-      .select('*, clients(*)')
-      .eq('id', user.id)
-      .maybeSingle()
-    if (data) {
-      if (data.clients && !Array.isArray(data.clients)) data.clients = [data.clients]
-      setProfile(data)
+    const [{ data: userData }, { data: clientData }] = await Promise.all([
+      supabase.from('users').select('*').eq('id', user.id).maybeSingle(),
+      supabase.from('clients').select('*').eq('user_id', user.id).maybeSingle(),
+    ])
+    if (userData) {
+      setProfile({ ...userData, clients: clientData ? [clientData] : [] })
     }
   }
 
