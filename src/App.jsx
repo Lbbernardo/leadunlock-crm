@@ -21,6 +21,7 @@ import ResetPassword from './pages/auth/ResetPassword'
 import Callback from './pages/auth/Callback'
 import AdminLogin from './pages/auth/AdminLogin'
 import AccountBlocked from './pages/dashboard/AccountBlocked'
+import HowItWorks from './pages/dashboard/HowItWorks'
 import DemoPage from './pages/demo/DemoPage'
 
 const Spinner = () => (
@@ -92,6 +93,7 @@ export default function App() {
           <Route path="/dashboard/leads/:id" element={<ClientRoute><LeadDetail /></ClientRoute>} />
           <Route path="/dashboard/billing" element={<ClientRoute><Billing /></ClientRoute>} />
           <Route path="/dashboard/help" element={<ClientRoute><Help /></ClientRoute>} />
+          <Route path="/dashboard/how-it-works" element={<ClientRoute><HowItWorks /></ClientRoute>} />
           <Route path="/dashboard/profile" element={<ClientRoute><Profile /></ClientRoute>} />
           <Route path="/admin" element={<ProtectedRoute adminOnly><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/finanzas" element={<ProtectedRoute adminOnly><AdminFinanzas /></ProtectedRoute>} />

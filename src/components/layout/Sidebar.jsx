@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, CreditCard, LogOut, Shield, DollarSign, HelpCircle, User, BookOpen, Zap, X } from 'lucide-react'
+import { LayoutDashboard, CreditCard, LogOut, Shield, DollarSign, HelpCircle, User, BookOpen, Zap, X, BookOpenCheck } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import clsx from 'clsx'
 
 const clientNavItems = [
   { label: 'Leads', icon: LayoutDashboard, href: '/dashboard' },
+  { label: 'Cómo funciona', icon: BookOpenCheck, href: '/dashboard/how-it-works' },
   { label: 'Facturación', icon: CreditCard, href: '/dashboard/billing' },
   { label: 'Perfil', icon: User, href: '/dashboard/profile' },
   { label: 'Ayuda', icon: HelpCircle, href: '/dashboard/help' },
