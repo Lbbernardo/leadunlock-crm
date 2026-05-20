@@ -85,7 +85,7 @@ function StepIndicator({ current }) {
 }
 
 function Step1({ data, onChange, onNext }) {
-  const valid = data.companyName && data.city && data.categories.length > 0
+  const valid = data.companyName && data.insuranceCompany && data.city && data.phone && data.productDescription && data.categories.length > 0
 
 
   function toggleCategory(id) {
@@ -116,7 +116,6 @@ function Step1({ data, onChange, onNext }) {
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">
           ¿Para qué compañía de seguros trabajas?
-          <span className="text-slate-500 font-normal ml-1 text-xs">(opcional)</span>
         </label>
         <div className="relative">
           <Briefcase size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -208,7 +207,7 @@ function Step1({ data, onChange, onNext }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-2">¿Qué producto o servicio vendes? (opcional)</label>
+        <label className="block text-sm font-medium text-slate-300 mb-2">¿Qué producto o servicio vendes?</label>
         <textarea
           value={data.productDescription}
           onChange={e => onChange({ ...data, productDescription: e.target.value })}
@@ -250,7 +249,7 @@ function Step2({ data, onChange, onNext, onBack }) {
     onChange({ ...data, goal: text || 'Otro', otherGoalText: text })
   }
 
-  const valid = data.targetAudience && data.budget && data.goal && data.goal !== 'Otro'
+  const valid = data.targetAudience && data.targetState && data.leadsPerMonth && data.budget && data.goal && data.goal !== 'Otro'
   const hasFinancial = data.categories.includes('financial-products')
 
   return (
@@ -291,7 +290,7 @@ function Step2({ data, onChange, onNext, onBack }) {
       <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">
           ¿En qué estado(s) quieres vender?
-          <span className="text-slate-500 font-normal ml-1 text-xs">Preferiblemente donde tengas tu licencia</span>
+          <span className="text-slate-500 font-normal ml-1 text-xs">Donde tengas tu licencia</span>
         </label>
         <input
           value={data.targetState}
