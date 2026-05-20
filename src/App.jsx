@@ -22,6 +22,7 @@ import Callback from './pages/auth/Callback'
 import AdminLogin from './pages/auth/AdminLogin'
 import AccountBlocked from './pages/dashboard/AccountBlocked'
 import HowItWorks from './pages/dashboard/HowItWorks'
+import ComoFunciona from './pages/ComoFunciona'
 import DemoPage from './pages/demo/DemoPage'
 
 const Spinner = () => (
@@ -100,6 +101,7 @@ export default function App() {
           <Route path="/admin/manual" element={<ProtectedRoute adminOnly><Manual /></ProtectedRoute>} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/building" element={<ProtectedRoute><Building /></ProtectedRoute>} />
+          <Route path="/como-funciona" element={<ComoFunciona />} />
           <Route path="/demo" element={<DemoPage />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/admin-login" element={<AdminLogin />} />

@@ -831,6 +831,9 @@ function Footer() {
                   {l.label}
                 </a>
               ))}
+              <Link to="/como-funciona" className="block text-green-500/60 hover:text-green-400 text-sm transition-colors font-medium">
+                Guía completa paso a paso →
+              </Link>
             </div>
           </div>
 
