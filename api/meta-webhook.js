@@ -20,6 +20,7 @@ async function processLead(leadgenId, formId) {
 
   const lead = await addPoolLead(supabase, {
     ...metaLead,
+    meta_lead_id: String(leadgenId),
     campaign_id: campaign.id,
     campaign_name: campaign.name,
     category: campaign.interest_category,
@@ -28,6 +29,11 @@ async function processLead(leadgenId, formId) {
     acquisition_cost: campaign.cost_per_lead,
     default_state: campaign.default_state,
   })
+
+  if (!lead) {
+    console.log(`Lead de Meta ${leadgenId} ya existía, se ignora`)
+    return
+  }
 
   const notified = await notifyPoolLead(supabase, lead)
   console.log(`Lead al pool: ${lead.id} (${lead.category} · ${lead.state_code}) → ${notified} clientes avisados`)

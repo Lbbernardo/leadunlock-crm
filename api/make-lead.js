@@ -38,6 +38,7 @@ export default async function handler(req, res) {
   try {
     lead = await addPoolLead(supabase, {
       ...metaLead,
+      meta_lead_id: String(lead_id),
       campaign_id: campaign.id,
       campaign_name: campaign.name,
       category: campaign.interest_category,
@@ -50,6 +51,8 @@ export default async function handler(req, res) {
     console.error('Lead insert error:', error)
     return res.status(500).json({ error: 'Failed to create lead' })
   }
+
+  if (!lead) return res.status(200).json({ success: true, duplicate: true })
 
   const notified = await notifyPoolLead(supabase, lead)
   console.log(`Lead al pool: ${lead.id} (${lead.category} · ${lead.state_code}) → ${notified} clientes avisados`)

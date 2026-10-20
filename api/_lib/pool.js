@@ -87,7 +87,8 @@ function resolveState(lead) {
   return toStateCode(lead.state) || zipToState(lead.zip_code) || toStateCode(lead.default_state)
 }
 
-// Inserta el lead en el pool (sin cliente, bloqueado)
+// Inserta el lead en el pool (sin cliente, bloqueado).
+// Retorna null si ese lead de Meta ya existía (llegó por Make y por el webhook directo).
 export async function addPoolLead(supabase, lead) {
   const stateCode = resolveState(lead)
   const { data, error } = await supabase.from('leads').insert({
@@ -101,6 +102,7 @@ export async function addPoolLead(supabase, lead) {
     state: lead.state || stateCode,
     state_code: stateCode,
     zip_code: lead.zip_code || null,
+    meta_lead_id: lead.meta_lead_id || null,
     category: lead.category || null,
     product_interest: lead.product_interest || null,
     source: lead.source || 'Meta Ads',
@@ -109,6 +111,7 @@ export async function addPoolLead(supabase, lead) {
     acquisition_cost: lead.acquisition_cost || 0,
   }).select().single()
 
+  if (error?.code === '23505' && lead.meta_lead_id) return null
   if (error) throw error
   return data
 }
