@@ -4,7 +4,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout'
 import Button from '../../components/ui/Button'
 import { useAuth } from '../../context/AuthContext'
 
-const PROD_BASE_URL = 'https://leadunlock-crm.vercel.app'
+const PROD_BASE_URL = 'https://unlocklead.click'
 
 function CopyBox({ label, value, dark }) {
   const [copied, setCopied] = useState(false)

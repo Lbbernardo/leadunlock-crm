@@ -51,7 +51,7 @@ const PHASES = [
           'Developers → API Keys → copiar Publishable key y Secret key',
           'Pegar en .env.local: VITE_STRIPE_PUBLISHABLE_KEY y STRIPE_SECRET_KEY',
           'Crear webhook en Developers → Webhooks → Add endpoint',
-          'URL: https://tu-dominio.vercel.app/api/stripe/webhook',
+          'URL: https://unlocklead.click/api/stripe/webhook',
           'Evento: payment_intent.succeeded',
           'Copiar Signing secret → STRIPE_WEBHOOK_SECRET',
         ],
@@ -120,7 +120,7 @@ const PHASES = [
         checklist: [
           'En GHL ir a Settings → Integrations → Webhooks',
           'Click "Add New Webhook"',
-          'URL: https://tu-dominio.vercel.app/api/webhook',
+          'URL: https://unlocklead.click/api/webhook',
           'Eventos: Contact Created, Contact Updated',
           'Agregar header personalizado: x-webhook-token = [tu token]',
           'En el cuerpo del webhook mapear: full_name, phone, email, city',
