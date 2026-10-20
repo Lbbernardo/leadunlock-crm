@@ -2,6 +2,7 @@
 // Verifica el balance del cliente, descuenta el crédito y desbloquea el lead.
 
 import { createClient } from '@supabase/supabase-js'
+import { requireClientOwner } from './_lib/auth.js'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -13,6 +14,7 @@ export default async function handler(req, res) {
 
   const { leadId, clientId } = req.body
   if (!leadId || !clientId) return res.status(400).json({ error: 'Missing leadId or clientId' })
+  if (!await requireClientOwner(req, res, supabase, clientId)) return
 
   const [{ data: client, error: clientErr }, { data: lead, error: leadErr }] = await Promise.all([
     supabase.from('clients').select('id, balance, lead_price').eq('id', clientId).single(),

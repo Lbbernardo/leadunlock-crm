@@ -4,6 +4,7 @@ import Button from '../ui/Button'
 import { Lock, AlertCircle, Wallet, CreditCard, PhoneCall, CheckCircle } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { Link } from 'react-router-dom'
+import { authHeaders } from '../../lib/supabase'
 
 function UnlockForm({ lead, clientId, amount, onSuccess, onClose }) {
   const { clientData, refreshProfile } = useAuth()
@@ -22,7 +23,7 @@ function UnlockForm({ lead, clientId, amount, onSuccess, onClose }) {
     try {
       const res = await fetch('/api/unlock-lead', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders(),
         body: JSON.stringify({ leadId: lead.id, clientId }),
       })
       const data = await res.json()
@@ -47,7 +48,7 @@ function UnlockForm({ lead, clientId, amount, onSuccess, onClose }) {
     try {
       const res = await fetch('/api/stripe/charge-lead', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders(),
         body: JSON.stringify({ leadId: lead.id, clientId }),
       })
       const data = await res.json()

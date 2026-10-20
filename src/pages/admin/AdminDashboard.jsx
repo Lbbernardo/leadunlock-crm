@@ -7,7 +7,7 @@ import {
 } from 'recharts'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import { Badge, StatusBadge } from '../../components/ui/Badge'
-import { supabase } from '../../lib/supabase'
+import { supabase, authHeaders } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 
 const INITIAL_CATEGORIES = [
@@ -220,7 +220,7 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
     if (!confirm(`¿Eliminar permanentemente la cuenta de ${client.company_name}? Esta acción no se puede deshacer.`)) return
     const res = await fetch('/api/admin', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: await authHeaders(),
       body: JSON.stringify({ action: 'delete-user', clientId: client.id, userId: client.user_id }),
     })
     const result = await res.json()
@@ -248,7 +248,7 @@ function ClientRow({ client, onRefresh, initialExpanded = false }) {
     try {
       const res = await fetch('/api/admin', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: await authHeaders(),
         body: JSON.stringify({ action: 'add-credit', clientId: client.id, amount }),
       })
       const data = await res.json()

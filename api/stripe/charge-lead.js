@@ -3,6 +3,7 @@
 
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { requireClientOwner } from '../_lib/auth.js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -12,6 +13,7 @@ export default async function handler(req, res) {
 
   const { leadId, clientId } = req.body
   if (!leadId || !clientId) return res.status(400).json({ error: 'leadId and clientId required' })
+  if (!await requireClientOwner(req, res, supabase, clientId)) return
 
   const [{ data: client }, { data: lead }] = await Promise.all([
     supabase.from('clients').select('id, balance, lead_price, stripe_customer_id, user_id').eq('id', clientId).single(),

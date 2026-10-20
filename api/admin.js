@@ -2,6 +2,7 @@
 // Maneja todas las acciones de admin: add-credit, delete-user, notify-registration
 
 import { createClient } from '@supabase/supabase-js'
+import { getAuthUser } from './_lib/auth.js'
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -90,9 +91,15 @@ export default async function handler(req, res) {
 
   const { action, ...body } = req.body
 
-  if (action === 'add-credit')          return addCredit(body, res)
-  if (action === 'delete-user')         return deleteUser(body, res)
+  // notify-registration se llama desde el registro (sin sesión de admin)
   if (action === 'notify-registration') return notifyRegistration(body, res)
+
+  const user = await getAuthUser(req, supabase)
+  if (!user) return res.status(401).json({ error: 'unauthorized' })
+  if (!user.isAdmin) return res.status(403).json({ error: 'Forbidden' })
+
+  if (action === 'add-credit')  return addCredit(body, res)
+  if (action === 'delete-user') return deleteUser(body, res)
 
   return res.status(400).json({ error: 'action inválida' })
 }
