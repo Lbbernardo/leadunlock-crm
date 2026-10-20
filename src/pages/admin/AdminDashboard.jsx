@@ -9,6 +9,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout'
 import { Badge, StatusBadge } from '../../components/ui/Badge'
 import { supabase, authHeaders } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
+import { US_STATES } from '../../lib/usStates'
 
 const INITIAL_CATEGORIES = [
   { id: 'final-expense',      name: 'Gastos finales',        icon: '🕊️', description: 'Seguros de gastos funerarios y vida',   is_active: true  },
@@ -737,7 +738,7 @@ function StatCard({ icon: Icon, label, value, sub, color }) {
   )
 }
 
-const EMPTY_CAMPAIGN_FORM = { name: '', client_id: '', source: 'Meta Ads', meta_form_id: '', interest_category: '', lead_interest: '', cost_per_lead: '' }
+const EMPTY_CAMPAIGN_FORM = { name: '', client_id: '', source: 'Meta Ads', meta_form_id: '', interest_category: '', lead_interest: '', cost_per_lead: '', default_state: '' }
 
 export default function AdminDashboard() {
   const { isMock, user: adminUser } = useAuth()
@@ -883,7 +884,7 @@ export default function AdminDashboard() {
   async function fetchCampaigns() {
     const { data } = await supabase
       .from('campaigns')
-      .select('id, name, source, is_active, created_at, client_id, meta_form_id, interest_category, lead_interest, cost_per_lead, clients(company_name)')
+      .select('id, name, source, is_active, created_at, client_id, meta_form_id, interest_category, lead_interest, cost_per_lead, default_state, clients(company_name)')
       .order('created_at', { ascending: false })
     if (data) setCampaigns(data)
   }
@@ -1015,6 +1016,7 @@ export default function AdminDashboard() {
       interest_category: campaignForm.interest_category.trim() || null,
       lead_interest: campaignForm.lead_interest.trim() || null,
       cost_per_lead: campaignForm.cost_per_lead ? parseFloat(campaignForm.cost_per_lead) : 0,
+      default_state: campaignForm.default_state || null,
     })
     if (!error) {
       logAdminAction('campaign_created', campaignForm.name.trim(), { category: campaignForm.interest_category })
@@ -1046,6 +1048,7 @@ export default function AdminDashboard() {
       interest_category: editCampaignForm.interest_category?.trim() || null,
       lead_interest: editCampaignForm.lead_interest?.trim() || null,
       cost_per_lead: editCampaignForm.cost_per_lead ? parseFloat(editCampaignForm.cost_per_lead) : 0,
+      default_state: editCampaignForm.default_state || null,
     }).eq('id', id)
     logAdminAction('campaign_edited', editCampaignForm.name?.trim() || id, {})
     setEditingCampaignId(null)
@@ -1497,6 +1500,13 @@ export default function AdminDashboard() {
                       </select>
                     </div>
                     <div>
+                      <label className="block text-xs font-medium text-white/35 mb-1">Estado por defecto <span className="text-white/25">(si el lead llega sin estado ni ZIP)</span></label>
+                      <select value={campaignForm.default_state} onChange={e => setCampaignForm(p => ({ ...p, default_state: e.target.value }))} className="w-full px-3 py-2 border border-white/[0.1] rounded-xl text-sm text-white focus:outline-none focus:border-green-500/40 bg-white/[0.05]">
+                        <option value="">Ninguno (varios estados)</option>
+                        {US_STATES.map(st => <option key={st.code} value={st.code}>{st.code} — {st.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
                       <label className="block text-xs font-medium text-white/35 mb-1">Interés del lead</label>
                       <input value={campaignForm.lead_interest} onChange={e => setCampaignForm(p => ({ ...p, lead_interest: e.target.value }))} placeholder="Ej: Fondo de retiro, Plan de vida con ahorro..." className="w-full px-3 py-2 border border-white/[0.1] rounded-xl text-sm text-white focus:outline-none focus:border-green-500/40 bg-white/[0.05] placeholder-white/20" />
                     </div>
@@ -1530,6 +1540,7 @@ export default function AdminDashboard() {
                             </div>
                             <div><label className="text-xs text-white/30 block mb-1">Meta Form ID</label><input value={editCampaignForm.meta_form_id || ''} onChange={e => setEditCampaignForm(p => ({ ...p, meta_form_id: e.target.value }))} placeholder="1234567890123456" className="w-full px-2 py-1.5 text-xs border border-white/[0.1] rounded-lg focus:outline-none focus:border-green-500/40 bg-white/[0.05] text-white" /></div>
                             <div><label className="text-xs text-white/30 block mb-1">Categoría</label><select value={editCampaignForm.interest_category || ''} onChange={e => setEditCampaignForm(p => ({ ...p, interest_category: e.target.value }))} className="w-full px-2 py-1.5 text-xs border border-white/[0.1] rounded-lg focus:outline-none focus:border-green-500/40 bg-white/[0.05] text-white"><option value="">Sin categoría</option>{INITIAL_CATEGORIES.map(cat => <option key={cat.id} value={cat.name}>{cat.icon} {cat.name}</option>)}</select></div>
+                            <div><label className="text-xs text-white/30 block mb-1">Estado por defecto</label><select value={editCampaignForm.default_state || ''} onChange={e => setEditCampaignForm(p => ({ ...p, default_state: e.target.value }))} className="w-full px-2 py-1.5 text-xs border border-white/[0.1] rounded-lg focus:outline-none focus:border-green-500/40 bg-white/[0.05] text-white"><option value="">Ninguno</option>{US_STATES.map(st => <option key={st.code} value={st.code}>{st.code} — {st.name}</option>)}</select></div>
                             <div><label className="text-xs text-white/30 block mb-1">Interés del lead</label><input value={editCampaignForm.lead_interest || ''} onChange={e => setEditCampaignForm(p => ({ ...p, lead_interest: e.target.value }))} placeholder="Ej: Fondo de retiro..." className="w-full px-2 py-1.5 text-xs border border-white/[0.1] rounded-lg focus:outline-none focus:border-green-500/40 bg-white/[0.05] text-white placeholder-white/20" /></div>
                           </div>
                           <div className="flex gap-2">
@@ -1550,13 +1561,14 @@ export default function AdminDashboard() {
                               <p className="text-xs text-white/35 mt-0.5">
                                 {camp.client_name} · {camp.source}
                                 {camp.meta_form_id ? ` · Form: ${camp.meta_form_id}` : ''}
+                                {camp.default_state ? ` · Estado: ${camp.default_state}` : ''}
                               </p>
                             </div>
                             <div className="flex items-center gap-1 flex-shrink-0">
                               <button onClick={() => handleToggleCampaign(camp.id, camp.is_active)} className="text-white/30 hover:text-green-500 transition-colors p-1">
                                 {camp.is_active ? <ToggleRight size={18} className="text-green-500" /> : <ToggleLeft size={18} />}
                               </button>
-                              <button onClick={() => { setEditingCampaignId(camp.id); setEditCampaignForm({ name: camp.name, source: camp.source, meta_form_id: camp.meta_form_id || '', interest_category: camp.interest_category || '', lead_interest: camp.lead_interest || '', cost_per_lead: camp.cost_per_lead || '', client_id: camp.client_id }) }} className="text-white/30 hover:text-blue-400 transition-colors p-1">
+                              <button onClick={() => { setEditingCampaignId(camp.id); setEditCampaignForm({ name: camp.name, source: camp.source, meta_form_id: camp.meta_form_id || '', interest_category: camp.interest_category || '', lead_interest: camp.lead_interest || '', cost_per_lead: camp.cost_per_lead || '', default_state: camp.default_state || '', client_id: camp.client_id }) }} className="text-white/30 hover:text-blue-400 transition-colors p-1">
                                 <Edit2 size={14} />
                               </button>
                               <button onClick={() => handleDeleteCampaign(camp.id)} className="text-white/30 hover:text-red-400 transition-colors p-1">

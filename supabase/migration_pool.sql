@@ -13,9 +13,13 @@ ALTER TABLE public.campaigns ALTER COLUMN client_id DROP NOT NULL;
 ALTER TABLE public.leads
   ADD COLUMN IF NOT EXISTS category       TEXT,
   ADD COLUMN IF NOT EXISTS state_code     TEXT,
+  ADD COLUMN IF NOT EXISTS zip_code       TEXT,
   ADD COLUMN IF NOT EXISTS claimed_at     TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS reserved_by    UUID,
   ADD COLUMN IF NOT EXISTS reserved_until TIMESTAMPTZ;
+
+-- Estado que se asigna a leads que llegan sin estado ni código postal
+ALTER TABLE public.campaigns ADD COLUMN IF NOT EXISTS default_state TEXT;
 
 ALTER TABLE public.clients
   ADD COLUMN IF NOT EXISTS pool_categories TEXT[],

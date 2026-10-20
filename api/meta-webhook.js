@@ -26,6 +26,7 @@ async function processLead(leadgenId, formId) {
     product_interest: campaign.lead_interest,
     source: 'Meta Ads',
     acquisition_cost: campaign.cost_per_lead,
+    default_state: campaign.default_state,
   })
 
   const notified = await notifyPoolLead(supabase, lead)

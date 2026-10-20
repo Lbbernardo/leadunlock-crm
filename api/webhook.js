@@ -9,7 +9,7 @@
 //   2. Campaign name:  busca la campaña por campaign_name → su interest_category
 //
 // Body (JSON):
-//   full_name, phone, email, city, state,
+//   full_name, phone, email, city, state, zip_code,
 //   campaign_name, category, product_interest, source, cost
 
 import { createClient } from '@supabase/supabase-js'
@@ -36,6 +36,7 @@ export default async function handler(req, res) {
     email,
     city,
     state,
+    zip_code,
     campaign_name,
     category,
     product_interest,
@@ -51,7 +52,7 @@ export default async function handler(req, res) {
   if (campaign_name) {
     const { data } = await supabase
       .from('campaigns')
-      .select('id, interest_category, lead_interest, cost_per_lead')
+      .select('id, interest_category, lead_interest, cost_per_lead, default_state')
       .eq('name', campaign_name)
       .eq('is_active', true)
       .maybeSingle()
@@ -66,6 +67,8 @@ export default async function handler(req, res) {
       email,
       city,
       state,
+      zip_code,
+      default_state: campaign?.default_state,
       campaign_id: campaign?.id,
       campaign_name,
       category: category || campaign?.interest_category,

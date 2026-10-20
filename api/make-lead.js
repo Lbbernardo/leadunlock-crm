@@ -44,6 +44,7 @@ export default async function handler(req, res) {
       product_interest: campaign.lead_interest,
       source: 'Meta Ads',
       acquisition_cost: campaign.cost_per_lead,
+      default_state: campaign.default_state,
     })
   } catch (error) {
     console.error('Lead insert error:', error)

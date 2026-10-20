@@ -1,7 +1,7 @@
 // Pool de leads: entrada de leads + notificaciones a los clientes que coinciden.
 // Lo usan make-lead, meta-webhook y webhook.
 
-import { toStateCode } from '../../src/lib/usStates.js'
+import { toStateCode, zipToState } from '../../src/lib/usStates.js'
 
 const FROM = 'LeadUnlock <notificaciones@unlocklead.click>'
 
@@ -67,6 +67,7 @@ export async function fetchMetaLead(leadgenId) {
     email: fields.email || null,
     city: fields.city || null,
     state: fields.state || fields.province || null,
+    zip_code: fields.zip_code || fields.post_code || fields.zip || null,
   }
 }
 
@@ -74,15 +75,21 @@ export async function fetchMetaLead(leadgenId) {
 export async function findCampaignByForm(supabase, formId) {
   const { data } = await supabase
     .from('campaigns')
-    .select('id, name, interest_category, lead_interest, cost_per_lead')
+    .select('id, name, interest_category, lead_interest, cost_per_lead, default_state')
     .eq('meta_form_id', String(formId))
     .eq('is_active', true)
     .maybeSingle()
   return data
 }
 
+// Estado del lead: el que escribió → su código postal → el estado por defecto de la campaña
+function resolveState(lead) {
+  return toStateCode(lead.state) || zipToState(lead.zip_code) || toStateCode(lead.default_state)
+}
+
 // Inserta el lead en el pool (sin cliente, bloqueado)
 export async function addPoolLead(supabase, lead) {
+  const stateCode = resolveState(lead)
   const { data, error } = await supabase.from('leads').insert({
     client_id: null,
     campaign_id: lead.campaign_id || null,
@@ -91,8 +98,9 @@ export async function addPoolLead(supabase, lead) {
     phone: lead.phone || null,
     email: lead.email || null,
     city: lead.city || null,
-    state: lead.state || null,
-    state_code: toStateCode(lead.state),
+    state: lead.state || stateCode,
+    state_code: stateCode,
+    zip_code: lead.zip_code || null,
     category: lead.category || null,
     product_interest: lead.product_interest || null,
     source: lead.source || 'Meta Ads',
