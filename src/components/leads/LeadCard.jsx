@@ -1,4 +1,4 @@
-import { Lock, Unlock, Phone, Mail, MapPin, Tag, Calendar, ChevronRight } from 'lucide-react'
+import { Lock, Unlock, Phone, Mail, MapPin, Tag, Calendar, ChevronRight, Clock, TrendingDown } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { StatusBadge } from '../ui/Badge'
 import Button from '../ui/Button'
@@ -10,6 +10,16 @@ function formatDate(dateStr) {
   })
 }
 
+function timeAgo(dateStr) {
+  const mins = Math.floor((Date.now() - new Date(dateStr)) / 60000)
+  if (mins < 1) return 'ahora'
+  if (mins < 60) return `hace ${mins} min`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `hace ${hours} h`
+  const days = Math.floor(hours / 24)
+  return `hace ${days} día${days === 1 ? '' : 's'}`
+}
+
 function maskName(name) {
   if (!name) return '•••••• ••••••'
   const parts = name.split(' ').filter(p => p.length > 0)
@@ -17,7 +27,8 @@ function maskName(name) {
 }
 
 export default function LeadCard({ lead, onUnlock }) {
-  const isUnlocked = !lead.is_locked || lead.is_unlocked
+  const isUnlocked = lead.is_unlocked
+  const discounted = !isUnlocked && Date.now() - new Date(lead.created_at) > 86400000
 
   return (
     <div className={clsx(
@@ -42,17 +53,27 @@ export default function LeadCard({ lead, onUnlock }) {
               <p className={clsx('font-semibold text-sm', isUnlocked ? 'text-white' : 'text-white/25')}>
                 {isUnlocked ? lead.full_name : maskName(lead.full_name)}
               </p>
-              <p className="text-xs text-white/25 mt-0.5">{lead.source || lead.campaign_name || 'Meta Ads'}</p>
+              <p className="text-xs text-white/25 mt-0.5">{lead.category || lead.source || 'Meta Ads'}</p>
             </div>
           </div>
-          <StatusBadge status={lead.status} />
+          {isUnlocked ? (
+            <StatusBadge status={lead.status} />
+          ) : discounted ? (
+            <span className="flex items-center gap-1 text-[11px] font-semibold text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+              <TrendingDown size={11} /> Rebajado
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-[11px] font-semibold text-green-300 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded-full">
+              <Clock size={11} /> {timeAgo(lead.created_at)}
+            </span>
+          )}
         </div>
 
         {/* Info grid */}
         <div className="grid grid-cols-2 gap-2 mb-4">
           {[
-            { icon: MapPin, text: `${lead.city}${lead.state ? `, ${lead.state}` : ''}` },
-            { icon: Tag, text: lead.product_interest || 'General' },
+            { icon: MapPin, text: [lead.city, lead.state].filter(Boolean).join(', ') || '—' },
+            { icon: Tag, text: lead.product_interest || lead.category || 'General' },
             {
               icon: Phone,
               text: isUnlocked && lead.phone ? lead.phone : '+1 ••• •••••••',
@@ -82,7 +103,7 @@ export default function LeadCard({ lead, onUnlock }) {
         <div className="flex items-center justify-between pt-3 border-t border-white/[0.05]">
           <div className="flex items-center gap-1.5 text-xs text-white/20">
             <Calendar size={11} />
-            {formatDate(lead.created_at)}
+            {isUnlocked ? formatDate(lead.claimed_at || lead.created_at) : timeAgo(lead.created_at)}
           </div>
 
           {isUnlocked ? (
@@ -98,7 +119,7 @@ export default function LeadCard({ lead, onUnlock }) {
               className="flex items-center gap-1.5 bg-green-500 hover:bg-green-400 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-lg shadow-green-500/20"
             >
               <Lock size={11} />
-              Desbloquear ${lead.price ? Math.round(lead.price) : 12}
+              Desbloquear ${lead.price ?? '—'}
             </button>
           )}
         </div>

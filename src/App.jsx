@@ -1,7 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
-import { supabase } from './lib/supabase'
 import Landing from './pages/Landing'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
@@ -15,7 +13,6 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminFinanzas from './pages/admin/AdminFinanzas'
 import Manual from './pages/admin/Manual'
 import Onboarding from './pages/onboarding/Onboarding'
-import Building from './pages/dashboard/Building'
 import Privacy from './pages/Privacy'
 import ResetPassword from './pages/auth/ResetPassword'
 import Callback from './pages/auth/Callback'
@@ -44,21 +41,9 @@ function ProtectedRoute({ children, adminOnly = false }) {
   return children
 }
 
-// Solo para rutas del dashboard de clientes — requiere cuenta activa y campaña configurada
+// Solo para rutas del dashboard de clientes — requiere cuenta activa
 function ClientRoute({ children }) {
-  const { user, profile, clientData, loading, isMock } = useAuth()
-  const [campaignReady, setCampaignReady] = useState(isMock ? true : null)
-
-  useEffect(() => {
-    if (isMock || !clientData?.id) return
-    supabase
-      .from('campaigns')
-      .select('id')
-      .eq('client_id', clientData.id)
-      .not('meta_form_id', 'is', null)
-      .limit(1)
-      .then(({ data }) => setCampaignReady(data != null && data.length > 0))
-  }, [clientData?.id, isMock])
+  const { user, profile, clientData, loading } = useAuth()
 
   if (loading) return <Spinner />
   if (!user) return <Navigate to="/login" replace />
@@ -68,8 +53,6 @@ function ClientRoute({ children }) {
   const status = clientData?.status
   if (status === 'pending' || !status) return <Navigate to="/onboarding" replace />
   if (status === 'paused' || status === 'banned') return <Navigate to="/account-blocked" replace />
-  if (campaignReady === null) return <Spinner />
-  if (!campaignReady) return <Navigate to="/building" replace />
 
   return children
 }
@@ -100,7 +83,7 @@ export default function App() {
           <Route path="/admin/finanzas" element={<ProtectedRoute adminOnly><AdminFinanzas /></ProtectedRoute>} />
           <Route path="/admin/manual" element={<ProtectedRoute adminOnly><Manual /></ProtectedRoute>} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-          <Route path="/building" element={<ProtectedRoute><Building /></ProtectedRoute>} />
+          <Route path="/building" element={<Navigate to="/dashboard" replace />} />
           <Route path="/como-funciona" element={<ComoFunciona />} />
           <Route path="/demo" element={<DemoPage />} />
           <Route path="/privacy" element={<Privacy />} />

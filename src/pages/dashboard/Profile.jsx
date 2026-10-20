@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
-import { Building2, MapPin, Phone, Mail, CreditCard, AlertTriangle, Check, Save, User, Plus, X, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react'
+import { Building2, MapPin, Phone, Mail, CreditCard, AlertTriangle, Check, Save, User, Plus, X, Lock, Eye, EyeOff, ShieldCheck, Target } from 'lucide-react'
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import Button from '../../components/ui/Button'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
+import { US_STATES } from '../../lib/usStates'
+import { LEAD_CATEGORY_NAMES } from '../../lib/leadCategories'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder')
 
@@ -261,6 +263,76 @@ function PasswordForm({ onSuccess, onClose }) {
   )
 }
 
+function PoolPreferences({ initialCategories, initialStates }) {
+  const { refreshProfile } = useAuth()
+  const [categories, setCategories] = useState(initialCategories || [])
+  const [states, setStates] = useState(initialStates || [])
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState(null)
+
+  function toggle(list, setList, value) {
+    setList(list.includes(value) ? list.filter(v => v !== value) : [...list, value])
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    setError(null)
+    const { error: rpcError } = await supabase.rpc('set_pool_preferences', {
+      p_categories: categories.length ? categories : null,
+      p_states: states.length ? states : null,
+    })
+    setSaving(false)
+    if (rpcError) { setError('No se pudo guardar. Intenta de nuevo.'); return }
+    await refreshProfile?.()
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
+  }
+
+  const chip = (active) => `px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
+    active ? 'bg-green-500 border-green-500 text-white' : 'bg-white border-slate-200 text-slate-600 hover:border-green-300'
+  }`
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl p-6 mb-6">
+      <div className="flex items-center gap-2 mb-1">
+        <Target size={18} className="text-slate-500" />
+        <h2 className="font-semibold text-slate-900">Qué leads quiero ver</h2>
+      </div>
+      <p className="text-sm text-slate-500 mb-5">Solo verás y recibirás avisos de leads de estos nichos y estados. Sin selección = todos.</p>
+
+      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Nichos</p>
+      <div className="flex flex-wrap gap-2 mb-5">
+        {LEAD_CATEGORY_NAMES.map(name => (
+          <button key={name} type="button" onClick={() => toggle(categories, setCategories, name)} className={chip(categories.includes(name))}>
+            {name}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Estados donde tengo licencia</p>
+        {states.length > 0 && (
+          <button type="button" onClick={() => setStates([])} className="text-xs text-slate-400 hover:text-slate-600">Quitar todos</button>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-1.5 mb-5">
+        {US_STATES.map(st => (
+          <button key={st.code} type="button" title={st.name} onClick={() => toggle(states, setStates, st.code)} className={chip(states.includes(st.code))}>
+            {st.code}
+          </button>
+        ))}
+      </div>
+
+      {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
+      <Button onClick={handleSave} loading={saving} className="w-full sm:w-auto">
+        <Save size={15} />
+        {saved ? '¡Guardado!' : 'Guardar preferencias'}
+      </Button>
+    </div>
+  )
+}
+
 export default function Profile() {
   const { user } = useAuth()
   const [profile, setProfile] = useState(null)
@@ -278,7 +350,7 @@ export default function Profile() {
     async function load() {
       const [{ data: userData }, { data: clientData }] = await Promise.all([
         supabase.from('users').select('email, full_name').eq('id', user.id).single(),
-        supabase.from('clients').select('company_name, phone, city, status, payment_method_last4, payment_method_brand').eq('user_id', user.id).single(),
+        supabase.from('clients').select('company_name, phone, city, status, payment_method_last4, payment_method_brand, pool_categories, pool_states').eq('user_id', user.id).single(),
       ])
       setProfile({ ...userData, ...clientData })
       setForm({
@@ -429,6 +501,8 @@ export default function Profile() {
             {saved ? '¡Guardado!' : 'Guardar cambios'}
           </Button>
         </div>
+
+        <PoolPreferences initialCategories={profile?.pool_categories} initialStates={profile?.pool_states} />
 
         {/* Método de pago */}
         <div className="bg-white border border-slate-200 rounded-2xl p-6">

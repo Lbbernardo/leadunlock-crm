@@ -147,25 +147,30 @@ src/lib/supabase.js              # Cliente de Supabase
 
 ## 🔄 Flujos principales
 
+### Pool de leads (desde oct 2026)
+Los leads NO se asignan a un cliente al entrar. Van a un **pool** por nicho + estado;
+los ven todos los clientes activos que coinciden y **el primero que paga se lo queda** (exclusivo).
+- Precio: `costo × 3` (mín $12) → 100% <24h · 60% <7 días · 30% después (`pool_price()` en SQL)
+- Preferencias del cliente: `clients.pool_categories` + `clients.pool_states` (editables en Perfil)
+- Lógica compartida de entrada: `api/_lib/pool.js` · migración: `supabase/migration_pool.sql`
+
 ### Cómo llega un lead de Meta Ads
-1. Lead llena formulario en Meta Ads
-2. Meta notifica a Make.com (webhook configurado con el form_id)
-3. Make.com llama `POST /api/make-lead` con `{lead_id, form_id}`
-4. `make-lead.js` llama Facebook Graph API para obtener datos del lead
-5. Busca en `campaigns` por `meta_form_id` → encuentra `client_id`
-6. Inserta en `leads` con `is_locked: true`
-7. Envía SMS al cliente (Twilio) + Email al admin (Resend)
+1. Lead llena formulario en Meta Ads → Make.com → `POST /api/make-lead` con `{lead_id, form_id}`
+2. Busca la campaña por `meta_form_id` → toma su `interest_category` (nicho) y `cost_per_lead`
+3. Inserta en `leads` con `client_id: null`, `is_locked: true`, `category`, `state_code`
+4. Email + SMS a todos los clientes que coinciden + aviso al admin
 
 ### Cómo desbloquea un lead el cliente
-**Con crédito:** `POST /api/unlock-lead` → descuenta balance → `is_locked: false`
-**Con tarjeta:** `POST /api/stripe/charge-lead` → cobra Stripe → `is_locked: false`
+`reserve_pool_lead` lo aparta 2 min (si otro ya lo tomó → 409 `lead_taken`, sin cobrar) →
+cobra (crédito con `deduct_balance` o tarjeta con Stripe) → `claim_pool_lead` lo asigna.
+Si la reserva se perdió después de cobrar, se devuelve el crédito / se reembolsa en Stripe.
+**Con crédito:** `POST /api/unlock-lead` · **Con tarjeta:** `POST /api/stripe/charge-lead`
 
 ### Cómo se activa una cuenta nueva
 1. Cliente completa onboarding (4 pasos)
 2. Paga $100 → `POST /api/stripe/create-activation-payment` → PaymentIntent
 3. Pago exitoso → `POST /api/stripe/confirm-activation` → guarda tarjeta + activa cuenta
-4. Cliente ve pantalla Building (polling cada 15s)
-5. Luis crea campaña en admin con `meta_form_id` → cliente entra al dashboard
+4. Cliente entra directo al dashboard y ve el pool (ya no hay pantalla "Building")
 
 ---
 
@@ -188,7 +193,9 @@ discount_codes   id, code, discount_pct, max_uses, used_count, expires_at, activ
 
 ### RPC disponible
 ```sql
-get_client_leads(p_client_id UUID) -- Retorna leads del cliente con is_unlocked calculado
+get_pool_leads()                 -- Leads del cliente + pool que coincide (datos ocultos, con precio)
+set_pool_preferences(cats, states) -- El cliente cambia nichos/estados
+reserve_pool_lead / claim_pool_lead / deduct_balance -- Solo service_role (APIs)
 ```
 
 ---

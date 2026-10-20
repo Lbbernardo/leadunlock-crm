@@ -6,7 +6,9 @@ import { useAuth } from '../../context/AuthContext'
 import { Link } from 'react-router-dom'
 import { authHeaders } from '../../lib/supabase'
 
-function UnlockForm({ lead, clientId, amount, onSuccess, onClose }) {
+const TAKEN_MSG = 'Otro agente se adelantó y tomó este lead. No se te cobró nada.'
+
+function UnlockForm({ lead, clientId, amount, onSuccess, onClose, onTaken }) {
   const { clientData, refreshProfile } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -27,6 +29,11 @@ function UnlockForm({ lead, clientId, amount, onSuccess, onClose }) {
         body: JSON.stringify({ leadId: lead.id, clientId }),
       })
       const data = await res.json()
+      if (data.error === 'lead_taken') {
+        setError(TAKEN_MSG)
+        onTaken?.(lead.id)
+        return
+      }
       if (!data.success) {
         setError(data.error === 'insufficient_balance'
           ? `Saldo insuficiente. Tienes $${data.balance} y el lead cuesta $${data.required}.`
@@ -53,7 +60,10 @@ function UnlockForm({ lead, clientId, amount, onSuccess, onClose }) {
       })
       const data = await res.json()
       if (!data.success) {
-        if (data.error === 'no_payment_method') {
+        if (data.error === 'lead_taken') {
+          setError(TAKEN_MSG)
+          onTaken?.(lead.id)
+        } else if (data.error === 'no_payment_method') {
           setError('No hay método de pago guardado. Agrega una tarjeta en tu perfil.')
         } else if (data.error === 'card_declined') {
           setError('Tu tarjeta fue rechazada. Verifica los datos en tu perfil.')
@@ -189,7 +199,7 @@ function UnlockForm({ lead, clientId, amount, onSuccess, onClose }) {
   )
 }
 
-export default function PaymentModal({ open, onClose, lead, clientId, onSuccess, leadPrice }) {
+export default function PaymentModal({ open, onClose, lead, clientId, onSuccess, onTaken, leadPrice }) {
   if (!lead) return null
 
   const amount = leadPrice ?? lead.price ?? null
@@ -226,6 +236,7 @@ export default function PaymentModal({ open, onClose, lead, clientId, onSuccess,
           amount={Math.round(amount)}
           onSuccess={handleSuccess}
           onClose={onClose}
+          onTaken={onTaken}
         />
       )}
     </Modal>

@@ -6,6 +6,7 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 import { Unlock, Building2, MapPin, Tag, Users, ChevronRight, Check, CreditCard, AlertCircle, Briefcase } from 'lucide-react'
 import Button from '../../components/ui/Button'
 import { useAuth } from '../../context/AuthContext'
+import { parseStates } from '../../lib/usStates'
 import { supabase } from '../../lib/supabase'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder')
@@ -628,8 +629,8 @@ function Step4({ data }) {
       <div>
         <h2 className="text-2xl font-bold text-white mb-2">¡Cuenta activada!</h2>
         <p className="text-slate-400">
-          Recibimos la información de <strong className="text-white">{data.companyName}</strong>.
-          Nuestro equipo creará tus campañas en las próximas <strong className="text-green-400">24-48 horas</strong>.
+          Bienvenido, <strong className="text-white">{data.companyName}</strong>.
+          Tu dashboard ya está listo con los <strong className="text-green-400">leads disponibles en tu zona</strong>.
         </p>
       </div>
 
@@ -646,10 +647,10 @@ function Step4({ data }) {
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 text-left space-y-3">
         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide">¿Qué sigue?</h3>
         {[
-          { step: '1', text: 'Nuestro equipo revisa tu briefing de campaña', time: 'Hoy' },
-          { step: '2', text: 'Creamos y activamos tu campaña personalizada en Meta Ads', time: '24-48h' },
-          { step: '3', text: 'Los leads empiezan a llegar a tu dashboard', time: 'En 48h' },
-          { step: '4', text: 'Abre los leads que te interesan y empieza a cerrar negocios', time: 'Tú decides' },
+          { step: '1', text: 'Entra a tu dashboard y revisa los leads disponibles', time: 'Ahora' },
+          { step: '2', text: 'Te avisamos por email y SMS cada vez que entra un lead nuevo', time: 'En vivo' },
+          { step: '3', text: 'El primer agente que desbloquea un lead se lo queda — sé rápido', time: 'Exclusivo' },
+          { step: '4', text: 'Los leads que nadie toma bajan de precio con el tiempo', time: 'Tú decides' },
         ].map(item => (
           <div key={item.step} className="flex items-start gap-3">
             <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white mt-0.5">
@@ -712,6 +713,8 @@ function OnboardingContent() {
         goal: data.goal,
         target_state: data.targetState || null,
         categories: categoryLabels,
+        pool_categories: categoryLabels.length ? categoryLabels : null,
+        pool_states: parseStates(data.targetState).length ? parseStates(data.targetState) : null,
         status: 'active',
       }
 
