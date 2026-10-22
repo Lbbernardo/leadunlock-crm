@@ -3,6 +3,7 @@
 
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { getAuthUser } from '../_lib/auth.js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
@@ -10,8 +11,11 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { setupIntentId, userId } = req.body
-  if (!setupIntentId || !userId) return res.status(400).json({ error: 'setupIntentId and userId required' })
+  const user = await getAuthUser(req, supabase)
+  if (!user) return res.status(401).json({ error: 'unauthorized' })
+
+  const { setupIntentId } = req.body || {}
+  if (!setupIntentId) return res.status(400).json({ error: 'setupIntentId required' })
 
   try {
     const si = await stripe.setupIntents.retrieve(setupIntentId, {
@@ -20,6 +24,13 @@ export default async function handler(req, res) {
 
     if (si.status !== 'succeeded') {
       return res.status(400).json({ error: `SetupIntent status: ${si.status}` })
+    }
+
+    // La tarjeta tiene que ser del customer de este usuario
+    const { data: client } = await supabase
+      .from('clients').select('stripe_customer_id, status').eq('user_id', user.id).single()
+    if (!client?.stripe_customer_id || si.customer !== client.stripe_customer_id) {
+      return res.status(403).json({ error: 'Esta tarjeta no corresponde a tu cuenta' })
     }
 
     const pm = si.payment_method
@@ -33,13 +44,15 @@ export default async function handler(req, res) {
       })
     }
 
+    // Tarjeta nueva: si estaba bloqueado por un cobro rechazado, vuelve a activo
     await supabase
       .from('clients')
       .update({
         payment_method_last4: last4,
         payment_method_brand: brand,
+        ...(client.status === 'payment_required' && { status: 'active' }),
       })
-      .eq('user_id', userId)
+      .eq('user_id', user.id)
 
     return res.status(200).json({ success: true, last4, brand })
   } catch (err) {

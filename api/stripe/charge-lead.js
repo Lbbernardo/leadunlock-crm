@@ -25,7 +25,8 @@ export default async function handler(req, res) {
   const { data: client } = await supabase
     .from('clients').select('id, status, stripe_customer_id').eq('id', clientId).single()
   if (!client) return res.status(404).json({ error: 'Client not found' })
-  if (client.status !== 'active') return res.status(403).json({ error: 'account_inactive' })
+  // payment_required = una tarjeta fue rechazada; puede seguir usando crédito o reintentar
+  if (!['active', 'payment_required'].includes(client.status)) return res.status(403).json({ error: 'account_inactive' })
   if (!client.stripe_customer_id) return res.status(400).json({ error: 'no_payment_method' })
 
   const { data: price, error: reserveErr } = await supabase

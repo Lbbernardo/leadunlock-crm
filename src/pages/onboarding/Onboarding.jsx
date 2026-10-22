@@ -7,7 +7,7 @@ import { Unlock, Building2, MapPin, Tag, Users, ChevronRight, Check, CreditCard,
 import Button from '../../components/ui/Button'
 import { useAuth } from '../../context/AuthContext'
 import { parseStates } from '../../lib/usStates'
-import { supabase } from '../../lib/supabase'
+import { supabase, authHeaders } from '../../lib/supabase'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder')
 
@@ -431,7 +431,7 @@ function PaymentForm({ data, onSuccess, onBack }) {
     if (row.expires_at && new Date(row.expires_at) < new Date()) { setCouponError('Este código ha vencido.'); setCouponLoading(false); return }
     if (row.max_uses !== null && row.used_count >= row.max_uses) { setCouponError('Este código ya agotó sus usos.'); setCouponLoading(false); return }
 
-    setAppliedCodeData(row)
+    setAppliedCodeData({ ...row, code })
     setCouponLoading(false)
   }
 
@@ -440,43 +440,39 @@ function PaymentForm({ data, onSuccess, onBack }) {
     setLoading(true)
     setError(null)
 
-    if (isMock || isFree) {
+    if (isMock) {
       await new Promise(r => setTimeout(r, 900))
-      if (appliedCodeData?.id) {
-        await supabase.from('discount_codes')
-          .update({ used_count: appliedCodeData.used_count + 1 })
-          .eq('id', appliedCodeData.id)
-      }
       onSuccess()
       return
     }
 
     try {
+      // El servidor calcula el precio y valida el cupón; con cupón de 100% activa la cuenta directo
       const res = await fetch('/api/stripe/create-activation-payment', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: finalAmount, email: user?.email, description: 'Activación cuenta LeadUnlock' }),
+        headers: await authHeaders(),
+        body: JSON.stringify({ code: appliedCodeData?.code || null }),
       })
-      const { clientSecret, error: apiErr } = await res.json()
+      const { clientSecret, activated, error: apiErr } = await res.json()
       if (apiErr) throw new Error(apiErr)
+      if (activated) { onSuccess(); return }
 
       const { error: stripeErr, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: { card: elements.getElement(CardElement) },
       })
       if (stripeErr) throw new Error(stripeErr.message)
-      if (paymentIntent.status === 'succeeded') {
-        await fetch('/api/stripe/confirm-activation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paymentIntentId: paymentIntent.id, userId: user?.id }),
-        })
-        if (appliedCodeData?.id) {
-          await supabase.from('discount_codes')
-            .update({ used_count: appliedCodeData.used_count + 1 })
-            .eq('id', appliedCodeData.id)
-        }
-        onSuccess()
+      if (paymentIntent.status !== 'succeeded') throw new Error('El pago no se completó. Intenta de nuevo.')
+
+      const confirmRes = await fetch('/api/stripe/confirm-activation', {
+        method: 'POST',
+        headers: await authHeaders(),
+        body: JSON.stringify({ paymentIntentId: paymentIntent.id }),
+      })
+      const confirmData = await confirmRes.json()
+      if (!confirmData.success) {
+        throw new Error('Tu pago se recibió, pero no pudimos activar la cuenta. Escríbenos por WhatsApp y lo resolvemos.')
       }
+      onSuccess()
     } catch (err) {
       setError(err.message)
       setLoading(false)
@@ -715,7 +711,6 @@ function OnboardingContent() {
         categories: categoryLabels,
         pool_categories: categoryLabels.length ? categoryLabels : null,
         pool_states: parseStates(data.targetState).length ? parseStates(data.targetState) : null,
-        status: 'active',
       }
 
       const { data: existing } = await supabase

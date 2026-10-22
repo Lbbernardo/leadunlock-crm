@@ -4,7 +4,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import Button from '../../components/ui/Button'
-import { supabase } from '../../lib/supabase'
+import { supabase, authHeaders } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import { US_STATES } from '../../lib/usStates'
 import { LEAD_CATEGORY_NAMES } from '../../lib/leadCategories'
@@ -49,7 +49,6 @@ function CardIcon({ brand }) {
 function AddCardForm({ onSuccess, onClose }) {
   const stripe = useStripe()
   const elements = useElements()
-  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [cardComplete, setCardComplete] = useState(false)
@@ -64,8 +63,8 @@ function AddCardForm({ onSuccess, onClose }) {
       // 1. Crear SetupIntent
       const res = await fetch('/api/stripe/create-setup-intent', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user?.id }),
+        headers: await authHeaders(),
+        body: JSON.stringify({}),
       })
       const { clientSecret, error: apiErr } = await res.json()
       if (apiErr) throw new Error(apiErr)
@@ -80,8 +79,8 @@ function AddCardForm({ onSuccess, onClose }) {
       // 3. Guardar en Supabase
       const saveRes = await fetch('/api/stripe/confirm-setup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ setupIntentId: setupIntent.id, userId: user?.id }),
+        headers: await authHeaders(),
+        body: JSON.stringify({ setupIntentId: setupIntent.id }),
       })
       const saveData = await saveRes.json()
       if (!saveData.success) throw new Error(saveData.error || 'Error al guardar tarjeta')

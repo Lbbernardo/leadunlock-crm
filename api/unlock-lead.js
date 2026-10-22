@@ -26,7 +26,8 @@ export default async function handler(req, res) {
   const { data: client } = await supabase
     .from('clients').select('id, balance, status').eq('id', clientId).single()
   if (!client) return res.status(404).json({ error: 'Client not found' })
-  if (client.status !== 'active') return res.status(403).json({ error: 'account_inactive' })
+  // payment_required = una tarjeta fue rechazada; puede seguir usando crédito o reintentar
+  if (!['active', 'payment_required'].includes(client.status)) return res.status(403).json({ error: 'account_inactive' })
 
   const { data: price, error: reserveErr } = await supabase
     .rpc('reserve_pool_lead', { p_lead: leadId, p_client: clientId })

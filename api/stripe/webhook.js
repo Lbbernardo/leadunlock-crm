@@ -1,6 +1,6 @@
 // POST /api/stripe/webhook
 // Stripe firma cada evento — verificamos la firma antes de procesar.
-// Eventos: payment_intent.succeeded, payment_intent.payment_failed
+// Eventos: payment_intent.succeeded (respaldo de activación), payment_intent.payment_failed (tarjeta rechazada)
 
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
@@ -52,52 +52,35 @@ export default async function handler(req, res) {
   // ── Pago exitoso ──────────────────────────────────────────────────────────
   if (event.type === 'payment_intent.succeeded') {
     const pi = event.data.object
-    const { lead_id, client_id, type } = pi.metadata
+    const { type, user_id, client_id } = pi.metadata || {}
 
-    // Cobro de activación de cuenta ($100)
-    if (type === 'activation' && client_id) {
+    // Respaldo de la activación: si el navegador se cerró antes de confirm-activation
+    if (type === 'account_activation' && user_id) {
       await supabase
         .from('clients')
-        .update({ status: 'active' })
-        .eq('id', client_id)
+        .update({ status: 'active', activation_amount_paid: pi.amount / 100 })
+        .eq('user_id', user_id)
         .eq('status', 'pending')
-      console.log('Activation payment confirmed for client:', client_id)
+      console.log('Activation payment confirmed for user:', user_id)
     }
 
-    // Cobro de lead con tarjeta (off-session)
-    if (lead_id && client_id) {
-      const amount = pi.amount / 100
-
-      const [unlockRes, leadRes] = await Promise.all([
-        supabase.from('lead_unlocks').insert({
-          lead_id,
-          client_id,
-          amount_paid: amount,
-          payment_method: 'card',
-        }),
-        supabase.from('leads').update({ is_locked: false }).eq('id', lead_id),
-      ])
-
-      if (unlockRes.error) console.error('lead_unlock insert error:', unlockRes.error)
-      if (leadRes.error) console.error('lead update error:', leadRes.error)
-
-      // Si el cliente estaba en payment_required, restaurarlo a active
+    // Cobro de lead: charge-lead ya asignó el lead (o lo reembolsó si otro ganó).
+    // Aquí solo se quita el bloqueo por tarjeta rechazada.
+    if (type === 'lead_unlock' && client_id) {
       await supabase
         .from('clients')
         .update({ status: 'active' })
         .eq('id', client_id)
         .eq('status', 'payment_required')
-
-      console.log('Lead unlocked via webhook:', lead_id)
     }
   }
 
   // ── Pago fallido ──────────────────────────────────────────────────────────
   if (event.type === 'payment_intent.payment_failed') {
     const pi = event.data.object
-    const { client_id } = pi.metadata
+    const { type, client_id } = pi.metadata || {}
 
-    if (client_id && pi.off_session) {
+    if (type === 'lead_unlock' && client_id) {
       await supabase
         .from('clients')
         .update({ status: 'payment_required' })
