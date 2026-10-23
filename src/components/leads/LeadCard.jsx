@@ -28,7 +28,7 @@ function maskName(name) {
 
 export default function LeadCard({ lead, onUnlock }) {
   const isUnlocked = lead.is_unlocked
-  const discounted = !isUnlocked && Date.now() - new Date(lead.created_at) > 86400000
+  const discounted = !isUnlocked && Date.now() - new Date(lead.created_at) > 6 * 3600000
 
   return (
     <div className={clsx(

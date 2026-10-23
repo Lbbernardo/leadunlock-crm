@@ -150,7 +150,8 @@ src/lib/supabase.js              # Cliente de Supabase
 ### Pool de leads (desde oct 2026)
 Los leads NO se asignan a un cliente al entrar. Van a un **pool** por nicho + estado;
 los ven todos los clientes activos que coinciden y **el primero que paga se lo queda** (exclusivo).
-- Precio: `costo × 3` (mín $12) → 100% <24h · 60% <7 días · 30% después (`pool_price()` en SQL)
+- Precio: **2× el costo** al llegar → **3×** a los 30 min → **1× (costo)** a las 6 h (`pool_price()` en SQL, sin mínimo de $12)
+- El cliente nunca paga más de lo que vio: si el precio subió mientras pagaba → 409 `price_changed`, sin cobrar
 - Preferencias del cliente: `clients.pool_categories` + `clients.pool_states` (editables en Perfil)
 - Lógica compartida de entrada: `api/_lib/pool.js` · migración: `supabase/migration_pool.sql`
 

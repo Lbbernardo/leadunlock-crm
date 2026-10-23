@@ -7,8 +7,9 @@ const FROM = 'LeadUnlock <notificaciones@unlocklead.click>'
 
 const esc = (v) => String(v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 
+// Precio al llegar (2× el costo). Igual que pool_price() en SQL: 2× → 3× a los 30 min → 1× a las 6 h
 export function basePrice(cost) {
-  return Math.max(Math.round((Number(cost) || 0) * 3), 12)
+  return Math.max(Math.round((Number(cost) || 0) * 2), 1)
 }
 
 async function resend(path, payload) {

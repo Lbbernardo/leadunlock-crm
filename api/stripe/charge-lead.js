@@ -18,7 +18,7 @@ async function release(leadId, clientId) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { leadId, clientId } = req.body
+  const { leadId, clientId, expectedPrice } = req.body
   if (!leadId || !clientId) return res.status(400).json({ error: 'leadId and clientId required' })
   if (!await requireClientOwner(req, res, supabase, clientId)) return
 
@@ -36,6 +36,11 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to process unlock' })
   }
   if (price == null) return res.status(409).json({ error: 'lead_taken' })
+  // El precio sube a los 30 min: nunca cobrar más de lo que el cliente vio en pantalla
+  if (expectedPrice != null && price > Number(expectedPrice)) {
+    await release(leadId, clientId)
+    return res.status(409).json({ error: 'price_changed', price })
+  }
 
   let pi
   try {

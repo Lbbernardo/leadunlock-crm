@@ -1487,7 +1487,7 @@ export default function AdminDashboard() {
                       <label className="block text-xs font-medium text-white/35 mb-1">Costo por lead <span className="text-white/25">($)</span></label>
                       <input type="number" step="0.01" min="0" value={campaignForm.cost_per_lead} onChange={e => setCampaignForm(p => ({ ...p, cost_per_lead: e.target.value }))} placeholder="Ej. 5.00" className="w-full px-3 py-2 border border-white/[0.1] rounded-xl text-sm text-white focus:outline-none focus:border-green-500/40 bg-white/[0.05]" />
                       {campaignForm.cost_per_lead > 0 && (
-                        <p className="text-xs text-green-600 mt-1">→ Precio al cliente: ${Math.max(Math.round(campaignForm.cost_per_lead * 3), 12)} (60% tras 24h · 30% tras 7 días)</p>
+                        <p className="text-xs text-green-600 mt-1">→ Precio al cliente: ${Math.max(Math.round(campaignForm.cost_per_lead * 2), 1)} al llegar · ${Math.max(Math.round(campaignForm.cost_per_lead * 3), 1)} a los 30 min · ${Math.max(Math.round(campaignForm.cost_per_lead), 1)} a las 6 h</p>
                       )}
                     </div>
                     <div>

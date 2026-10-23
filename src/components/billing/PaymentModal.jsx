@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom'
 import { authHeaders } from '../../lib/supabase'
 
 const TAKEN_MSG = 'Otro agente se adelantó y tomó este lead. No se te cobró nada.'
+const priceChangedMsg = (price) => `El precio de este lead cambió a $${price}. No se te cobró nada; cierra y vuelve a intentar.`
 
 function UnlockForm({ lead, clientId, amount, onSuccess, onClose, onTaken }) {
   const { clientData, refreshProfile } = useAuth()
@@ -26,12 +27,16 @@ function UnlockForm({ lead, clientId, amount, onSuccess, onClose, onTaken }) {
       const res = await fetch('/api/unlock-lead', {
         method: 'POST',
         headers: await authHeaders(),
-        body: JSON.stringify({ leadId: lead.id, clientId }),
+        body: JSON.stringify({ leadId: lead.id, clientId, expectedPrice: amount }),
       })
       const data = await res.json()
       if (data.error === 'lead_taken') {
         setError(TAKEN_MSG)
         onTaken?.(lead.id)
+        return
+      }
+      if (data.error === 'price_changed') {
+        setError(priceChangedMsg(data.price))
         return
       }
       if (!data.success) {
@@ -56,13 +61,15 @@ function UnlockForm({ lead, clientId, amount, onSuccess, onClose, onTaken }) {
       const res = await fetch('/api/stripe/charge-lead', {
         method: 'POST',
         headers: await authHeaders(),
-        body: JSON.stringify({ leadId: lead.id, clientId }),
+        body: JSON.stringify({ leadId: lead.id, clientId, expectedPrice: amount }),
       })
       const data = await res.json()
       if (!data.success) {
         if (data.error === 'lead_taken') {
           setError(TAKEN_MSG)
           onTaken?.(lead.id)
+        } else if (data.error === 'price_changed') {
+          setError(priceChangedMsg(data.price))
         } else if (data.error === 'no_payment_method') {
           setError('No hay método de pago guardado. Agrega una tarjeta en tu perfil.')
         } else if (data.error === 'card_declined') {
