@@ -1018,6 +1018,7 @@ export default function AdminDashboard() {
       cost_per_lead: campaignForm.cost_per_lead ? parseFloat(campaignForm.cost_per_lead) : 0,
       default_state: campaignForm.default_state || null,
     })
+    if (error) alert(`No se pudo crear la campaña: ${error.message}`)
     if (!error) {
       logAdminAction('campaign_created', campaignForm.name.trim(), { category: campaignForm.interest_category })
       setCampaignForm(EMPTY_CAMPAIGN_FORM); setShowCampaignForm(false); await fetchCampaigns()
@@ -1041,7 +1042,7 @@ export default function AdminDashboard() {
   }
 
   async function handleSaveCampaign(id) {
-    await supabase.from('campaigns').update({
+    const { error } = await supabase.from('campaigns').update({
       name: editCampaignForm.name?.trim(),
       source: editCampaignForm.source,
       meta_form_id: editCampaignForm.meta_form_id?.trim() || null,
@@ -1050,6 +1051,7 @@ export default function AdminDashboard() {
       cost_per_lead: editCampaignForm.cost_per_lead ? parseFloat(editCampaignForm.cost_per_lead) : 0,
       default_state: editCampaignForm.default_state || null,
     }).eq('id', id)
+    if (error) { alert(`No se pudo guardar la campaña: ${error.message}`); return }
     logAdminAction('campaign_edited', editCampaignForm.name?.trim() || id, {})
     setEditingCampaignId(null)
     await fetchCampaigns()

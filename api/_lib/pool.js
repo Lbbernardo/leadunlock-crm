@@ -78,8 +78,10 @@ export async function findCampaignByForm(supabase, formId) {
     .select('id, name, interest_category, lead_interest, cost_per_lead, default_state')
     .eq('meta_form_id', String(formId))
     .eq('is_active', true)
-    .maybeSingle()
-  return data
+    .order('created_at', { ascending: false })
+    .limit(1)
+  // Si hay varias campañas activas con el mismo formulario, usa la más reciente
+  return data?.[0] || null
 }
 
 // Estado del lead: el que escribió → su código postal → el estado por defecto de la campaña
