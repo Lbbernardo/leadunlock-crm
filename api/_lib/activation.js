@@ -1,7 +1,8 @@
-// Activación de cuenta ($100): precio, cupones, cliente de Stripe y emails.
+// Activación de cuenta (gratis por ahora para atraer registros; antes $100): precio, cupones, cliente de Stripe y emails.
 // Lo usan create-activation-payment (cobro o cupón gratis) y confirm-activation.
 
-export const ACTIVATION_PRICE = 100
+// Para volver a cobrar: cambiar a 100 aquí y en src/pages/onboarding/Onboarding.jsx
+export const ACTIVATION_PRICE = 0
 
 // Valida el cupón en el servidor. Retorna la fila o null si no sirve.
 export async function findValidDiscount(supabase, code) {

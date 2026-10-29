@@ -393,6 +393,9 @@ const CARD_OPTIONS = {
   },
 }
 
+// Gratis por ahora (debe coincidir con ACTIVATION_PRICE en api/_lib/activation.js)
+const ACTIVATION_PRICE = 0
+
 function PaymentForm({ data, onSuccess, onBack }) {
   const stripe = useStripe()
   const elements = useElements()
@@ -405,7 +408,7 @@ function PaymentForm({ data, onSuccess, onBack }) {
   const { isMock, user } = useAuth()
 
   const discountPct = appliedCodeData?.discount_pct || 0
-  const finalAmount = discountPct > 0 ? Math.round(100 * (1 - discountPct / 100)) : 100
+  const finalAmount = discountPct > 0 ? Math.round(ACTIVATION_PRICE * (1 - discountPct / 100)) : ACTIVATION_PRICE
   const isFree = finalAmount === 0
 
   async function applyCoupon() {
@@ -488,7 +491,9 @@ function PaymentForm({ data, onSuccess, onBack }) {
     <form onSubmit={handlePay} className="space-y-5">
       <div>
         <h2 className="text-2xl font-bold text-white mb-1">Activa tu cuenta</h2>
-        <p className="text-slate-400 text-sm">Pago único de activación para empezar a recibir leads.</p>
+        <p className="text-slate-400 text-sm">
+          {ACTIVATION_PRICE === 0 ? 'Tu cuenta es gratis. Solo pagas por los leads que desbloqueas.' : 'Pago único de activación para empezar a recibir leads.'}
+        </p>
       </div>
 
       <div className="bg-slate-800 rounded-2xl p-5 space-y-3">
@@ -507,15 +512,17 @@ function PaymentForm({ data, onSuccess, onBack }) {
             <span className="text-white">{data.leadsPerMonth || '—'}</span>
           </div>
         </div>
-        <div className="border-t border-slate-700 pt-3">
-          <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-xs text-green-400">
-            🎁 Si desbloqueas $1,000 en leads, te devolvemos estos $100 como crédito en tu cuenta.
+        {ACTIVATION_PRICE > 0 && (
+          <div className="border-t border-slate-700 pt-3">
+            <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3 text-xs text-green-400">
+              🎁 Si desbloqueas $1,000 en leads, te devolvemos estos $100 como crédito en tu cuenta.
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Código de descuento */}
-      <div>
+      {ACTIVATION_PRICE > 0 && <div>
         <label className="block text-sm font-medium text-slate-300 mb-2">Código de descuento (opcional)</label>
         <div className="flex gap-2">
           <input
@@ -541,16 +548,16 @@ function PaymentForm({ data, onSuccess, onBack }) {
             <p className="text-xs text-green-400 font-medium">{appliedCodeData.discount_pct}% de descuento aplicado</p>
           </div>
         )}
-      </div>
+      </div>}
 
       {/* Precio */}
       <div className="flex items-center justify-between bg-slate-900 border border-slate-700 rounded-2xl px-5 py-4">
         <div>
           <p className="text-white font-semibold">Activación de cuenta</p>
-          <p className="text-slate-500 text-xs">Pago único · No recurrente</p>
+          <p className="text-slate-500 text-xs">{ACTIVATION_PRICE === 0 ? 'Gratis · Sin tarjeta' : 'Pago único · No recurrente'}</p>
         </div>
         <div className="text-right">
-          {appliedCodeData && <p className="text-slate-500 text-sm line-through">$1</p>}
+          {appliedCodeData && <p className="text-slate-500 text-sm line-through">${ACTIVATION_PRICE}</p>}
           <span className="text-3xl font-extrabold text-white">
             ${finalAmount}
           </span>
@@ -569,7 +576,7 @@ function PaymentForm({ data, onSuccess, onBack }) {
 
       {(isMock || isFree) && (
         <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3 text-xs text-blue-400">
-          {isFree ? '✅ Código aplicado — activación sin costo.' : 'Modo demo activo — el pago se simulará sin cargo real.'}
+          {isFree ? (ACTIVATION_PRICE === 0 ? '✅ Activación gratis — no necesitas tarjeta. La agregas cuando quieras desbloquear tu primer lead.' : '✅ Código aplicado — activación sin costo.') : 'Modo demo activo — el pago se simulará sin cargo real.'}
         </div>
       )}
 
@@ -585,7 +592,7 @@ function PaymentForm({ data, onSuccess, onBack }) {
         </Button>
         <Button type="submit" loading={loading} className="flex-1 py-3 text-base">
           <CreditCard size={18} />
-          {isFree ? `Activar cuenta — $${finalAmount}` : `Pagar $${finalAmount} y activar cuenta`}
+          {isFree ? (ACTIVATION_PRICE === 0 ? 'Activar mi cuenta gratis' : `Activar cuenta — $${finalAmount}`) : `Pagar $${finalAmount} y activar cuenta`}
         </Button>
       </div>
 
@@ -660,9 +667,11 @@ function Step4({ data }) {
         ))}
       </div>
 
-      <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-sm text-green-400">
-        🎁 Recuerda: desbloquea $1,000 en leads y te devolvemos los $100 de activación como crédito.
-      </div>
+      {ACTIVATION_PRICE > 0 && (
+        <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 text-sm text-green-400">
+          🎁 Recuerda: desbloquea $1,000 en leads y te devolvemos los $100 de activación como crédito.
+        </div>
+      )}
 
       <Button onClick={() => window.location.href = '/dashboard'} className="w-full py-3 text-base">
         Ir a mi dashboard <ChevronRight size={18} />

@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
   try {
     if (amount === 0) {
-      await activateClient(supabase, { userId: user.id, amount: 0, discountId: discount.id })
+      await activateClient(supabase, { userId: user.id, amount: 0, discountId: discount?.id })
       return res.status(200).json({ activated: true, amount: 0 })
     }
 

@@ -26,7 +26,7 @@ Al iniciar una conversación con Luis:
 ### Modelo de ingresos
 | Concepto | Monto |
 |----------|-------|
-| Activación de cuenta | $100 (cobrado con Stripe al registrarse) |
+| Activación de cuenta | **Gratis desde 28-oct-2026** para atraer registros (antes $100; `ACTIVATION_PRICE` en `api/_lib/activation.js` + Onboarding.jsx) |
 | Por lead desbloqueado | Variable, mínimo $12 |
 | Crédito de fidelidad | Al llegar a $1,000 en leads o 50 desbloqueados, se devuelven $100 al cliente |
 

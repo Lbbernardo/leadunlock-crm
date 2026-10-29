@@ -247,7 +247,7 @@ function Navbar() {
                 </Link>
                 <Link to="/register" onClick={() => setOpen(false)}
                   className="bg-green-500 text-white text-sm font-bold py-3 rounded-xl text-center">
-                  Activar mi cuenta — $100
+                  Crear cuenta gratis
                 </Link>
               </div>
             </div>
@@ -260,7 +260,7 @@ function Navbar() {
 
 /* ─── Hero ─── */
 function Hero() {
-  const pills = ['Final Expense · Medicare · Whole Life', 'Meta Ads incluido', 'Desde $12/lead', '$100 reembolsable']
+  const pills = ['Final Expense · Medicare · Whole Life', 'Meta Ads incluido', 'Desde $12/lead', 'Cuenta gratis']
   return (
     <section className="pt-28 pb-20 md:pt-36 md:pb-32 bg-[#070b10] relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_70%_at_65%_20%,rgba(34,197,94,0.09),transparent)]" />
@@ -291,7 +291,7 @@ function Hero() {
 
             <FadeIn delay={0.18}>
               <p className="text-white/45 text-lg leading-relaxed mb-8">
-                Diseñada para agentes independientes de seguros que quieren clientes sin pagar mensualidades ni contratos. Empieza por $100, abre solo los leads que necesitas y crece a tu propio ritmo.
+                Diseñada para agentes independientes de seguros que quieren clientes sin pagar mensualidades ni contratos. Crea tu cuenta gratis, abre solo los leads que necesitas y crece a tu propio ritmo.
               </p>
             </FadeIn>
 
@@ -310,7 +310,7 @@ function Hero() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-5">
                 <Link to="/register"
                   className="group flex items-center gap-2.5 bg-green-500 hover:bg-green-400 text-white font-black px-8 py-4 rounded-xl transition-all text-base shadow-2xl shadow-green-500/30 hover:shadow-green-500/50 hover:-translate-y-0.5">
-                  Empezar ahora — $100
+                  Empezar gratis
                   <ArrowRight size={17} className="group-hover:translate-x-1 transition-transform" />
                 </Link>
                 <Link to="/demo" className="text-white/30 hover:text-white/65 text-sm transition-colors flex items-center gap-1">
@@ -318,7 +318,7 @@ function Hero() {
                 </Link>
               </div>
               <p className="text-white/18 text-xs">
-                Pago único · Los $100 son reembolsables al llegar a $1,000 en leads comprados
+                Sin tarjeta para registrarte · Solo pagas los leads que abres
               </p>
             </FadeIn>
           </div>
@@ -566,9 +566,9 @@ function Benefits() {
                     <Star size={17} className="text-green-400" />
                   </div>
                   <div>
-                    <h3 className="text-green-300 font-semibold text-sm mb-1">Crédito de fidelidad</h3>
+                    <h3 className="text-green-300 font-semibold text-sm mb-1">Cuenta gratis</h3>
                     <p className="text-white/40 text-xs leading-relaxed">
-                      Al comprar $1,000 en leads, te devolvemos $100 de crédito. Tu inversión inicial es 100% reembolsable.
+                      Registrarte no cuesta nada y no pide tarjeta. Solo pagas por los leads que decides abrir.
                     </p>
                   </div>
                 </div>
@@ -590,7 +590,6 @@ function Pricing() {
     'Teléfono y email completos al desbloquear',
     'Notas y seguimiento por lead',
     'Sin mensualidades — solo pagas lo que abres',
-    '$100 de crédito al llegar a $1,000 en leads',
     'Soporte directo con el equipo',
   ]
   return (
@@ -623,8 +622,8 @@ function Pricing() {
                 </div>
                 <div className="text-right">
                   <p className="text-white/25 text-xs mb-0.5">Activación</p>
-                  <p className="text-4xl font-black text-white leading-none">$100</p>
-                  <p className="text-green-400 text-xs font-semibold mt-1">reembolsable</p>
+                  <p className="text-4xl font-black text-white leading-none">$0</p>
+                  <p className="text-green-400 text-xs font-semibold mt-1">gratis</p>
                 </div>
               </div>
 
@@ -647,7 +646,7 @@ function Pricing() {
 
               <Link to="/register"
                 className="group flex items-center justify-center gap-2 bg-green-500 hover:bg-green-400 text-white font-black py-4 rounded-xl transition-all text-sm shadow-lg shadow-green-500/25 hover:shadow-green-500/40 hover:-translate-y-0.5 mb-3">
-                Activar mi cuenta — $100
+                Crear cuenta gratis
                 <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <p className="text-center text-white/20 text-xs">
@@ -701,8 +700,8 @@ function FAQ() {
       a: 'El precio mínimo es $12 por lead. Dependiendo del nicho y la campaña puede variar. Siempre verás el precio antes de decidir si lo abres — nunca hay sorpresas.',
     },
     {
-      q: '¿Los $100 de activación son reembolsables?',
-      a: 'Sí. Cuando hayas comprado $1,000 acumulados en leads, los $100 de activación regresan a tu cuenta como crédito. Es una muestra de que estamos comprometidos con tu éxito.',
+      q: '¿Cuánto cuesta crear la cuenta?',
+      a: 'Nada. Crear tu cuenta es gratis y no pide tarjeta. Solo pagas por los leads que decides desbloquear.',
     },
     {
       q: '¿Qué tan rápido empieza a llegar leads?',
@@ -769,13 +768,13 @@ function CTA() {
             ¿Listo para recibir leads de calidad?
           </h2>
           <p className="text-white/40 text-lg mb-10 max-w-xl mx-auto leading-relaxed">
-            Activa tu cuenta con $100, nosotros creamos tu campaña, y los leads empiezan a llegar solos a tu dashboard.
+            Crea tu cuenta gratis, nosotros creamos tu campaña, y los leads empiezan a llegar solos a tu dashboard.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link to="/register"
               className="group flex items-center gap-2.5 bg-green-500 hover:bg-green-400 text-white font-black px-10 py-4 rounded-xl transition-all text-base shadow-2xl shadow-green-500/30 hover:shadow-green-500/50 hover:-translate-y-0.5 w-full sm:w-auto justify-center">
-              Activar mi cuenta — $100
+              Crear cuenta gratis
               <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link to="/login" className="text-white/35 hover:text-white/65 text-sm transition-colors">
@@ -784,7 +783,7 @@ function CTA() {
           </div>
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-6">
-            {['Sin contrato', 'Sin mensualidad', '$100 reembolsable', 'Soporte real'].map((t) => (
+            {['Sin contrato', 'Sin mensualidad', 'Cuenta gratis', 'Soporte real'].map((t) => (
               <div key={t} className="flex items-center gap-2 text-white/25 text-xs">
                 <CheckCircle size={12} className="text-green-500/60" />
                 {t}
