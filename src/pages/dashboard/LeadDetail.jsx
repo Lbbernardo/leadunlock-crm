@@ -37,6 +37,7 @@ export default function LeadDetail() {
   const [status, setStatus] = useState('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState(null)
 
   useEffect(() => {
     supabase.from('leads').select('*').eq('id', id).single()
@@ -53,9 +54,16 @@ export default function LeadDetail() {
 
   async function handleSave() {
     setSaving(true)
-    await supabase.from('leads').update({ notes, status }).eq('id', id)
-    setLead((prev) => ({ ...prev, notes, status }))
+    setSaveError(null)
+    // .select() para saber si de verdad se guardó: si RLS lo bloquea, Supabase no da error, solo 0 filas
+    const { data, error } = await supabase.from('leads').update({ notes, status }).eq('id', id).select('id')
     setSaving(false)
+    if (error || !data?.length) {
+      console.error('Guardar lead:', error)
+      setSaveError(error?.message || 'No se pudo guardar. Intenta de nuevo o escríbenos.')
+      return
+    }
+    setLead((prev) => ({ ...prev, notes, status }))
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
   }
@@ -158,6 +166,7 @@ export default function LeadDetail() {
               <Save size={15} />
               {saved ? '¡Guardado!' : 'Guardar cambios'}
             </Button>
+            {saveError && <p className="text-xs text-red-500 mt-2">{saveError}</p>}
           </div>
         </div>
 
